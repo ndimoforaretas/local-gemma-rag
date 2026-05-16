@@ -18,6 +18,11 @@ class RagRequest(BaseModel):
 
 # ── Responses ────────────────────────────────────────────────────────────────
 
+class StatusResponse(BaseModel):
+    """Generic success envelope used across multiple endpoints."""
+    status: str
+
+
 class IngestResponse(BaseModel):
     """Returned when a new ingestion workflow is started."""
     status: str
@@ -43,3 +48,49 @@ class ErrorResponse(BaseModel):
     """Standard error envelope for non-200 responses."""
     error: str
     detail: Optional[str] = None
+
+
+# ── Knowledge Base ───────────────────────────────────────────────────────────
+
+class KBFile(BaseModel):
+    """A single indexed file within a KB subfolder."""
+    name: str
+    type: str
+    size: str = "N/A"
+    modified: str = "N/A"
+
+
+class KBSubfolder(BaseModel):
+    """A logical grouping of files within a KB folder."""
+    name: str
+    files: list[KBFile] = []
+
+
+class KBFolder(BaseModel):
+    """A top-level knowledge base category."""
+    name: str
+    description: str
+    icon: str
+    updated: str
+    subfolders: list[KBSubfolder] = []
+
+
+class KBResponse(BaseModel):
+    """Returned by the /kb endpoint."""
+    folders: list[KBFolder] = []
+
+
+# ── Workflow Status ──────────────────────────────────────────────────────────
+
+class WorkflowStep(BaseModel):
+    """A single step in a DBOS workflow execution."""
+    name: str
+    status: str
+    output: list = []
+
+
+class WorkflowStatusResponse(BaseModel):
+    """Returned by the /ingest/status/{workflow_id} endpoint."""
+    workflow_id: str
+    status: str
+    steps: list[WorkflowStep] = []

@@ -6,10 +6,22 @@ import json
 import os
 import shutil
 from datetime import datetime
+from typing import Optional
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
 from backend.config import get_settings, logger
+from backend.models.schemas import (
+    IngestResponse,
+    KBFile,
+    KBFolder,
+    KBResponse,
+    KBSubfolder,
+    StatusResponse,
+    UploadResponse,
+    WorkflowStatusResponse,
+    WorkflowStep,
+)
 from backend.services.ingest import dbos as ingest_dbos
 from backend.services.ingest import ingest_workflow
 from backend.services.vector_db import vector_db
@@ -18,10 +30,16 @@ router = APIRouter(tags=["Knowledge Base"])
 
 settings = get_settings()
 
+# Upload constraints
+_ALLOWED_EXTENSIONS = {".pdf"}
+_ALLOWED_MIME_TYPES = {"application/pdf", "application/octet-stream"}
+_MAX_FILES_PER_REQUEST = 20
+_MAX_FILE_SIZE_BYTES = settings.max_upload_size_mb * 1024 * 1024
+
 
 # ── Browse ───────────────────────────────────────────────────────────────────
 
-@router.get("/kb")
+@router.get("/kb", response_model=KBResponse)
 async def get_knowledge_base():
     """
     Return the knowledge base structure derived from indexed document metadata.
@@ -29,7 +47,7 @@ async def get_knowledge_base():
     """
     try:
         if not os.path.exists(settings.metadata_file):
-            return {"folders": []}
+            return KBResponse()
 
         with open(settings.metadata_file, "r") as f:
             metadata = json.load(f)
@@ -51,20 +69,18 @@ async def get_knowledge_base():
                 description = f"Repository for {root.replace('_', ' ')} related intelligence."
             subfolder_name = src.split(" > ")[1] if " > " in src else src
 
-            file_meta = {
-                "name": src.split(" > ")[-1] if " > " in src else src,
-                "type": "pdf" if src.lower().endswith(".pdf") else "file",
-                "size": "N/A",
-                "modified": "N/A",
-            }
+            file_meta = KBFile(
+                name=src.split(" > ")[-1] if " > " in src else src,
+                type="pdf" if src.lower().endswith(".pdf") else "file",
+            )
 
             try:
                 for f_name in os.listdir(settings.docs_dir):
                     if src.endswith(f_name):
                         path = os.path.join(settings.docs_dir, f_name)
                         stats = os.stat(path)
-                        file_meta["size"] = f"{stats.st_size / 1024:.1f} KB"
-                        file_meta["modified"] = datetime.fromtimestamp(
+                        file_meta.size = f"{stats.st_size / 1024:.1f} KB"
+                        file_meta.modified = datetime.fromtimestamp(
                             stats.st_mtime
                         ).strftime("%b %d, %Y")
                         break
@@ -81,34 +97,33 @@ async def get_knowledge_base():
                 }
 
             if subfolder_name not in folders[root]["subfolders"]:
-                folders[root]["subfolders"][subfolder_name] = {
-                    "name": subfolder_name,
-                    "files": [file_meta],
-                }
+                folders[root]["subfolders"][subfolder_name] = KBSubfolder(
+                    name=subfolder_name, files=[file_meta]
+                )
             else:
-                existing = folders[root]["subfolders"][subfolder_name]["files"]
-                if not any(f["name"] == file_meta["name"] for f in existing):
+                existing = folders[root]["subfolders"][subfolder_name].files
+                if not any(f.name == file_meta.name for f in existing):
                     existing.append(file_meta)
 
-            if file_meta["modified"] != "N/A":
-                folders[root]["updated"] = file_meta["modified"]
+            if file_meta.modified != "N/A":
+                folders[root]["updated"] = file_meta.modified
 
         result = [
-            {
-                "name": data["name"],
-                "description": data["description"],
-                "icon": data["icon"],
-                "updated": data["updated"],
-                "subfolders": list(data["subfolders"].values()),
-            }
+            KBFolder(
+                name=data["name"],
+                description=data["description"],
+                icon=data["icon"],
+                updated=data["updated"],
+                subfolders=list(data["subfolders"].values()),
+            )
             for data in folders.values()
         ]
 
-        return {"folders": result}
+        return KBResponse(folders=result)
 
     except Exception:
         logger.exception("Error building knowledge base listing")
-        return {"folders": []}
+        return KBResponse()
 
 
 # ── Upload ───────────────────────────────────────────────────────────────────
@@ -117,16 +132,50 @@ def _sanitize_filename(filename: str) -> str:
     """
     Remove path separators and leading dots to prevent directory traversal.
     """
-    # Strip directory components
     name = os.path.basename(filename)
-    # Remove leading dots (hidden files / traversal)
     name = name.lstrip(".")
     return name or "unnamed_upload.pdf"
 
 
-@router.post("/upload")
+def _validate_upload(file: UploadFile) -> Optional[str]:
+    """
+    Validate a single uploaded file. Returns an error message or None if valid.
+    """
+    safe_name = _sanitize_filename(file.filename or "")
+    _, ext = os.path.splitext(safe_name)
+
+    if ext.lower() not in _ALLOWED_EXTENSIONS:
+        return f"Rejected '{safe_name}': only PDF files are accepted"
+
+    if file.content_type and file.content_type not in _ALLOWED_MIME_TYPES:
+        return f"Rejected '{safe_name}': invalid MIME type '{file.content_type}'"
+
+    return None
+
+
+@router.post("/upload", response_model=UploadResponse)
 async def upload_documents(files: list[UploadFile] = File(...)):
-    """Upload PDF files to the docs/ directory for later ingestion."""
+    """
+    Upload PDF files to the docs/ directory for later ingestion.
+
+    Validates:
+    - File count (max 20 per request)
+    - File extension (.pdf only)
+    - MIME type (application/pdf)
+    - File size (configurable, default 50 MB)
+    """
+    if len(files) > _MAX_FILES_PER_REQUEST:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Too many files: maximum {_MAX_FILES_PER_REQUEST} per request",
+        )
+
+    # Validate all files before writing any to disk.
+    for file in files:
+        error = _validate_upload(file)
+        if error:
+            raise HTTPException(status_code=400, detail=error)
+
     os.makedirs(settings.docs_dir, exist_ok=True)
 
     saved_files: list[str] = []
@@ -134,34 +183,45 @@ async def upload_documents(files: list[UploadFile] = File(...)):
         safe_name = _sanitize_filename(file.filename or "upload.pdf")
         file_path = os.path.join(settings.docs_dir, safe_name)
 
+        # Stream the file to disk with size enforcement.
+        bytes_written = 0
         with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+            while chunk := await file.read(8192):
+                bytes_written += len(chunk)
+                if bytes_written > _MAX_FILE_SIZE_BYTES:
+                    buffer.close()
+                    os.remove(file_path)
+                    raise HTTPException(
+                        status_code=413,
+                        detail=f"File '{safe_name}' exceeds the {settings.max_upload_size_mb} MB limit",
+                    )
+                buffer.write(chunk)
 
         saved_files.append(safe_name)
-        logger.info("Uploaded file: %s", safe_name)
+        logger.info("Uploaded file: %s (%d bytes)", safe_name, bytes_written)
 
-    return {
-        "status": "success",
-        "message": f"Successfully uploaded: {', '.join(saved_files)}",
-        "files": saved_files,
-    }
+    return UploadResponse(
+        status="success",
+        message=f"Successfully uploaded: {', '.join(saved_files)}",
+        files=saved_files,
+    )
 
 
 # ── Ingest ───────────────────────────────────────────────────────────────────
 
-@router.post("/ingest")
+@router.post("/ingest", response_model=IngestResponse)
 async def ingest_endpoint():
     """Trigger a durable DBOS ingestion workflow and return its ID."""
     try:
         handle = ingest_dbos.start_workflow(ingest_workflow)
         logger.info("Started ingestion workflow: %s", handle.workflow_id)
-        return {"status": "success", "workflow_id": handle.workflow_id}
+        return IngestResponse(status="success", workflow_id=handle.workflow_id)
     except Exception as e:
         logger.exception("Failed to start ingestion workflow")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/ingest/status/{workflow_id}")
+@router.get("/ingest/status/{workflow_id}", response_model=WorkflowStatusResponse)
 def get_ingest_status(workflow_id: str):
     """
     Poll the status and steps of an ingestion workflow.
@@ -169,10 +229,14 @@ def get_ingest_status(workflow_id: str):
     If the workflow has completed successfully, the in-memory
     vector database is automatically reloaded.
     """
+    # Basic input validation.
+    if not workflow_id or len(workflow_id) > 200:
+        raise HTTPException(status_code=400, detail="Invalid workflow ID")
+
     try:
         status = ingest_dbos.get_workflow_status(workflow_id)
         if not status:
-            return {"status": "not_found"}
+            raise HTTPException(status_code=404, detail=f"Workflow '{workflow_id}' not found")
 
         if status.status == "SUCCESS":
             logger.info("Workflow %s succeeded — reloading vector DB", workflow_id)
@@ -180,7 +244,7 @@ def get_ingest_status(workflow_id: str):
 
         steps = ingest_dbos.list_workflow_steps(workflow_id)
 
-        formatted_steps = []
+        formatted_steps: list[WorkflowStep] = []
         for step in steps:
             fn_name = step.get("function_name", "Unknown Step")
             out_val = step.get("output", [])
@@ -194,11 +258,11 @@ def get_ingest_status(workflow_id: str):
                 except (json.JSONDecodeError, TypeError):
                     pass
 
-            formatted_steps.append({
-                "name": fn_name,
-                "status": "COMPLETED" if not step.get("error") else "ERROR",
-                "output": safe_out,
-            })
+            formatted_steps.append(WorkflowStep(
+                name=fn_name,
+                status="COMPLETED" if not step.get("error") else "ERROR",
+                output=safe_out,
+            ))
 
         # Inject a RUNNING step indicator for the frontend when workflow is pending.
         if status.status == "PENDING":
@@ -208,7 +272,7 @@ def get_ingest_status(workflow_id: str):
                 "embed_batch",
                 "save_vector_store",
             ]
-            last_completed = formatted_steps[-1]["name"] if formatted_steps else None
+            last_completed = formatted_steps[-1].name if formatted_steps else None
 
             if last_completed in expected_order:
                 idx = expected_order.index(last_completed)
@@ -217,21 +281,23 @@ def get_ingest_status(workflow_id: str):
                     "embed_batch",
                 ]:
                     next_step = expected_order[idx + 1]
-                    formatted_steps.append({"name": next_step, "status": "RUNNING", "output": []})
+                    formatted_steps.append(WorkflowStep(name=next_step, status="RUNNING"))
                 else:
-                    formatted_steps.append({
-                        "name": last_completed,
-                        "status": "RUNNING",
-                        "output": formatted_steps[-1]["output"],
-                    })
+                    formatted_steps.append(WorkflowStep(
+                        name=last_completed,
+                        status="RUNNING",
+                        output=formatted_steps[-1].output,
+                    ))
             elif not formatted_steps:
-                formatted_steps.append({"name": "list_document_files", "status": "RUNNING", "output": []})
+                formatted_steps.append(WorkflowStep(name="list_document_files", status="RUNNING"))
 
-        return {
-            "workflow_id": workflow_id,
-            "status": status.status,
-            "steps": formatted_steps,
-        }
+        return WorkflowStatusResponse(
+            workflow_id=workflow_id,
+            status=status.status,
+            steps=formatted_steps,
+        )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception("Error fetching workflow status")
         raise HTTPException(status_code=500, detail=str(e))
@@ -239,12 +305,29 @@ def get_ingest_status(workflow_id: str):
 
 # ── Delete ───────────────────────────────────────────────────────────────────
 
-@router.delete("/api/docs/{filename}")
+@router.delete("/api/docs/{filename}", response_model=StatusResponse)
 async def delete_document(filename: str):
     """Soft-delete a document from the vector store and remove the physical file."""
     safe_name = _sanitize_filename(filename)
+
+    # Check if the document exists in metadata or on disk.
+    file_path = os.path.join(settings.docs_dir, safe_name)
+    in_metadata = False
+    if os.path.exists(settings.metadata_file):
+        with open(settings.metadata_file, "r") as f:
+            metadata = json.load(f)
+        in_metadata = any(
+            item.get("source") == safe_name and not item.get("deleted")
+            for item in metadata
+        )
+
+    if not os.path.exists(file_path) and not in_metadata:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Document '{safe_name}' not found",
+        )
+
     try:
-        file_path = os.path.join(settings.docs_dir, safe_name)
         if os.path.exists(file_path):
             os.remove(file_path)
             logger.info("Deleted file: %s", safe_name)
@@ -262,7 +345,9 @@ async def delete_document(filename: str):
 
             vector_db.reload()
 
-        return {"status": "success"}
+        return StatusResponse(status="success")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception("Error deleting document %s", safe_name)
         raise HTTPException(status_code=500, detail=str(e))

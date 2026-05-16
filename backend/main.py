@@ -6,6 +6,7 @@ Run with:
 """
 
 import os
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
@@ -13,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import get_settings, logger
+from backend.middleware import RequestIDMiddleware, register_exception_handlers
 from backend.models.schemas import HealthResponse
 from backend.routers import history, knowledge, rag
 from backend.services.ingest import dbos as ingest_dbos
@@ -20,15 +22,41 @@ from backend.services.vector_db import vector_db
 
 settings = get_settings()
 
+
+# ── Lifecycle ────────────────────────────────────────────────────────────────
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application startup / shutdown lifecycle."""
+    logger.info("═" * 60)
+    logger.info("  Gemma CogniVault starting")
+    logger.info("  LLM model    : %s", settings.llm_model)
+    logger.info("  Embed model  : %s", settings.embedding_model)
+    logger.info("  Ollama host  : %s", settings.ollama_host)
+    logger.info("  Vector chunks: %d", len(vector_db.metadata))
+    logger.info("═" * 60)
+
+    yield  # Application is running
+
+    logger.info("Gemma CogniVault shutting down")
+
+
 # ── App factory ──────────────────────────────────────────────────────────────
 
 app = FastAPI(
     title="Gemma CogniVault API",
     description="Local RAG pipeline powered by Gemma 4 via Ollama",
     version="1.0.0",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
+    lifespan=lifespan,
 )
 
-# CORS — tightened to configured origins (defaults to localhost dev ports).
+# ── Middleware (order matters: outermost first) ──────────────────────────────
+
+app.add_middleware(RequestIDMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -36,6 +64,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ── Exception handlers ──────────────────────────────────────────────────────
+
+register_exception_handlers(app)
 
 # ── Routers ──────────────────────────────────────────────────────────────────
 
@@ -46,7 +78,7 @@ app.include_router(history.router)
 
 # ── Health check ─────────────────────────────────────────────────────────────
 
-@app.get("/health", response_model=HealthResponse)
+@app.get("/health", response_model=HealthResponse, tags=["System"])
 async def health_check():
     """Lightweight readiness probe for the application."""
     ollama_ok = False
@@ -66,10 +98,10 @@ async def health_check():
 
 
 # ── Static file mounts ──────────────────────────────────────────────────────
-# Order matters: specific mounts before the catch-all frontend mount.
+# Moved to /static/docs to avoid collision with FastAPI's Swagger UI at /docs.
 
 os.makedirs(settings.docs_dir, exist_ok=True)
-app.mount("/docs", StaticFiles(directory=settings.docs_dir), name="docs")
+app.mount("/static/docs", StaticFiles(directory=settings.docs_dir), name="uploaded_docs")
 
 # Serve the compiled React frontend as a catch-all.
 _frontend_dist = os.path.join("frontend", "dist")

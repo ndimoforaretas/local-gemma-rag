@@ -370,7 +370,7 @@ export function KnowledgeBase() {
               {contextItems.map((item, i) => (
                 <motion.a
                   key={i}
-                  href={`/docs/${item.title}`}
+                  href={`/static/docs/${item.title}`}
                   target="_blank"
                   rel="noreferrer"
                   initial={{ opacity: 0, x: 20 }}
