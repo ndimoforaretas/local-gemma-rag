@@ -71,6 +71,49 @@ Install all four tools before proceeding:
 | **Docker Desktop** | PostgreSQL database | [docker.com](https://www.docker.com/products/docker-desktop/) |
 | **Ollama** | Local LLM inference | [ollama.com](https://ollama.com/download) |
 
+> **⚠️ Make sure Docker Desktop and Ollama are both running** before proceeding.
+
+### Get Up and Running (2 commands)
+
+```bash
+# 1. Clone and enter the project
+git clone https://github.com/ndimoforaretas/local-gemma-rag.git
+cd local-gemma-rag
+
+# 2. One-time setup (pulls models, installs deps, builds frontend)
+./scripts/setup.sh
+
+# 3. Launch the app
+./scripts/start.sh
+```
+
+That's it! Open **[http://localhost:8000](http://localhost:8000)** and start chatting.
+
+### Stopping & Restarting
+
+```bash
+# Stop everything (backend + database)
+./scripts/stop.sh
+
+# Start again later (no setup needed)
+./scripts/start.sh
+```
+
+### What the scripts do
+
+| Script | Purpose |
+|---|---|
+| `scripts/setup.sh` | Checks prerequisites, pulls Ollama models, starts PostgreSQL, creates Python venv, installs dependencies, runs DBOS migration, builds frontend |
+| `scripts/start.sh` | Checks Ollama is running, frees port 8000 if needed, starts database, launches the backend |
+| `scripts/stop.sh` | Stops the backend server and shuts down the database |
+
+---
+
+<details>
+<summary><strong>📋 Manual Setup (step-by-step)</strong></summary>
+
+If you prefer to run each step manually:
+
 ### 1. Clone & enter the project
 
 ```bash
@@ -80,32 +123,18 @@ cd local-gemma-rag
 
 ### 2. Start Ollama & pull the required models
 
-Make sure the **Ollama** application is running (look for the llama icon in your system tray / menu bar), then pull the two models:
+Make sure the **Ollama** application is running, then pull the two models:
 
 ```bash
 ollama pull gemma4:e4b          # Chat model (~2.8 GB)
 ollama pull embeddinggemma      # Embedding model (~1.6 GB)
 ```
 
-> **⚠️ Ollama must be running whenever you use CogniVault.** If Ollama is not running, chat queries will fail with an internal error.
-
-You can verify Ollama is ready with:
-
-```bash
-ollama list
-```
-
-You should see both `gemma4:e4b` and `embeddinggemma` in the output.
-
-### 3. Start Docker Desktop & launch the database
-
-Open **Docker Desktop** and wait for it to fully start (whale icon in the menu bar stops animating). Then start the PostgreSQL database:
+### 3. Start the PostgreSQL database
 
 ```bash
 docker compose up -d db
 ```
-
-> **Note:** We only start the `db` service. The application itself runs natively on your machine for the fastest development experience.
 
 ### 4. Set up the Python environment
 
@@ -116,8 +145,6 @@ pip install -r requirements.txt
 ```
 
 ### 5. Initialize DBOS tables
-
-This creates the internal workflow tracking tables in PostgreSQL (only needed once):
 
 ```bash
 dbos migrate
@@ -138,49 +165,11 @@ cd ..
 python -m backend.main
 ```
 
-You should see:
-
-```
-════════════════════════════════════════════════════════════
-  Gemma CogniVault starting
-  LLM model    : gemma4:e4b
-  Embed model  : embeddinggemma
-  Ollama host  : http://localhost:11434
-  Vector chunks: 0
-════════════════════════════════════════════════════════════
-Uvicorn running on http://0.0.0.0:8000
-```
-
 ### 8. Open the app
 
 Navigate to **[http://localhost:8000](http://localhost:8000)**
 
-1. Go to the **Knowledge Base** tab in the sidebar.
-2. Click **Upload Documents** to add your PDFs.
-3. Watch the durable ingestion pipeline progress in real-time!
-4. Switch to the **Chat** tab to query your knowledge base.
-
----
-
-## 🛑 Stopping the Application
-
-1. **Stop the backend**: Press `Ctrl + C` in the terminal where the server is running.
-2. **Stop the database**: Run:
-
-```bash
-docker compose down
-```
-
-To start everything again later, you just need steps 2 (Ollama), 3 (database), and 7 (launch):
-
-```bash
-# 1. Make sure Ollama is running (open the app)
-# 2. Start the database
-docker compose up -d db
-# 3. Activate the Python environment and launch
-source .venv/bin/activate
-python -m backend.main
-```
+</details>
 
 ---
 
