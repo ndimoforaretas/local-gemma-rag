@@ -1,13 +1,25 @@
-ollama
-numpy
+# Core framework
 fastapi
 uvicorn
 python-multipart
+
+# AI & Embedding
+ollama
 strands-agents[ollama]
+
+# Vector database
 faiss-cpu
+numpy
+
+# Document processing
 pypdf
 langchain-text-splitters
+
+# Durable workflows
 dbos
 sqlalchemy
 psycopg2-binary
 
+# Configuration
+pydantic-settings
+pyyaml

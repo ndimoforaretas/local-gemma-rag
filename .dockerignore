@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+frontend/node_modules/
+.git/
+.env
+*.faiss
+vector_store.json
+chat_history.json
+docs/
+.DS_Store
+.gemini/
+*.md
+!README.md

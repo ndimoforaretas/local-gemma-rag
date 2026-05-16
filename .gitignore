@@ -1,7 +1,27 @@
+# Python
 .venv/
 __pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+
+# Data (user-generated, not needed for the app to run)
 docs/
 vector_store.faiss
 vector_store.json
+chat_history.json
+
+# IDE & OS
 .gemini/
 .DS_Store
+.vscode/
+.idea/
+
+# Node
+frontend/node_modules/
+frontend/dist/
