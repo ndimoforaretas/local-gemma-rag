@@ -22,3 +22,7 @@ psycopg2-binary
 
 # Configuration
 pydantic-settings>=2.0.0
+
+# Testing (install with: pip install -r requirements.txt)
+pytest
+pytest-asyncio
