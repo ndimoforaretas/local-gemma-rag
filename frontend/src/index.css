@@ -230,6 +230,73 @@ body {
   color: #424754;
 }
 
+.ai-response table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid #c2c6d6;
+  border-radius: 0.75rem;
+  background: #ffffff;
+}
+
+.ai-response thead {
+  background: #eceef0;
+}
+
+.ai-response th,
+.ai-response td {
+  min-width: 7.5rem;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.45;
+  border-right: 1px solid #c2c6d6;
+  border-bottom: 1px solid #c2c6d6;
+}
+
+.ai-response th {
+  font-weight: 600;
+  color: #191c1e;
+  white-space: nowrap;
+}
+
+.ai-response td {
+  color: #2a2d31;
+}
+
+.ai-response th:last-child,
+.ai-response td:last-child {
+  border-right: 0;
+}
+
+.ai-response tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.ai-response tbody tr:nth-child(even) {
+  background: #f7f9fb;
+}
+
+.ai-response td code,
+.ai-response th code {
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .ai-response table {
+    font-size: 0.92rem;
+  }
+
+  .ai-response th,
+  .ai-response td {
+    min-width: 6.5rem;
+    padding: 0.52rem 0.6rem;
+  }
+}
+
 .dark .ai-response code {
   background: color-mix(in srgb, #32353c 75%, transparent);
   border: 1px solid color-mix(in srgb, #424754 85%, transparent);
@@ -247,4 +314,31 @@ body {
 .dark .ai-response blockquote {
   border-left-color: #424754;
   color: #c2c6d6;
+}
+
+.dark .ai-response table {
+  background: #141821;
+  border-color: #424754;
+}
+
+.dark .ai-response thead {
+  background: #242833;
+}
+
+.dark .ai-response th,
+.dark .ai-response td {
+  border-right-color: #424754;
+  border-bottom-color: #424754;
+}
+
+.dark .ai-response th {
+  color: #e1e2ec;
+}
+
+.dark .ai-response td {
+  color: #d2d6e3;
+}
+
+.dark .ai-response tbody tr:nth-child(even) {
+  background: #1a1f2a;
 }
