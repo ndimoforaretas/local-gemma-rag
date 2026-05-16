@@ -18,6 +18,7 @@ export function KnowledgeBase() {
   const [contextItems, setContextItems] = useState<ContextItem[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isNewChatRef = useRef(false);
 
   // ── Data fetching ─────────────────────────────────────────────────
 
@@ -48,7 +49,7 @@ export function KnowledgeBase() {
   // ── Derived state ─────────────────────────────────────────────────
 
   useEffect(() => {
-    if (sessions.length > 0 && !activeSessionId) {
+    if (sessions.length > 0 && !activeSessionId && !isNewChatRef.current) {
       setActiveSessionId(sessions[0].id);
     }
   }, [sessions, activeSessionId]);
@@ -115,6 +116,7 @@ export function KnowledgeBase() {
         return next;
       });
       setActiveSessionId(currentSessionId);
+      isNewChatRef.current = false;
     }
 
     const newMsgId = Date.now().toString();
@@ -178,6 +180,7 @@ export function KnowledgeBase() {
   };
 
   const handleSelectSession = (id: string) => {
+    isNewChatRef.current = false;
     setActiveSessionId(id);
     setContextItems([]);
   };
@@ -203,7 +206,7 @@ export function KnowledgeBase() {
           <div className="flex items-center gap-3 pr-2">
              <Tooltip content="Start a fresh conversation" position="bottom">
                <button 
-                  onClick={() => { setActiveSessionId(null); setContextItems([]); }} 
+                  onClick={() => { isNewChatRef.current = true; setActiveSessionId(null); setContextItems([]); }} 
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#e0e3e5] hover:bg-[#c2c6d6] dark:bg-[#272a31] dark:hover:bg-[#32353c] text-[#191c1e] dark:text-[#c2c6d6] font-medium transition-colors"
                 >
                   <Plus size={18} /> New Chat
