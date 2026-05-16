@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gemma CogniVault AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#bc13fe",
+                        "on-primary": "#ffffff",
+                        "primary-container": "#55007b",
+                        "on-primary-container": "#f6d6ff",
+                        "primary-fixed": "#e9b8ff",
+                        "on-primary-fixed": "#32004a",
+                        "primary-fixed-dim": "#d682ff",
+                        "on-primary-fixed-variant": "#63008f",
+                        "secondary": "#d5bdfc",
+                        "on-secondary": "#39245a",
+                        "secondary-container": "#503a73",
+                        "on-secondary-container": "#eedaff",
+                        "tertiary": "#ffb2e8",
+                        "on-tertiary": "#500042",
+                        "tertiary-container": "#7a2268",
+                        "on-tertiary-container": "#ffd8ef",
+                        "background": "#000000",
+                        "on-background": "#f1e8fa",
+                        "surface": "#050505",
+                        "surface-dim": "#000000",
+                        "surface-bright": "#1a1a1e",
+                        "surface-container-lowest": "#000000",
+                        "surface-container-low": "#08080a",
+                        "surface-container": "#101014",
+                        "surface-container-high": "#18181e",
+                        "surface-container-highest": "#202028",
+                        "surface-variant": "#201c26",
+                        "on-surface": "#f1e8fa",
+                        "on-surface-variant": "#c9bfe3",
+                        "inverse-surface": "#f1e8fa",
+                        "inverse-on-surface": "#101014",
+                        "inverse-primary": "#8e00c7",
+                        "outline": "#948aab",
+                        "outline-variant": "#453b59",
+                        "error": "#ffb4ab",
+                        "on-error": "#690005",
+                        "error-container": "#93000a",
+                        "on-error-container": "#ffdad6",
+                        "secondary-fixed": "#e9ccff",
+                        "on-secondary-fixed": "#24005e",
+                        "secondary-fixed-dim": "#d5bdfc",
+                        "on-secondary-fixed-variant": "#503a73",
+                        "tertiary-fixed": "#ffd7f1",
+                        "on-tertiary-fixed": "#39002e",
+                        "tertiary-fixed-dim": "#ffb2e8",
+                        "on-tertiary-fixed-variant": "#7a2268",
+                        "surface-tint": "#bc13fe"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "gutter": "24px",
+                        "margin-desktop": "64px",
+                        "base": "4px",
+                        "xs": "4px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "margin-mobile": "16px",
+                        "xl": "40px",
+                        "max-width": "1200px"
+                    },
+                    fontFamily: {
+                        "display-lg": ["Inter", "sans-serif"],
+                        "label-md": ["Inter", "sans-serif"],
+                        "body-md": ["Inter", "sans-serif"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "headline-md": ["Inter", "sans-serif"],
+                        "label-sm": ["Inter", "sans-serif"],
+                        "headline-lg": ["Inter", "sans-serif"],
+                        "headline-lg-mobile": ["Inter", "sans-serif"],
+                        "body-sm": ["Inter", "sans-serif"]
+                    },
+                    fontSize: {
+                        "display-lg": ["48px", { lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                        "label-md": ["14px", { lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "500" }],
+                        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+                        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+                        "label-sm": ["12px", { lineHeight: "14px", letterSpacing: "0.05em", fontWeight: "600" }],
+                        "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.01em", fontWeight: "600" }],
+                        "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }],
+                        "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md h-screen overflow-hidden flex selection:bg-primary-container selection:text-on-primary-container">
+<!-- Left Sidebar -->
+<aside class="hidden md:flex flex-col h-full w-[240px] z-50 border-r border-outline-variant bg-surface-container-low shrink-0 py-6">
+<div class="px-gutter mb-8 flex items-center gap-3">
+<img alt="Gemma CogniVault Logo" class="w-10 h-10 rounded-lg shadow-sm border border-outline-variant/30" src="data:image/png;base64,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"/>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-background">ResearchAI</h1>
+<span class="font-label-sm text-label-sm text-on-surface-variant block mt-1">v2.4 Premium</span>
+</div>
+</div>
+<nav class="flex-1 px-3 space-y-1 overflow-y-auto">
+<!-- Active Tab -->
+<a class="flex items-center gap-4 px-4 py-3 text-primary border-l-4 border-primary bg-primary/10 rounded-r-DEFAULT relative group overflow-hidden transition-all duration-200" href="#">
+<div class="absolute inset-0 bg-primary/5 blur-xl group-hover:bg-primary/10 transition-colors"></div>
+<span class="material-symbols-outlined relative z-10 fill" data-icon="chat">chat</span>
+<span class="font-label-md text-label-md font-medium relative z-10">Chat</span>
+</a>
+<!-- Inactive Tab -->
+<a class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 rounded-r-DEFAULT border-l-4 border-transparent group" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-label-md text-label-md font-medium">Knowledge Base</span>
+</a>
+<!-- Inactive Tab -->
+<a class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 rounded-r-DEFAULT border-l-4 border-transparent group" href="#">
+<span class="material-symbols-outlined" data-icon="folder_special">folder_special</span>
+<span class="font-label-md text-label-md font-medium">Projects</span>
+</a>
+</nav>
+<div class="px-3 mt-auto space-y-1">
+<a class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 rounded-r-DEFAULT border-l-4 border-transparent" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-md text-label-md font-medium">Settings</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 rounded-r-DEFAULT border-l-4 border-transparent" href="#">
+<span class="material-symbols-outlined" data-icon="dark_mode">dark_mode</span>
+<span class="font-label-md text-label-md font-medium">Dark Mode</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 bg-background relative">
+<!-- Top App Bar -->
+<header class="sticky top-0 w-full z-40 bg-background/80 backdrop-blur-md border-b border-outline-variant shrink-0">
+<div class="flex justify-between items-center h-16 px-gutter max-w-max-width mx-auto w-full">
+<div class="flex items-center gap-4">
+<button class="md:hidden text-on-surface-variant hover:text-on-surface transition-colors p-2 rounded-full hover:bg-surface-container-high">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div>
+<h2 class="font-headline-md text-headline-md font-bold text-on-background flex items-center gap-2">
+                            Gemma CogniVault AI
+                            <span class="material-symbols-outlined text-primary text-[20px] fill">temp_preferences_custom</span>
+</h2>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Session: Quantum Research Deep-Dive</span>
+</div>
+</div>
+<div class="flex items-center gap-2 md:gap-4">
+<button class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary-container rounded-full font-label-md text-label-md hover:bg-primary/90 hover:shadow-[0_0_15px_rgba(188,19,254,0.4)] transition-all duration-200 scale-95 active:scale-90">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="hidden sm:inline">New Chat</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-container-high relative group">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-surface-container-high text-on-surface px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-outline-variant">History</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-container-high relative group hidden sm:block">
+<span class="material-symbols-outlined" data-icon="share">share</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-container-high relative group">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Chat Thread -->
+<div class="flex-1 overflow-y-auto px-gutter py-8 md:px-margin-desktop scroll-smooth">
+<div class="max-w-3xl mx-auto space-y-8 pb-24">
+<!-- Initial Context -->
+<div class="flex justify-center">
+<span class="bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm px-3 py-1 rounded-full border border-outline-variant/50">Today, 10:24 AM</span>
+</div>
+<!-- User Message -->
+<div class="flex justify-end group">
+<div class="bg-primary text-on-primary-container px-5 py-3 rounded-2xl rounded-tr-sm max-w-[85%] sm:max-w-[75%] relative shadow-sm">
+<p class="font-body-md text-body-md">Summarize the key takeaways from the Q3 report regarding our international expansion.</p>
+</div>
+</div>
+<!-- AI Response -->
+<div class="flex items-start gap-4 group">
+<div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center shrink-0 shadow-sm relative overflow-hidden">
+<div class="absolute inset-0 bg-primary/20 blur-md"></div>
+<span class="material-symbols-outlined text-primary text-[18px] relative z-10 fill">neurology</span>
+</div>
+<div class="bg-surface-container-low border border-outline-variant rounded-2xl rounded-tl-sm px-6 py-5 max-w-[90%] sm:max-w-[80%] shadow-sm relative overflow-hidden flex-1">
+<!-- Top Light Source simulation -->
+<div class="absolute top-0 left-0 right-0 h-[1px] bg-white opacity-5"></div>
+<h3 class="font-headline-md text-headline-md font-semibold text-on-surface flex items-center gap-2 mb-4">
+                            Key Insights
+                            <span class="material-symbols-outlined text-primary text-[16px] animate-pulse">auto_awesome</span>
+</h3>
+<div class="prose prose-invert prose-p:font-body-md prose-p:text-on-surface-variant prose-li:text-on-surface-variant prose-li:font-body-md marker:text-primary max-w-none">
+<ul class="space-y-3 list-disc pl-4">
+<li><strong>Regional growth (12%):</strong> European markets showed unexpected resilience, driven by the new SaaS tier. APAC remains steady but heavily reliant on legacy contracts.</li>
+<li><strong>Logistics optimization:</strong> The transition to the modular supply chain model in Q2 yielded a 4.5% reduction in cross-border friction costs during Q3.</li>
+<li><strong>Risk mitigation strategies:</strong> Currency fluctuation in LatAm highlighted the need for localized hedging protocols, which the finance team plans to implement in early Q4.</li>
+</ul>
+</div>
+<!-- Action Row -->
+<div class="mt-5 pt-3 border-t border-outline-variant/50 flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1.5 rounded-md hover:bg-surface-container-high" title="Copy">
+<span class="material-symbols-outlined text-[18px]" data-icon="content_copy">content_copy</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1.5 rounded-md hover:bg-surface-container-high" title="Export">
+<span class="material-symbols-outlined text-[18px]" data-icon="download">download</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Input Area -->
+<div class="absolute bottom-0 left-0 w-full p-4 md:px-gutter bg-gradient-to-t from-background via-background/95 to-transparent pt-12 pb-6 z-30">
+<div class="max-w-3xl mx-auto relative">
+<div class="bg-surface-container-high border border-outline-variant rounded-[24px] shadow-lg flex items-end p-2 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all duration-200 relative overflow-hidden">
+<!-- Top Light Source simulation -->
+<div class="absolute top-0 left-0 right-0 h-[1px] bg-white opacity-5"></div>
+<button class="p-3 text-on-surface-variant hover:text-primary transition-colors shrink-0 rounded-full hover:bg-surface-container">
+<span class="material-symbols-outlined" data-icon="attach_file">attach_file</span>
+</button>
+<textarea class="flex-1 bg-transparent border-none text-on-surface font-body-md text-body-md placeholder-on-surface-variant/50 resize-none py-3 px-2 focus:ring-0 max-h-32 min-h-[48px]" placeholder="Ask Gemma anything about your research..." rows="1"></textarea>
+<button class="p-3 bg-primary text-on-primary-container rounded-full hover:bg-primary/90 transition-colors shrink-0 ml-2 shadow-[0_0_10px_rgba(188,19,254,0.2)] hover:shadow-[0_0_15px_rgba(188,19,254,0.4)]">
+<span class="material-symbols-outlined" data-icon="send">send</span>
+</button>
+</div>
+<div class="text-center mt-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant/50">AI can make mistakes. Consider verifying important information.</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Right Sidebar (Context Panel) -->
+<aside class="hidden xl:flex flex-col w-[280px] h-full border-l border-outline-variant bg-surface-container-low shrink-0 z-40 overflow-y-auto">
+<div class="p-6 border-b border-outline-variant/50 sticky top-0 bg-surface-container-low/90 backdrop-blur-sm z-10">
+<h3 class="font-label-md text-label-md font-semibold text-on-surface uppercase tracking-wider flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">database</span>
+                Context Used
+            </h3>
+</div>
+<div class="p-4 space-y-3">
+<!-- Document Card 1 -->
+<div class="bg-surface-container border border-outline-variant rounded-xl p-3 hover:bg-surface-container-high transition-colors cursor-pointer group relative overflow-hidden">
+<div class="absolute top-0 left-0 right-0 h-[1px] bg-white opacity-[0.03]"></div>
+<div class="flex items-start gap-3">
+<div class="bg-primary/10 text-primary p-2 rounded-lg shrink-0 group-hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
+</div>
+<div class="min-w-0">
+<p class="font-label-md text-label-md font-medium text-on-surface truncate">Q3_Financial_Report.pdf</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">Added 2 hours ago</p>
+</div>
+</div>
+</div>
+<!-- Document Card 2 -->
+<div class="bg-surface-container border border-outline-variant rounded-xl p-3 hover:bg-surface-container-high transition-colors cursor-pointer group relative overflow-hidden">
+<div class="absolute top-0 left-0 right-0 h-[1px] bg-white opacity-[0.03]"></div>
+<div class="flex items-start gap-3">
+<div class="bg-primary/10 text-primary p-2 rounded-lg shrink-0 group-hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined text-[20px]">picture_as_pdf</span>
+</div>
+<div class="min-w-0">
+<p class="font-label-md text-label-md font-medium text-on-surface truncate">Market_Trends_Analysis.pdf</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">Added yesterday</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-4 py-2 border border-dashed border-outline-variant rounded-xl text-on-surface-variant font-label-md text-label-md hover:bg-surface-container hover:text-on-surface transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                Add Context
+            </button>
+</div>
+</aside>
+</body></html>

@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * ============================================================
+ * DARK MODE — CogniVault Core (stitch_gemma_cognivault/DESIGN.md)
+ * ============================================================
+ * background:               #10131a  (deep obsidian)
+ * surface-container-lowest: #0b0e15
+ * surface-container-low:    #191b23
+ * surface-container:        #1d2027  (cards)
+ * surface-container-high:   #272a31
+ * surface-container-highest:#32353c
+ * surface-bright:           #363941
+ *
+ * on-surface (body text):   #e1e2ec  (near-white)
+ * on-surface-variant:       #c2c6d6  (muted)
+ * outline:                  #8c909f
+ * outline-variant:          #424754  (borders)
+ *
+ * primary (light blue):     #adc6ff  → icon/label on dark
+ * primary-container:        #4d8eff  → interactive accent
+ * on-primary:               #002e6a  → text ON blue elements
+ *
+ * secondary (indigo):       #c0c1ff
+ * secondary-container:      #3131c0
+ *
+ * User bubble: neon purple (from screenshot) → #9333ea / #a855f7
+ * ============================================================
+ * LIGHT MODE — Precision Scholarly AI (DESIGN-light.md)
+ * ============================================================
+ * (unchanged from previous session)
+ */
+
+@theme {
+  /* ── Dark defaults (CogniVault Core) ── */
+  --color-background:            #10131a;
+  --color-surface:               #10131a;
+  --color-surface-low:           #191b23;
+  --color-surface-mid:           #1d2027;
+  --color-surface-high:          #272a31;
+  --color-surface-highest:       #32353c;
+  --color-surface-bright:        #363941;
+
+  --color-on-surface:            #e1e2ec;
+  --color-on-surface-variant:    #c2c6d6;
+
+  --color-outline:               #8c909f;
+  --color-outline-variant:       #424754;
+
+  --color-primary:               #adc6ff;
+  --color-primary-container:     #4d8eff;
+  --color-on-primary:            #002e6a;
+
+  --color-secondary:             #c0c1ff;
+  --color-secondary-container:   #3131c0;
+
+  --color-tertiary:              #ffb786;
+
+  --color-error:                 #ffb4ab;
+
+  /* Neon purple accent (from Stitch screenshot user bubble) */
+  --color-accent-purple:         #a855f7;
+  --color-accent-purple-bright:  #c026d3;
+}
+
+/* ── Base styles ── */
+body {
+  background-color: #10131a;
+  color: #e1e2ec;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #424754; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #8c909f; }
+
+/* ────────────────────────────────────────────────────────────
+   LIGHT MODE — Precision Scholarly AI (DESIGN-light.md)
+   ──────────────────────────────────────────────────────────── */
+.light {
+  --color-background:            #f7f9fb;
+  --color-surface:               #f7f9fb;
+  --color-surface-low:           #f2f4f6;
+  --color-surface-mid:           #eceef0;
+  --color-surface-high:          #e6e8ea;
+  --color-surface-highest:       #e0e3e5;
+  --color-surface-bright:        #ffffff;
+
+  --color-on-surface:            #191c1e;
+  --color-on-surface-variant:    #424754;
+
+  --color-outline:               #727785;
+  --color-outline-variant:       #c2c6d6;
+
+  --color-primary:               #0058be;
+  --color-primary-container:     #2170e4;
+  --color-on-primary:            #ffffff;
+
+  --color-secondary:             #505f76;
+  --color-secondary-container:   #d0e1fb;
+
+  --color-tertiary:              #924700;
+
+  --color-error:                 #ba1a1a;
+
+  --color-accent-purple:         #7c3aed;
+  --color-accent-purple-bright:  #9333ea;
+}
+
+.light body {
+  background-color: #f7f9fb;
+  color: #191c1e;
+}
