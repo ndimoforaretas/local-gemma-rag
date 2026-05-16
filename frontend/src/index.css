@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -36,41 +36,45 @@
 
 @theme {
   /* ── Dark defaults (CogniVault Core) ── */
-  --color-background:            #10131a;
-  --color-surface:               #10131a;
-  --color-surface-low:           #191b23;
-  --color-surface-mid:           #1d2027;
-  --color-surface-high:          #272a31;
-  --color-surface-highest:       #32353c;
-  --color-surface-bright:        #363941;
+  --color-background: #10131a;
+  --color-surface: #10131a;
+  --color-surface-low: #191b23;
+  --color-surface-mid: #1d2027;
+  --color-surface-high: #272a31;
+  --color-surface-highest: #32353c;
+  --color-surface-bright: #363941;
 
-  --color-on-surface:            #e1e2ec;
-  --color-on-surface-variant:    #c2c6d6;
+  --color-on-surface: #e1e2ec;
+  --color-on-surface-variant: #c2c6d6;
 
-  --color-outline:               #8c909f;
-  --color-outline-variant:       #424754;
+  --color-outline: #8c909f;
+  --color-outline-variant: #424754;
 
-  --color-primary:               #adc6ff;
-  --color-primary-container:     #4d8eff;
-  --color-on-primary:            #002e6a;
+  --color-primary: #adc6ff;
+  --color-primary-container: #4d8eff;
+  --color-on-primary: #002e6a;
 
-  --color-secondary:             #c0c1ff;
-  --color-secondary-container:   #3131c0;
+  --color-secondary: #c0c1ff;
+  --color-secondary-container: #3131c0;
 
-  --color-tertiary:              #ffb786;
+  --color-tertiary: #ffb786;
 
-  --color-error:                 #ffb4ab;
+  --color-error: #ffb4ab;
 
   /* Neon purple accent (from Stitch screenshot user bubble) */
-  --color-accent-purple:         #a855f7;
-  --color-accent-purple-bright:  #c026d3;
+  --color-accent-purple: #a855f7;
+  --color-accent-purple-bright: #c026d3;
 }
 
 /* ── Base styles ── */
 body {
   background-color: #10131a;
   color: #e1e2ec;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    sans-serif;
   margin: 0;
   padding: 0;
   height: 100vh;
@@ -78,45 +82,169 @@ body {
 }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #424754; border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: #8c909f; }
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #424754;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8c909f;
+}
 
 /* ────────────────────────────────────────────────────────────
    LIGHT MODE — Precision Scholarly AI (DESIGN-light.md)
    ──────────────────────────────────────────────────────────── */
 .light {
-  --color-background:            #f7f9fb;
-  --color-surface:               #f7f9fb;
-  --color-surface-low:           #f2f4f6;
-  --color-surface-mid:           #eceef0;
-  --color-surface-high:          #e6e8ea;
-  --color-surface-highest:       #e0e3e5;
-  --color-surface-bright:        #ffffff;
+  --color-background: #f7f9fb;
+  --color-surface: #f7f9fb;
+  --color-surface-low: #f2f4f6;
+  --color-surface-mid: #eceef0;
+  --color-surface-high: #e6e8ea;
+  --color-surface-highest: #e0e3e5;
+  --color-surface-bright: #ffffff;
 
-  --color-on-surface:            #191c1e;
-  --color-on-surface-variant:    #424754;
+  --color-on-surface: #191c1e;
+  --color-on-surface-variant: #424754;
 
-  --color-outline:               #727785;
-  --color-outline-variant:       #c2c6d6;
+  --color-outline: #727785;
+  --color-outline-variant: #c2c6d6;
 
-  --color-primary:               #0058be;
-  --color-primary-container:     #2170e4;
-  --color-on-primary:            #ffffff;
+  --color-primary: #0058be;
+  --color-primary-container: #2170e4;
+  --color-on-primary: #ffffff;
 
-  --color-secondary:             #505f76;
-  --color-secondary-container:   #d0e1fb;
+  --color-secondary: #505f76;
+  --color-secondary-container: #d0e1fb;
 
-  --color-tertiary:              #924700;
+  --color-tertiary: #924700;
 
-  --color-error:                 #ba1a1a;
+  --color-error: #ba1a1a;
 
-  --color-accent-purple:         #7c3aed;
-  --color-accent-purple-bright:  #9333ea;
+  --color-accent-purple: #7c3aed;
+  --color-accent-purple-bright: #9333ea;
 }
 
 .light body {
   background-color: #f7f9fb;
   color: #191c1e;
+}
+
+/* AI response typography tuning for readable long-form answers */
+.ai-response {
+  font-size: 0.98rem;
+  line-height: 1.75;
+  text-wrap: pretty;
+}
+
+.ai-response > *:first-child {
+  margin-top: 0;
+}
+
+.ai-response > *:last-child {
+  margin-bottom: 0;
+}
+
+.ai-response p,
+.ai-response ul,
+.ai-response ol,
+.ai-response pre,
+.ai-response blockquote,
+.ai-response table {
+  margin-top: 0.7rem;
+  margin-bottom: 0.7rem;
+}
+
+.ai-response h1,
+.ai-response h2,
+.ai-response h3,
+.ai-response h4 {
+  margin-top: 1.05rem;
+  margin-bottom: 0.55rem;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.ai-response h1 {
+  font-size: 1.28rem;
+}
+
+.ai-response h2 {
+  font-size: 1.15rem;
+}
+
+.ai-response h3,
+.ai-response h4 {
+  font-size: 1.02rem;
+}
+
+.ai-response ul,
+.ai-response ol {
+  padding-left: 1.35rem;
+}
+
+.ai-response li {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.ai-response code {
+  font-size: 0.9em;
+  font-weight: 500;
+  background: color-mix(in srgb, #d0e1fb 45%, transparent);
+  border: 1px solid color-mix(in srgb, #c2c6d6 70%, transparent);
+  border-radius: 0.35rem;
+  padding: 0.1rem 0.35rem;
+}
+
+.ai-response pre {
+  overflow-x: auto;
+  border-radius: 0.85rem;
+  padding: 0.9rem 1rem;
+  background: #eceef0;
+  border: 1px solid #c2c6d6;
+}
+
+.ai-response pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.ai-response a {
+  color: #0058be;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+
+.ai-response blockquote {
+  border-left: 3px solid #c2c6d6;
+  padding-left: 0.85rem;
+  color: #424754;
+}
+
+.dark .ai-response code {
+  background: color-mix(in srgb, #32353c 75%, transparent);
+  border: 1px solid color-mix(in srgb, #424754 85%, transparent);
+}
+
+.dark .ai-response pre {
+  background: #0b0e15;
+  border-color: #424754;
+}
+
+.dark .ai-response a {
+  color: #adc6ff;
+}
+
+.dark .ai-response blockquote {
+  border-left-color: #424754;
+  color: #c2c6d6;
 }
