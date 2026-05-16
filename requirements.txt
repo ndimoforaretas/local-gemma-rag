@@ -5,7 +5,7 @@ python-multipart
 
 # AI & Embedding
 ollama
-strands-agents[ollama]
+strands-agents
 
 # Vector database
 faiss-cpu
@@ -21,5 +21,4 @@ sqlalchemy
 psycopg2-binary
 
 # Configuration
-pydantic-settings
-pyyaml
+pydantic-settings>=2.0.0
