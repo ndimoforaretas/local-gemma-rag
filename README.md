@@ -62,6 +62,8 @@ A full-stack **Local RAG** (Retrieval-Augmented Generation) application that let
 
 ### Prerequisites
 
+Install all four tools before proceeding:
+
 | Tool | Purpose | Install |
 |---|---|---|
 | **Python 3.10+** | Backend runtime | [python.org](https://www.python.org/downloads/) |
@@ -76,16 +78,28 @@ git clone https://github.com/ndimoforaretas/local-gemma-rag.git
 cd local-gemma-rag
 ```
 
-### 2. Pull the required Ollama models
+### 2. Start Ollama & pull the required models
+
+Make sure the **Ollama** application is running (look for the llama icon in your system tray / menu bar), then pull the two models:
 
 ```bash
-ollama pull gemma4:e4b
-ollama pull embeddinggemma
+ollama pull gemma4:e4b          # Chat model (~2.8 GB)
+ollama pull embeddinggemma      # Embedding model (~1.6 GB)
 ```
 
-### 3. Start the PostgreSQL database
+> **⚠️ Ollama must be running whenever you use CogniVault.** If Ollama is not running, chat queries will fail with an internal error.
 
-DBOS requires a Postgres instance to store durable workflow state.
+You can verify Ollama is ready with:
+
+```bash
+ollama list
+```
+
+You should see both `gemma4:e4b` and `embeddinggemma` in the output.
+
+### 3. Start Docker Desktop & launch the database
+
+Open **Docker Desktop** and wait for it to fully start (whale icon in the menu bar stops animating). Then start the PostgreSQL database:
 
 ```bash
 docker compose up -d db
@@ -102,6 +116,8 @@ pip install -r requirements.txt
 ```
 
 ### 5. Initialize DBOS tables
+
+This creates the internal workflow tracking tables in PostgreSQL (only needed once):
 
 ```bash
 dbos migrate
@@ -146,6 +162,28 @@ Navigate to **[http://localhost:8000](http://localhost:8000)**
 
 ---
 
+## 🛑 Stopping the Application
+
+1. **Stop the backend**: Press `Ctrl + C` in the terminal where the server is running.
+2. **Stop the database**: Run:
+
+```bash
+docker compose down
+```
+
+To start everything again later, you just need steps 2 (Ollama), 3 (database), and 7 (launch):
+
+```bash
+# 1. Make sure Ollama is running (open the app)
+# 2. Start the database
+docker compose up -d db
+# 3. Activate the Python environment and launch
+source .venv/bin/activate
+python -m backend.main
+```
+
+---
+
 ## ⚙️ Configuration
 
 Copy the example environment file and adjust as needed:
@@ -162,6 +200,19 @@ cp .env.example .env
 | `DB_URL` | `postgresql://postgres:password@localhost:5432/dbos` | PostgreSQL connection |
 | `CORS_ORIGINS` | `["http://localhost:5173"]` | Allowed CORS origins |
 | `MAX_UPLOAD_SIZE_MB` | `50` | Max PDF upload size |
+
+---
+
+## 🔧 Troubleshooting
+
+| Problem | Cause | Fix |
+|---|---|---|
+| `"An internal error occurred while processing your query"` | Ollama is not running | Open the Ollama app and verify with `ollama list` |
+| `"Address already in use"` (port 8000) | A previous server instance is still running | Run `lsof -ti :8000 \| xargs kill -9` then restart |
+| `"Cannot connect to the Docker daemon"` | Docker Desktop is not running | Open Docker Desktop and wait for it to start |
+| `"can't open file 'api.py'"` | Using an outdated start command | Use `python -m backend.main` (not `python api.py`) |
+| `"Failed to connect to Ollama"` | Ollama crashed or was closed | Reopen the Ollama app |
+| `"DBOS system database"` connection error | PostgreSQL container is not running | Run `docker compose up -d db` |
 
 ---
 
@@ -193,13 +244,13 @@ Every `@DBOS.step()` return value is saved in Postgres. If your machine shuts do
 
 ## 🐳 Full Docker Deployment (Optional)
 
-To run the entire stack in containers:
+To run the entire stack in containers (requires internet access to pull the base image):
 
 ```bash
 docker compose up --build
 ```
 
-This builds the app image, starts PostgreSQL, and serves the application on port 8000. Requires Docker to be able to reach Docker Hub for the base image.
+This builds the app image, starts PostgreSQL, and serves the application on port 8000.
 
 ---
 
