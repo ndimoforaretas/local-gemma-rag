@@ -1,0 +1,116 @@
+/**
+ * Centralized API client for Gemma CogniVault.
+ *
+ * All non-streaming calls return JSON-parsed data matching the types
+ * defined in `types/api.ts`. Errors are thrown as `Error` with the
+ * server-provided message so callers can catch and display them.
+ */
+
+import type {
+  KBResponse,
+  IngestResponse,
+  UploadResponse,
+  StatusResponse,
+  WorkflowStatusResponse,
+  HealthResponse,
+  ChatSession,
+} from '../types/api';
+
+const API_BASE = ''; // same-origin in dev and production
+
+// ── Helpers ───────────────────────────────────────────────────────────
+
+async function handleJsonResponse<T>(resp: Response): Promise<T> {
+  if (!resp.ok) {
+    let msg = `Request failed (${resp.status})`;
+    try {
+      const body = await resp.json();
+      msg = body.error ?? body.detail ?? msg;
+    } catch {
+      /* response may not be JSON */
+    }
+    throw new Error(msg);
+  }
+  return resp.json() as Promise<T>;
+}
+
+// ── Public API ──────────────────────────────────────────────────────
+
+export const api = {
+  // RAG streaming — returns the raw Response so the caller can read
+  // the body as a stream.  NOT parsed as JSON.
+  ragStream: async (query: string): Promise<Response> => {
+    const resp = await fetch(`${API_BASE}/rag`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    });
+    if (!resp.ok) {
+      let msg = 'RAG request failed';
+      try {
+        const body = await resp.json();
+        msg = body.error ?? body.detail ?? msg;
+      } catch { /* ignore */ }
+      throw new Error(msg);
+    }
+    return resp;
+  },
+
+  // Knowledge base browsing
+  getKB: async (): Promise<KBResponse> => {
+    const resp = await fetch(`${API_BASE}/kb`);
+    return handleJsonResponse<KBResponse>(resp);
+  },
+
+  // Upload PDF documents
+  upload: async (formData: FormData): Promise<UploadResponse> => {
+    const resp = await fetch(`${API_BASE}/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+    return handleJsonResponse<UploadResponse>(resp);
+  },
+
+  // Delete a document from the knowledge base
+  deleteDoc: async (filename: string): Promise<StatusResponse> => {
+    const resp = await fetch(`${API_BASE}/api/docs/${encodeURIComponent(filename)}`, {
+      method: 'DELETE',
+    });
+    return handleJsonResponse<StatusResponse>(resp);
+  },
+
+  // Start a durable ingestion workflow
+  ingest: async (): Promise<IngestResponse> => {
+    const resp = await fetch(`${API_BASE}/ingest`, { method: 'POST' });
+    return handleJsonResponse<IngestResponse>(resp);
+  },
+
+  // Poll ingestion workflow status
+  ingestStatus: async (workflowId: string): Promise<WorkflowStatusResponse> => {
+    const resp = await fetch(`${API_BASE}/ingest/status/${encodeURIComponent(workflowId)}`);
+    return handleJsonResponse<WorkflowStatusResponse>(resp);
+  },
+
+  // Chat history
+  getHistory: async (): Promise<ChatSession[]> => {
+    const resp = await fetch(`${API_BASE}/api/history`);
+    return handleJsonResponse<ChatSession[]>(resp);
+  },
+
+  saveHistory: async (sessions: ChatSession[]): Promise<StatusResponse> => {
+    const resp = await fetch(`${API_BASE}/api/history`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sessions),
+    });
+    return handleJsonResponse<StatusResponse>(resp);
+  },
+
+  // System health
+  health: async (): Promise<HealthResponse> => {
+    const resp = await fetch(`${API_BASE}/health`);
+    return handleJsonResponse<HealthResponse>(resp);
+  },
+};
+
+export default api;

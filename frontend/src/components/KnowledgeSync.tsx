@@ -3,6 +3,8 @@ import { UploadCloud, CheckCircle2, Circle, Loader2, Database, Trash2 } from 'lu
 import { motion } from 'framer-motion';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Tooltip } from './Tooltip';
+import { api } from '../lib/api';
+import type { KBFolder, WorkflowStatusResponse } from '../types/api';
 
 interface Step {
   name: string;
@@ -17,23 +19,23 @@ export function KnowledgeSync() {
   const [expandedFolder, setExpandedFolder] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: kbFolders = [], refetch: refetchKB } = useQuery<any[]>({
+  const { data: kbFolders = [], refetch: refetchKB } = useQuery<KBFolder[]>({
     queryKey: ['kbFolders'],
     queryFn: async () => {
-      const res = await fetch('/kb');
-      if (!res.ok) return [];
-      const data = await res.json();
-      return data.folders || [];
+      try {
+        const data = await api.getKB();
+        return data.folders || [];
+      } catch {
+        return [];
+      }
     }
   });
 
-  const { data: workflowStatus } = useQuery({
+  const { data: workflowStatus } = useQuery<WorkflowStatusResponse | null>({
     queryKey: ['workflow', workflowId],
     queryFn: async () => {
       if (!workflowId) return null;
-      const res = await fetch(`/ingest/status/${workflowId}`);
-      if (!res.ok) throw new Error('Failed to fetch status');
-      return res.json();
+      return api.ingestStatus(workflowId);
     },
     enabled: !!workflowId,
     refetchInterval: (query) => {
@@ -63,11 +65,7 @@ export function KnowledgeSync() {
   }, [workflowStatus, refetchKB]);
 
   const deleteMutation = useMutation({
-    mutationFn: async (filename: string) => {
-      const res = await fetch(`/api/docs/${filename}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Delete failed');
-      return res.json();
-    },
+    mutationFn: (filename: string) => api.deleteDoc(filename),
     onSuccess: () => refetchKB()
   });
 
@@ -77,11 +75,7 @@ export function KnowledgeSync() {
   };
 
   const startSyncMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`/ingest`, { method: 'POST' });
-      if (!res.ok) throw new Error('Ingest failed');
-      return res.json();
-    },
+    mutationFn: () => api.ingest(),
     onSuccess: (data) => {
       if (data.workflow_id) {
         setSyncStatus('SYNCING');
@@ -94,11 +88,7 @@ export function KnowledgeSync() {
   });
 
   const uploadMutation = useMutation({
-    mutationFn: async (formData: FormData) => {
-      const res = await fetch('/upload', { method: 'POST', body: formData });
-      if (!res.ok) throw new Error('Upload failed');
-      return res.json();
-    },
+    mutationFn: (formData: FormData) => api.upload(formData),
     onSuccess: () => {
       startSyncMutation.mutate();
     },
@@ -249,7 +239,7 @@ export function KnowledgeSync() {
           <h3 className="text-2xl font-semibold text-[#191c1e] dark:text-[#e1e2ec]">Current Libraries</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {kbFolders.map((f, i) => {
-              const allFiles = f.subfolders?.flatMap((s: any) => s.files) || [];
+              const allFiles = f.subfolders?.flatMap((s) => s.files) || [];
               const isExpanded = expandedFolder === f.name;
               return (
                 <div
@@ -270,7 +260,7 @@ export function KnowledgeSync() {
                   </div>
                   {isExpanded && allFiles.length > 0 && (
                     <div className="mt-2 pt-4 border-t border-[#c2c6d6] dark:border-[#424754] flex flex-col gap-3">
-                      {allFiles.map((file: any, fileIdx: number) => (
+                      {allFiles.map((file, fileIdx) => (
                         <div key={fileIdx} className="flex items-center justify-between bg-[#f2f4f6] dark:bg-[#272a31] p-3 rounded-lg border border-[#c2c6d6] dark:border-[#424754]">
                           <div className="flex items-center gap-3 overflow-hidden">
                             <span className="text-[#0058be] dark:text-[#adc6ff] bg-[#d0e1fb] dark:bg-[#32353c] p-1.5 rounded-md">📄</span>
