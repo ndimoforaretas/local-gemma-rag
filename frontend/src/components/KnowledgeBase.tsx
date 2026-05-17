@@ -6,6 +6,7 @@ import { ChatMessageList } from "./ChatMessageList";
 import { ChatInput } from "./ChatInput";
 import { ContextSidebar } from "./ContextSidebar";
 import { HistorySidebar } from "./HistorySidebar";
+import { ConfirmationModal } from "./ConfirmationModal";
 import { api } from "../lib/api";
 import type { ChatSession, Message, ContextItem } from "../types/api";
 
@@ -22,6 +23,10 @@ export function KnowledgeBase() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isNewChatRef = useRef(false);
+
+  // Custom modal state
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<{ id: string; title: string } | null>(null);
 
   // ── Data fetching ─────────────────────────────────────────────────
 
@@ -351,15 +356,17 @@ export function KnowledgeBase() {
     setContextItems([]);
   };
 
-  const handleDeleteSession = async (id: string) => {
+  const handleDeleteSession = (id: string) => {
     const target = sessions.find((s) => s.id === id);
     if (!target) return;
+    setSessionToDelete({ id: target.id, title: target.title });
+    setIsDeleteModalOpen(true);
+  };
 
-    const confirmed = window.confirm(
-      `Delete session "${target.title}"? This cannot be undone.`,
-    );
-    if (!confirmed) return;
-
+  const confirmDeleteSession = async () => {
+    if (!sessionToDelete) return;
+    const { id } = sessionToDelete;
+    setIsDeleteModalOpen(false);
     setDeletingSessionId(id);
     try {
       await deleteHistoryMutation.mutateAsync(id);
@@ -378,6 +385,7 @@ export function KnowledgeBase() {
       console.error(e);
     } finally {
       setDeletingSessionId(null);
+      setSessionToDelete(null);
     }
   };
 
@@ -468,6 +476,20 @@ export function KnowledgeBase() {
           deletingSessionId={deletingSessionId}
         />
       </div>
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        title="Delete Chat Session"
+        message={`Delete session "${sessionToDelete?.title}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        type="destructive"
+        onConfirm={confirmDeleteSession}
+        onCancel={() => {
+          setIsDeleteModalOpen(false);
+          setSessionToDelete(null);
+        }}
+      />
     </div>
   );
 }

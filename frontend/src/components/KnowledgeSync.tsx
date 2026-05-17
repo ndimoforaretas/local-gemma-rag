@@ -10,6 +10,7 @@ import {
 import { motion } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Tooltip } from "./Tooltip";
+import { ConfirmationModal } from "./ConfirmationModal";
 import { api } from "../lib/api";
 import type { KBFile, KBFolder, WorkflowStatusResponse } from "../types/api";
 
@@ -43,6 +44,10 @@ export function KnowledgeSync() {
   const dropZoneHintId = useId();
   const sortSelectLabelId = useId();
   const sortStatusId = useId();
+
+  // Custom modal state
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<string | null>(null);
 
   const { data: kbFolders = [], refetch: refetchKB } = useQuery<KBFolder[]>({
     queryKey: ["kbFolders"],
@@ -121,11 +126,15 @@ export function KnowledgeSync() {
 
   const handleDelete = (e: React.MouseEvent, filename: string) => {
     e.stopPropagation();
-    const confirmed = window.confirm(
-      `Remove ${filename} from the knowledge base?`,
-    );
-    if (!confirmed) return;
-    deleteMutation.mutate(filename);
+    setFileToDelete(filename);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteFile = () => {
+    if (!fileToDelete) return;
+    deleteMutation.mutate(fileToDelete);
+    setIsDeleteModalOpen(false);
+    setFileToDelete(null);
   };
 
   const toggleFolder = (folderName: string) => {
@@ -722,6 +731,20 @@ export function KnowledgeSync() {
             </div>
           </div>
         )}
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        title="Remove Document"
+        message={`Are you sure you want to remove "${fileToDelete}" from the knowledge base? This action cannot be undone.`}
+        confirmLabel="Remove"
+        cancelLabel="Cancel"
+        type="destructive"
+        onConfirm={confirmDeleteFile}
+        onCancel={() => {
+          setIsDeleteModalOpen(false);
+          setFileToDelete(null);
+        }}
+      />
     </div>
   );
 }
