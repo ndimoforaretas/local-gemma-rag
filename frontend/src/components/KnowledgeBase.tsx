@@ -65,6 +65,7 @@ export function KnowledgeBase() {
 
   const activeSession = sessions.find((s) => s.id === activeSessionId);
   const messages = activeSession ? activeSession.messages : [];
+  const contextCount = contextItems.length;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -348,23 +349,28 @@ export function KnowledgeBase() {
   return (
     <div className="flex h-full w-full relative">
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden p-6 gap-4">
+      <div className="flex-1 flex flex-col h-full overflow-hidden p-3 sm:p-4 lg:p-6 gap-3 lg:gap-4 min-w-0">
         {/* Header Bar */}
-        <div className="flex items-center justify-between bg-[#eceef0] dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-4 shrink-0">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-3 sm:gap-2 sm:flex-row sm:items-center sm:justify-between bg-[#eceef0] dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-3 sm:p-4 shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             <div className="w-12 h-12 rounded-xl bg-[#d0e1fb] dark:bg-[#32353c] text-[#0058be] dark:text-[#adc6ff] flex items-center justify-center border border-[#c2c6d6] dark:border-[#424754]">
               <Bot size={24} />
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-[#191c1e] dark:text-[#e1e2ec] tracking-tight">
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-bold text-[#191c1e] dark:text-[#e1e2ec] tracking-tight truncate">
                 Gemma CogniVault AI
               </h2>
-              <p className="text-sm text-[#424754] dark:text-[#8c909f] font-medium">
+              <p className="text-xs sm:text-sm text-[#424754] dark:text-[#8c909f] font-medium truncate">
                 {activeSession?.title || "New Conversation"}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 pr-2">
+          <div className="flex items-center gap-2 sm:gap-3 sm:pr-2 flex-wrap">
+            {contextCount > 0 && (
+              <span className="text-xs font-medium px-2 py-1 rounded-full bg-[#d0e1fb] dark:bg-[#32353c] text-[#0058be] dark:text-[#adc6ff]">
+                {contextCount} sources
+              </span>
+            )}
             <Tooltip content="Start a fresh conversation" position="bottom">
               <button
                 onClick={() => {
@@ -372,7 +378,7 @@ export function KnowledgeBase() {
                   setActiveSessionId(null);
                   setContextItems([]);
                 }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#e0e3e5] hover:bg-[#c2c6d6] dark:bg-[#272a31] dark:hover:bg-[#32353c] text-[#191c1e] dark:text-[#c2c6d6] font-medium transition-colors">
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl bg-[#e0e3e5] hover:bg-[#c2c6d6] dark:bg-[#272a31] dark:hover:bg-[#32353c] text-[#191c1e] dark:text-[#c2c6d6] text-sm font-medium transition-colors">
                 <Plus size={18} /> New Chat
               </button>
             </Tooltip>
@@ -383,7 +389,7 @@ export function KnowledgeBase() {
               position="bottom">
               <button
                 onClick={() => setIsHistoryOpen(!isHistoryOpen)}
-                className={`p-2.5 rounded-xl transition-colors ${isHistoryOpen ? "bg-[#a855f7] text-white shadow-[0_0_16px_rgba(168,85,247,0.4)]" : "bg-[#e0e3e5] hover:bg-[#c2c6d6] dark:bg-[#272a31] dark:hover:bg-[#32353c] text-[#191c1e] dark:text-[#c2c6d6]"}`}>
+                className={`hidden sm:inline-flex p-2.5 rounded-xl transition-colors ${isHistoryOpen ? "bg-[#a855f7] text-white shadow-[0_0_16px_rgba(168,85,247,0.4)]" : "bg-[#e0e3e5] hover:bg-[#c2c6d6] dark:bg-[#272a31] dark:hover:bg-[#32353c] text-[#191c1e] dark:text-[#c2c6d6]"}`}>
                 <History size={20} />
               </button>
             </Tooltip>
@@ -410,15 +416,19 @@ export function KnowledgeBase() {
       </div>
 
       {/* Context Sidebar */}
-      <ContextSidebar contextItems={contextItems} />
+      <div className="hidden xl:block">
+        <ContextSidebar contextItems={contextItems} />
+      </div>
 
       {/* History Sidebar */}
-      <HistorySidebar
-        isOpen={isHistoryOpen}
-        sessions={sessions}
-        activeSessionId={activeSessionId}
-        onSelectSession={handleSelectSession}
-      />
+      <div className="hidden lg:block">
+        <HistorySidebar
+          isOpen={isHistoryOpen}
+          sessions={sessions}
+          activeSessionId={activeSessionId}
+          onSelectSession={handleSelectSession}
+        />
+      </div>
     </div>
   );
 }
