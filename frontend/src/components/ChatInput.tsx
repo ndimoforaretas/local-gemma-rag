@@ -42,7 +42,7 @@ export function ChatInput({
   return (
     <div className="flex flex-col gap-2">
       <div className="bg-white dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl px-3 py-2 flex items-end gap-2 transition-all focus-within:border-[#0058be] dark:focus-within:border-[#a855f7] focus-within:ring-2 focus-within:ring-[#0058be]/20 dark:focus-within:ring-[#a855f7]/20">
-        <Tooltip content="Attachment upload is coming soon" position="top">
+        <Tooltip content="Attachment upload is coming soon" position="right">
           <button
             type="button"
             aria-label="Attach a file (coming soon)"

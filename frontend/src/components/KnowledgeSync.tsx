@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 import {
   UploadCloud,
   CheckCircle2,
@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Tooltip } from "./Tooltip";
 import { api } from "../lib/api";
-import type { KBFolder, WorkflowStatusResponse } from "../types/api";
+import type { KBFile, KBFolder, WorkflowStatusResponse } from "../types/api";
 
 interface Step {
   name: string;
@@ -20,16 +20,29 @@ interface Step {
 }
 
 export function KnowledgeSync() {
+  type SortOption = "name-asc" | "name-desc" | "date-newest" | "size-largest";
+
   const [syncStatus, setSyncStatus] = useState<
     "IDLE" | "UPLOADING" | "SYNCING" | "SUCCESS" | "ERROR"
   >("IDLE");
   const [steps, setSteps] = useState<Step[]>([]);
   const [workflowId, setWorkflowId] = useState<string | null>(null);
-  const [expandedFolder, setExpandedFolder] = useState<string | null>(null);
+  const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [deletingFilename, setDeletingFilename] = useState<string | null>(null);
+  const [sortOption, setSortOption] = useState<SortOption>("name-asc");
+  const [sortAnnouncement, setSortAnnouncement] = useState(
+    "Files sorted by Name A-Z.",
+  );
+  const [isDragActive, setIsDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragDepthRef = useRef(0);
+  const dropZoneHintId = useId();
+  const sortSelectLabelId = useId();
+  const sortStatusId = useId();
 
   const { data: kbFolders = [], refetch: refetchKB } = useQuery<KBFolder[]>({
     queryKey: ["kbFolders"],
@@ -115,6 +128,18 @@ export function KnowledgeSync() {
     deleteMutation.mutate(filename);
   };
 
+  const toggleFolder = (folderName: string) => {
+    setCollapsedFolders((prev) => {
+      const next = new Set(prev);
+      if (next.has(folderName)) {
+        next.delete(folderName);
+      } else {
+        next.add(folderName);
+      }
+      return next;
+    });
+  };
+
   const startSyncMutation = useMutation({
     mutationFn: () => api.ingest(),
     onSuccess: (data) => {
@@ -153,17 +178,78 @@ export function KnowledgeSync() {
     },
   });
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
+  const uploadFiles = (files: FileList | File[]) => {
+    const selectedFiles = Array.from(files);
+    if (selectedFiles.length === 0) return;
+
+    const pdfFiles = selectedFiles.filter((file) =>
+      file.name.toLowerCase().endsWith(".pdf"),
+    );
+
+    if (pdfFiles.length === 0) {
+      setSyncStatus("ERROR");
+      setSyncNotice(null);
+      setSyncError("Only PDF files are supported.");
+      return;
+    }
+
     setSyncStatus("UPLOADING");
     setSyncNotice(null);
     setSyncError(null);
+
     const formData = new FormData();
-    for (let i = 0; i < e.target.files.length; i++) {
-      formData.append("files", e.target.files[i]);
+    for (const file of pdfFiles) {
+      formData.append("files", file);
     }
+
     uploadMutation.mutate(formData);
+  };
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    uploadFiles(e.target.files);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const isFileDrag = (e: React.DragEvent<HTMLDivElement>) =>
+    Array.from(e.dataTransfer.types).includes("Files");
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!canUpload || !isFileDrag(e)) return;
+    e.preventDefault();
+    dragDepthRef.current += 1;
+    setIsDragActive(true);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!canUpload || !isFileDrag(e)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!canUpload || !isFileDrag(e)) return;
+    e.preventDefault();
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) {
+      setIsDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!canUpload) return;
+    e.preventDefault();
+    dragDepthRef.current = 0;
+    setIsDragActive(false);
+    if (!e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
+    uploadFiles(e.dataTransfer.files);
+  };
+
+  const handleDropZoneKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!canUpload) return;
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    fileInputRef.current?.click();
   };
 
   // Helper to determine step status
@@ -216,11 +302,83 @@ export function KnowledgeSync() {
   const canUpload =
     syncStatus === "IDLE" || syncStatus === "SUCCESS" || syncStatus === "ERROR";
 
+  const parseSizeInBytes = (size: string): number => {
+    const match = size.match(/^\s*([\d.]+)\s*([A-Za-z]+)\s*$/);
+    if (!match) return 0;
+
+    const value = Number.parseFloat(match[1]);
+    const unit = match[2].toUpperCase();
+    if (Number.isNaN(value)) return 0;
+
+    const unitMap: Record<string, number> = {
+      B: 1,
+      KB: 1024,
+      MB: 1024 ** 2,
+      GB: 1024 ** 3,
+      TB: 1024 ** 4,
+    };
+
+    return value * (unitMap[unit] ?? 1);
+  };
+
+  const parseDate = (value: string): number => {
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  };
+
+  const sortFiles = (files: KBFile[]) => {
+    const sorted = [...files];
+
+    switch (sortOption) {
+      case "name-asc":
+        sorted.sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+        );
+        break;
+      case "name-desc":
+        sorted.sort((a, b) =>
+          b.name.localeCompare(a.name, undefined, { sensitivity: "base" }),
+        );
+        break;
+      case "date-newest":
+        sorted.sort((a, b) => parseDate(b.modified) - parseDate(a.modified));
+        break;
+      case "size-largest":
+        sorted.sort(
+          (a, b) => parseSizeInBytes(b.size) - parseSizeInBytes(a.size),
+        );
+        break;
+      default:
+        break;
+    }
+
+    return sorted;
+  };
+
+  const getSortLabel = (value: SortOption): string => {
+    switch (value) {
+      case "name-asc":
+        return "Name A-Z";
+      case "name-desc":
+        return "Name Z-A";
+      case "date-newest":
+        return "Date newest first";
+      case "size-largest":
+        return "File size largest first";
+      default:
+        return "Name A-Z";
+    }
+  };
+
+  useEffect(() => {
+    setSortAnnouncement(`Files sorted by ${getSortLabel(sortOption)}.`);
+  }, [sortOption]);
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 h-full overflow-y-auto">
       <div className="max-w-5xl mx-auto flex flex-col gap-6 sm:gap-8">
-        {/* Action Bar: surface-container bg */}
-        <div className="bg-[#eceef0] dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-4 sm:p-6 lg:p-8 flex flex-col gap-4 sm:gap-5 sm:flex-row sm:items-center sm:justify-between transition-colors duration-300">
+        {/* Upload Panel + Drag-and-Drop Zone */}
+        <div className="bg-[#eceef0] dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-4 sm:p-6 lg:p-8 flex flex-col gap-5 transition-colors duration-300">
           <div className="min-w-0">
             <h3 className="text-xl sm:text-2xl font-semibold mb-1.5 sm:mb-2 text-[#191c1e] dark:text-[#e1e2ec]">
               Knowledge Base Management
@@ -240,23 +398,69 @@ export function KnowledgeSync() {
             multiple
             accept=".pdf"
             className="hidden"
+            aria-hidden="true"
           />
 
-          <Tooltip
-            content="Select PDF files to add to your knowledge base"
-            position="left">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={!canUpload}
-              className="w-full sm:w-auto flex items-center justify-center gap-3 bg-[#a855f7] hover:bg-[#9333ea] disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 sm:px-6 py-3 rounded-xl font-medium shadow-lg shadow-[#a855f7]/25 hover:shadow-[#a855f7]/40 transition-all">
+          <div
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onKeyDown={handleDropZoneKeyDown}
+            tabIndex={0}
+            role="group"
+            aria-label="File upload drop zone"
+            aria-describedby={dropZoneHintId}
+            aria-disabled={!canUpload}
+            className={`rounded-2xl border-2 border-dashed px-4 py-8 sm:px-6 sm:py-10 text-center transition-all duration-300 ${
+              isDragActive
+                ? "border-[#a855f7] bg-[#d9c1f3]/45 dark:bg-[#3d2f4b]/55"
+                : "border-[#727785] dark:border-[#8c909f] bg-[#f2f4f6] dark:bg-[#191b23]"
+            }`}>
+            <div className="mx-auto max-w-md flex flex-col items-center gap-3 sm:gap-4">
               {syncStatus === "UPLOADING" ? (
-                <Loader2 className="animate-spin" size={20} />
+                <Loader2
+                  className="animate-spin text-[#0058be] dark:text-[#adc6ff]"
+                  size={46}
+                />
               ) : (
-                <UploadCloud size={20} />
+                <UploadCloud
+                  className="text-[#727785] dark:text-[#8c909f]"
+                  size={46}
+                />
               )}
-              {syncStatus === "UPLOADING" ? "Uploading..." : "Upload Documents"}
-            </button>
-          </Tooltip>
+
+              <p className="text-2xl sm:text-3xl font-semibold text-[#727785] dark:text-[#8c909f] tracking-tight">
+                {isDragActive
+                  ? "Drop PDFs to Upload"
+                  : "Drag & Drop Files Here"}
+              </p>
+
+              <p className="text-sm sm:text-base text-[#727785] dark:text-[#8c909f]">
+                or
+              </p>
+
+              <Tooltip
+                content="Select PDF files to add to your knowledge base"
+                position="top">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={!canUpload}
+                  className="inline-flex items-center justify-center gap-2 border border-[#0058be] dark:border-[#adc6ff] text-[#0058be] dark:text-[#adc6ff] bg-transparent hover:bg-[#d0e1fb] dark:hover:bg-[#32353c] disabled:opacity-50 disabled:cursor-not-allowed px-5 py-2.5 rounded-lg font-semibold transition-colors">
+                  {syncStatus === "UPLOADING" ? (
+                    <Loader2 className="animate-spin" size={18} />
+                  ) : null}
+                  {syncStatus === "UPLOADING" ? "Uploading..." : "Browse Files"}
+                </button>
+              </Tooltip>
+
+              <p
+                id={dropZoneHintId}
+                className="text-xs sm:text-sm text-[#727785] dark:text-[#8c909f]">
+                PDF files only
+              </p>
+            </div>
+          </div>
         </div>
 
         {syncNotice && (
@@ -379,68 +583,121 @@ export function KnowledgeSync() {
         syncStatus !== "SYNCING" &&
         syncStatus !== "UPLOADING" && (
           <div className="max-w-5xl mx-auto mt-8 flex flex-col gap-4 sm:gap-6">
-            <h3 className="text-xl sm:text-2xl font-semibold text-[#191c1e] dark:text-[#e1e2ec]">
-              Current Libraries
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h3 className="text-xl sm:text-2xl font-semibold text-[#191c1e] dark:text-[#e1e2ec]">
+                Current Libraries
+              </h3>
+
+              <label className="inline-flex items-center gap-2 text-sm font-medium text-[#424754] dark:text-[#8c909f]">
+                <span id={sortSelectLabelId}>Sort files</span>
+                <select
+                  value={sortOption}
+                  onChange={(e) => setSortOption(e.target.value as SortOption)}
+                  aria-labelledby={sortSelectLabelId}
+                  aria-describedby={sortStatusId}
+                  className="min-w-[220px] rounded-lg border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#272a31] px-3 py-2 text-sm text-[#191c1e] dark:text-[#e1e2ec] focus:outline-none focus:ring-2 focus:ring-[#0058be]/20 dark:focus:ring-[#a855f7]/30">
+                  <option value="name-asc">Name A-Z</option>
+                  <option value="name-desc">Name Z-A</option>
+                  <option value="date-newest">Date newest first</option>
+                  <option value="size-largest">File size largest first</option>
+                </select>
+              </label>
+              <p id={sortStatusId} className="sr-only" aria-live="polite">
+                {sortAnnouncement}
+              </p>
+            </div>
+            <div className="flex flex-col gap-4 sm:gap-6">
               {kbFolders.map((f, i) => {
                 const allFiles = f.subfolders?.flatMap((s) => s.files) || [];
-                const isExpanded = expandedFolder === f.name;
+                const sortedFiles = sortFiles(allFiles);
+                const isExpanded = !collapsedFolders.has(f.name);
+                const folderPanelId = `folder-files-${i}`;
                 return (
                   <div
                     key={i}
-                    onClick={() =>
-                      setExpandedFolder(isExpanded ? null : f.name)
-                    }
-                    className="bg-[#ffffff] dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-4 sm:p-6 transition-all hover:border-[#a855f7] dark:hover:border-[#a855f7] cursor-pointer flex flex-col">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="w-12 h-12 rounded-xl bg-[#d0e1fb] dark:bg-[#32353c] flex items-center justify-center text-[#0058be] dark:text-[#adc6ff]">
-                        <Database size={24} />
+                    className="bg-[#ffffff] dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-4 sm:p-6 transition-all hover:border-[#a855f7] dark:hover:border-[#a855f7] flex flex-col">
+                    <button
+                      type="button"
+                      onClick={() => toggleFolder(f.name)}
+                      aria-expanded={isExpanded}
+                      aria-controls={folderPanelId}
+                      className="w-full text-left">
+                      <div className="flex items-start justify-between mb-4 gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-[#d0e1fb] dark:bg-[#32353c] flex items-center justify-center text-[#0058be] dark:text-[#adc6ff] shrink-0">
+                          <Database size={24} />
+                        </div>
+                        <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium bg-[#eceef0] dark:bg-[#272a31] text-[#424754] dark:text-[#c2c6d6]">
+                          {isExpanded ? "Hide files" : "Show files"}
+                        </span>
                       </div>
-                    </div>
-                    <h4 className="text-lg sm:text-xl font-bold mb-2 text-[#191c1e] dark:text-[#e1e2ec]">
-                      {f.name}
-                    </h4>
-                    <p className="text-sm sm:text-base text-[#424754] dark:text-[#8c909f] mb-4 sm:mb-6">
-                      {f.description}
-                    </p>
-                    <div className="flex items-center justify-between text-sm text-[#727785] dark:text-[#8c909f] font-medium mb-4">
-                      <span>{allFiles.length} Documents</span>
-                      <span>{f.updated}</span>
-                    </div>
+                      <h4 className="text-lg sm:text-xl font-bold mb-2 text-[#191c1e] dark:text-[#e1e2ec]">
+                        {f.name}
+                      </h4>
+                      <p className="text-sm sm:text-base text-[#424754] dark:text-[#8c909f] mb-4 sm:mb-5">
+                        {f.description}
+                      </p>
+                      <div className="flex items-center justify-between text-sm text-[#727785] dark:text-[#8c909f] font-medium">
+                        <span>{allFiles.length} Documents</span>
+                        <span>{f.updated}</span>
+                      </div>
+                    </button>
                     {isExpanded && allFiles.length > 0 && (
-                      <div className="mt-2 pt-4 border-t border-[#c2c6d6] dark:border-[#424754] flex flex-col gap-3">
-                        {allFiles.map((file, fileIdx) => (
-                          <div
-                            key={fileIdx}
-                            className="flex items-center justify-between bg-[#f2f4f6] dark:bg-[#272a31] p-3 rounded-lg border border-[#c2c6d6] dark:border-[#424754]">
-                            <div className="flex items-center gap-3 overflow-hidden">
-                              <span className="text-[#0058be] dark:text-[#adc6ff] bg-[#d0e1fb] dark:bg-[#32353c] p-1.5 rounded-md">
-                                📄
-                              </span>
-                              <span className="text-base text-[#191c1e] dark:text-[#c2c6d6] truncate">
-                                {file.name}
-                              </span>
+                      <div
+                        id={folderPanelId}
+                        role="region"
+                        aria-label={`${f.name} files`}
+                        className="mt-4 pt-4 border-t border-[#c2c6d6] dark:border-[#424754]">
+                        <div
+                          role="list"
+                          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+                          {sortedFiles.map((file, fileIdx) => (
+                            <div
+                              key={fileIdx}
+                              role="listitem"
+                              className="bg-[#f2f4f6] dark:bg-[#272a31] p-3 rounded-xl border border-[#c2c6d6] dark:border-[#424754] flex flex-col gap-3">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-start gap-3 min-w-0">
+                                  <span className="text-[#0058be] dark:text-[#adc6ff] bg-[#d0e1fb] dark:bg-[#32353c] p-1.5 rounded-md shrink-0">
+                                    📄
+                                  </span>
+                                  <span className="text-sm sm:text-base text-[#191c1e] dark:text-[#c2c6d6] break-words">
+                                    {file.name}
+                                  </span>
+                                </div>
+                                <Tooltip
+                                  content="Remove this document from knowledge base"
+                                  position="top">
+                                  <button
+                                    onClick={(e) => handleDelete(e, file.name)}
+                                    disabled={deletingFilename === file.name}
+                                    className="text-[#8c909f] hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors p-1 shrink-0"
+                                    aria-label={`Delete ${file.name}`}>
+                                    <Trash2 size={16} />
+                                  </button>
+                                </Tooltip>
+                              </div>
+                              <div className="flex items-center justify-between text-xs text-[#727785] dark:text-[#8c909f]">
+                                <span>
+                                  {deletingFilename === file.name
+                                    ? "Removing..."
+                                    : file.size}
+                                </span>
+                                <span>{file.modified}</span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-4 text-sm text-[#727785] dark:text-[#8c909f] shrink-0">
-                              <span>
-                                {deletingFilename === file.name
-                                  ? "Removing..."
-                                  : file.size}
-                              </span>
-                              <Tooltip
-                                content="Remove this document from knowledge base"
-                                position="top">
-                                <button
-                                  onClick={(e) => handleDelete(e, file.name)}
-                                  disabled={deletingFilename === file.name}
-                                  className="text-[#8c909f] hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors p-1">
-                                  <Trash2 size={16} />
-                                </button>
-                              </Tooltip>
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {isExpanded && allFiles.length === 0 && (
+                      <div
+                        id={folderPanelId}
+                        role="region"
+                        aria-label={`${f.name} files`}
+                        className="mt-4 pt-4 border-t border-[#c2c6d6] dark:border-[#424754]">
+                        <p className="text-sm text-[#727785] dark:text-[#8c909f]">
+                          No files in this library yet.
+                        </p>
                       </div>
                     )}
                   </div>

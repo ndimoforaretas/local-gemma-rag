@@ -1,4 +1,4 @@
-import { Archive, MessageSquare, Database } from "lucide-react";
+import { MessageSquare, Database } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface SidebarProps {
@@ -17,9 +17,11 @@ export function Sidebar({ activeView, setActiveView }: SidebarProps) {
     <div className="w-64 bg-[#f2f4f6] dark:bg-[#191b23] border-r border-[#c2c6d6] dark:border-[#424754] p-6 flex flex-col gap-8 transition-colors duration-300">
       {/* Logo */}
       <div className="flex items-center gap-3 px-2">
-        <div className="w-8 h-8 rounded-lg bg-[#a855f7] flex items-center justify-center text-white shadow-lg shadow-[#a855f7]/30">
-          <Archive size={18} />
-        </div>
+        <img
+          src="/gemma-cognivault-logo.png"
+          alt="Gemma CogniVault logo"
+          className="w-8 h-8 rounded-lg object-cover shadow-lg shadow-[#a855f7]/20"
+        />
         <h1 className="text-xl font-bold tracking-tight text-[#191c1e] dark:text-[#e1e2ec]">
           Gemma CogniVault
         </h1>
