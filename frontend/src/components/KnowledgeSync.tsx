@@ -467,7 +467,7 @@ export function KnowledgeSync() {
                 </select>
               </label>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div className="flex flex-col gap-4 sm:gap-6">
               {kbFolders.map((f, i) => {
                 const allFiles = f.subfolders?.flatMap((s) => s.files) || [];
                 const sortedFiles = sortFiles(allFiles);
@@ -475,56 +475,75 @@ export function KnowledgeSync() {
                 return (
                   <div
                     key={i}
-                    onClick={() => toggleFolder(f.name)}
-                    className="bg-[#ffffff] dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-4 sm:p-6 transition-all hover:border-[#a855f7] dark:hover:border-[#a855f7] cursor-pointer flex flex-col">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="w-12 h-12 rounded-xl bg-[#d0e1fb] dark:bg-[#32353c] flex items-center justify-center text-[#0058be] dark:text-[#adc6ff]">
-                        <Database size={24} />
+                    className="bg-[#ffffff] dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-4 sm:p-6 transition-all hover:border-[#a855f7] dark:hover:border-[#a855f7] flex flex-col">
+                    <button
+                      type="button"
+                      onClick={() => toggleFolder(f.name)}
+                      aria-expanded={isExpanded}
+                      className="w-full text-left">
+                      <div className="flex items-start justify-between mb-4 gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-[#d0e1fb] dark:bg-[#32353c] flex items-center justify-center text-[#0058be] dark:text-[#adc6ff] shrink-0">
+                          <Database size={24} />
+                        </div>
+                        <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium bg-[#eceef0] dark:bg-[#272a31] text-[#424754] dark:text-[#c2c6d6]">
+                          {isExpanded ? "Hide files" : "Show files"}
+                        </span>
                       </div>
-                    </div>
-                    <h4 className="text-lg sm:text-xl font-bold mb-2 text-[#191c1e] dark:text-[#e1e2ec]">
-                      {f.name}
-                    </h4>
-                    <p className="text-sm sm:text-base text-[#424754] dark:text-[#8c909f] mb-4 sm:mb-6">
-                      {f.description}
-                    </p>
-                    <div className="flex items-center justify-between text-sm text-[#727785] dark:text-[#8c909f] font-medium mb-4">
-                      <span>{allFiles.length} Documents</span>
-                      <span>{f.updated}</span>
-                    </div>
+                      <h4 className="text-lg sm:text-xl font-bold mb-2 text-[#191c1e] dark:text-[#e1e2ec]">
+                        {f.name}
+                      </h4>
+                      <p className="text-sm sm:text-base text-[#424754] dark:text-[#8c909f] mb-4 sm:mb-5">
+                        {f.description}
+                      </p>
+                      <div className="flex items-center justify-between text-sm text-[#727785] dark:text-[#8c909f] font-medium">
+                        <span>{allFiles.length} Documents</span>
+                        <span>{f.updated}</span>
+                      </div>
+                    </button>
                     {isExpanded && allFiles.length > 0 && (
-                      <div className="mt-2 pt-4 border-t border-[#c2c6d6] dark:border-[#424754] flex flex-col gap-3">
+                      <div className="mt-4 pt-4 border-t border-[#c2c6d6] dark:border-[#424754] grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                         {sortedFiles.map((file, fileIdx) => (
                           <div
                             key={fileIdx}
-                            className="flex items-center justify-between bg-[#f2f4f6] dark:bg-[#272a31] p-3 rounded-lg border border-[#c2c6d6] dark:border-[#424754]">
-                            <div className="flex items-center gap-3 overflow-hidden">
-                              <span className="text-[#0058be] dark:text-[#adc6ff] bg-[#d0e1fb] dark:bg-[#32353c] p-1.5 rounded-md">
-                                📄
-                              </span>
-                              <span className="text-base text-[#191c1e] dark:text-[#c2c6d6] truncate">
-                                {file.name}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-4 text-sm text-[#727785] dark:text-[#8c909f] shrink-0">
-                              <span>
-                                {deletingFilename === file.name
-                                  ? "Removing..."
-                                  : file.size}
-                              </span>
+                            className="bg-[#f2f4f6] dark:bg-[#272a31] p-3 rounded-xl border border-[#c2c6d6] dark:border-[#424754] flex flex-col gap-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-start gap-3 min-w-0">
+                                <span className="text-[#0058be] dark:text-[#adc6ff] bg-[#d0e1fb] dark:bg-[#32353c] p-1.5 rounded-md shrink-0">
+                                  📄
+                                </span>
+                                <span className="text-sm sm:text-base text-[#191c1e] dark:text-[#c2c6d6] break-words">
+                                  {file.name}
+                                </span>
+                              </div>
                               <Tooltip
                                 content="Remove this document from knowledge base"
                                 position="top">
                                 <button
                                   onClick={(e) => handleDelete(e, file.name)}
                                   disabled={deletingFilename === file.name}
-                                  className="text-[#8c909f] hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors p-1">
+                                  className="text-[#8c909f] hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors p-1 shrink-0"
+                                  aria-label={`Delete ${file.name}`}>
                                   <Trash2 size={16} />
                                 </button>
                               </Tooltip>
                             </div>
+                            <div className="flex items-center justify-between text-xs text-[#727785] dark:text-[#8c909f]">
+                              <span>
+                                {deletingFilename === file.name
+                                  ? "Removing..."
+                                  : file.size}
+                              </span>
+                              <span>{file.modified}</span>
+                            </div>
                           </div>
                         ))}
+                      </div>
+                    )}
+                    {isExpanded && allFiles.length === 0 && (
+                      <div className="mt-4 pt-4 border-t border-[#c2c6d6] dark:border-[#424754]">
+                        <p className="text-sm text-[#727785] dark:text-[#8c909f]">
+                          No files in this library yet.
+                        </p>
                       </div>
                     )}
                   </div>
