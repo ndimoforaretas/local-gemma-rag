@@ -291,6 +291,14 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.ai-response td.is-numeric-column {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.94em;
+  letter-spacing: -0.01em;
+}
+
 @media (max-width: 768px) {
   .ai-response table {
     font-size: 0.92rem;
