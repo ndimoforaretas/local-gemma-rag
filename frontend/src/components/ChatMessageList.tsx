@@ -88,6 +88,17 @@ interface ChatMessageListProps {
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
+function formatMessageTime(id: string): string {
+  const raw = id.split("-")[0];
+  const ts = Number(raw);
+  if (!Number.isFinite(ts)) {
+    return "";
+  }
+
+  const d = new Date(ts);
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
 export function ChatMessageList({
   messages,
   isLoading,
@@ -133,7 +144,18 @@ export function ChatMessageList({
 
                 {/* Bubble Container */}
                 <div
-                  className={`flex flex-col gap-2 ${msg.role === "user" ? "max-w-[80%] items-end" : "w-full max-w-[min(100%,76ch)] items-start"}`}>
+                  className={`flex flex-col gap-2 ${msg.role === "user" ? "max-w-[82%] items-end" : "w-full max-w-[min(100%,74ch)] items-start"}`}>
+                  <div
+                    className={`flex items-center gap-2 text-[11px] font-medium ${msg.role === "user" ? "text-[#6f4ab3] dark:text-[#cba6ff]" : "text-[#727785] dark:text-[#8c909f]"}`}>
+                    <span>
+                      {msg.role === "user" ? "You" : "Gemma CogniVault AI"}
+                    </span>
+                    {formatMessageTime(msg.id) && (
+                      <span className="opacity-70">
+                        {formatMessageTime(msg.id)}
+                      </span>
+                    )}
+                  </div>
                   <div
                     className={`rounded-2xl p-5 text-base leading-relaxed
                     ${
@@ -142,7 +164,7 @@ export function ChatMessageList({
                         : "w-full bg-white text-[#191c1e] border border-[#c2c6d6] dark:bg-[#1d2027] dark:text-[#e1e2ec] dark:border-[#424754] rounded-tl-sm"
                     }`}>
                     {msg.role === "ai" && !msg.content && isLoading ? (
-                      <div className="flex items-center gap-1 h-6">
+                      <div className="flex items-center gap-2 min-h-6">
                         <motion.div
                           className="w-2 h-2 rounded-full bg-[#a855f7]"
                           animate={{ y: [0, -5, 0] }}
@@ -170,6 +192,9 @@ export function ChatMessageList({
                             delay: 0.2,
                           }}
                         />
+                        <span className="text-sm text-[#727785] dark:text-[#8c909f]">
+                          Generating answer...
+                        </span>
                       </div>
                     ) : msg.role === "ai" ? (
                       <div
@@ -189,7 +214,7 @@ export function ChatMessageList({
 
                   {/* AI Actions */}
                   {msg.role === "ai" && msg.content && (
-                    <div className="flex items-center gap-4 mt-1 self-center">
+                    <div className="flex items-center gap-4 mt-1 self-start">
                       <Tooltip
                         content={
                           copiedId === msg.id
