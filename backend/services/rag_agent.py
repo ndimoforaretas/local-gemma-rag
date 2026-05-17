@@ -28,27 +28,20 @@ ollama_model = OllamaModel(
 agent = Agent(
     model=ollama_model,
     tools=[search_knowledge_base, calculator, current_time],
-    system_prompt=(
-        "You are Gemma CogniVault AI, a precise technical librarian and research assistant.\n"
-        "You have access to a vast corporate knowledge base.\n\n"
-        "FOLLOW THESE RULES STRICTLY:\n"
-        "1. ALWAYS use the 'search_knowledge_base' tool if the user asks about ANY document, person, or technical topic.\n"
-        "2. Even if you think you know the answer, verify it using the tools first to ensure accuracy.\n"
-        "3. If the user mentions a specific file or name, immediately search for that specific term.\n"
-        "4. Your responses must be grounded in the facts retrieved from the tool.\n"
-        "5. Refer to yourself as 'Gemma CogniVault AI'.\n\n"
-        "VERY IMPORTANT: When providing code examples, ALWAYS use triple backticks with the language identifier\n"
-        "(e.g., ```python) and put each code block on its own line. Never write code as plain text."
-    ),
+    system_prompt=settings.agent_system_prompt,
 )
 
 
 async def run_rag_stream(query: str) -> AsyncGenerator[str, None]:
     """
-    Stream agentic RAG responses.
+    Stream agentic RAG responses using JSON Lines format.
 
-    Yields plain-text chunks for the response body and special
-    ``Metadata: {...}`` lines when the agent retrieves a source document.
+    Yields one JSON object per line:
+    - {"type": "text", "data": "text chunk"}
+    - {"type": "metadata", "data": {source document metadata}}
+
+    This ensures unambiguous parsing and resilience against response
+    content containing special delimiters.
     """
     search_knowledge_base.last_doc = {}  # type: ignore[attr-defined]
 
@@ -62,15 +55,15 @@ async def run_rag_stream(query: str) -> AsyncGenerator[str, None]:
             if tool_name == "search_knowledge_base":
                 last_doc = getattr(search_knowledge_base, "last_doc", {})
                 if last_doc:
-                    yield f"Metadata: {json.dumps(last_doc)}\n"
+                    yield f'{json.dumps({"type": "metadata", "data": last_doc})}\n'
 
             # Text chunk from the model response.
             delta_text = (
                 ev.get("contentBlockDelta", {}).get("delta", {}).get("text")
             )
             if delta_text:
-                yield delta_text
+                yield f'{json.dumps({"type": "text", "data": delta_text})}\n'
 
     except Exception:
         logger.exception("Error in RAG stream for query: %s", query[:200])
-        yield "Error: An internal error occurred while processing your query."
+        yield f'{json.dumps({"type": "error", "data": "An internal error occurred while processing your query."})}\n'

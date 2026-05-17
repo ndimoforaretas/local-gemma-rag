@@ -20,12 +20,20 @@ class Settings(BaseSettings):
     embedding_model: str = "embeddinggemma"
     ollama_host: str = "http://localhost:11434"
 
+    # --- RAG Agent ---
+    agent_system_prompt: str = (
+        "You are Gemma CogniVault AI, a precise technical assistant.\n"
+        "Use the search_knowledge_base tool for questions about documents.\n"
+        "Format code with triple backticks (e.g., ```python)."
+    )
+
     # --- Vector Store ---
     index_file: str = "vector_store.faiss"
     metadata_file: str = "vector_store.json"
     docs_dir: str = "docs"
     chunk_size: int = 1000
     chunk_overlap: int = 100
+    embedding_batch_size: int = 5
 
     # --- Database (DBOS) ---
     db_url: str = "postgresql://postgres:password@localhost:5432/dbos"

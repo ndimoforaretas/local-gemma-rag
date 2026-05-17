@@ -80,19 +80,34 @@ app.include_router(history.router)
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])
 async def health_check():
-    """Lightweight readiness probe for the application."""
+    """
+    Lightweight readiness probe for the application.
+
+    Returns:
+    - status: "healthy" if Ollama is connected and vector DB is loaded
+    - status: "degraded" if Ollama is down but vector DB is loaded
+    - ollama_connected: true/false based on connectivity
+    - vector_db_loaded: true/false based on FAISS index status
+    - indexed_chunks: count of non-deleted chunks in vector store
+    """
     ollama_ok = False
     try:
         import ollama as _ollama
+
+        # Try to connect with a short timeout
         _ollama.list()
         ollama_ok = True
-    except Exception:
-        pass
+    except (ConnectionError, TimeoutError, Exception) as e:
+        logger.debug("Ollama health check failed: %s", type(e).__name__)
+        ollama_ok = False
+
+    vector_db_loaded = vector_db.index is not None
+    status = "healthy" if (ollama_ok and vector_db_loaded) else "degraded"
 
     return HealthResponse(
-        status="healthy" if ollama_ok else "degraded",
+        status=status,
         ollama_connected=ollama_ok,
-        vector_db_loaded=vector_db.index is not None,
+        vector_db_loaded=vector_db_loaded,
         indexed_chunks=len(vector_db.metadata),
     )
 
