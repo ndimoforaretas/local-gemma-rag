@@ -136,9 +136,10 @@ body {
 
 /* AI response typography tuning for readable long-form answers */
 .ai-response {
-  font-size: 0.98rem;
-  line-height: 1.75;
+  font-size: 1rem;
+  line-height: 1.8;
   text-wrap: pretty;
+  letter-spacing: 0.002em;
 }
 
 .ai-response > *:first-child {
@@ -155,8 +156,12 @@ body {
 .ai-response pre,
 .ai-response blockquote,
 .ai-response table {
-  margin-top: 0.7rem;
-  margin-bottom: 0.7rem;
+  margin-top: 0.82rem;
+  margin-bottom: 0.82rem;
+}
+
+.ai-response p + p {
+  margin-top: 0.92rem;
 }
 
 .ai-response h1,
@@ -184,12 +189,12 @@ body {
 
 .ai-response ul,
 .ai-response ol {
-  padding-left: 1.35rem;
+  padding-left: 1.4rem;
 }
 
 .ai-response li {
-  margin-top: 0.25rem;
-  margin-bottom: 0.25rem;
+  margin-top: 0.34rem;
+  margin-bottom: 0.34rem;
 }
 
 .ai-response code {
@@ -204,7 +209,7 @@ body {
 .ai-response pre {
   overflow-x: auto;
   border-radius: 0.85rem;
-  padding: 0.9rem 1rem;
+  padding: 1rem 1.05rem;
   background: #eceef0;
   border: 1px solid #c2c6d6;
 }
@@ -226,7 +231,8 @@ body {
 
 .ai-response blockquote {
   border-left: 3px solid #c2c6d6;
-  padding-left: 0.85rem;
+  padding-left: 0.95rem;
+  margin-left: 0.1rem;
   color: #424754;
 }
 
@@ -355,4 +361,15 @@ body {
 
 .dark .ai-response tbody tr:nth-child(even) {
   background: #1a1f2a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

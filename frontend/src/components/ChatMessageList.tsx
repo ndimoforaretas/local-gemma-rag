@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Bot, User, Copy, Check, Download } from "lucide-react";
 import { marked } from "marked";
 import { Tooltip } from "./Tooltip";
@@ -88,6 +88,17 @@ interface ChatMessageListProps {
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
+function formatMessageTime(id: string): string {
+  const raw = id.split("-")[0];
+  const ts = Number(raw);
+  if (!Number.isFinite(ts)) {
+    return "";
+  }
+
+  const d = new Date(ts);
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
 export function ChatMessageList({
   messages,
   isLoading,
@@ -96,8 +107,15 @@ export function ChatMessageList({
   onExport,
   messagesEndRef,
 }: ChatMessageListProps) {
+  const prefersReducedMotion = useReducedMotion();
+
   return (
-    <div className="flex-1 overflow-y-auto rounded-2xl bg-[#f2f4f6] dark:bg-[#191b23] border border-[#c2c6d6] dark:border-[#424754] p-6 transition-colors duration-300 relative">
+    <div
+      role="log"
+      aria-live="polite"
+      aria-relevant="additions text"
+      aria-label="Conversation messages"
+      className="flex-1 overflow-y-auto rounded-2xl bg-[#f2f4f6] dark:bg-[#191b23] border border-[#c2c6d6] dark:border-[#424754] p-6 transition-colors duration-300 relative">
       {messages.length === 0 ? (
         <div className="h-full flex flex-col items-center justify-center opacity-60">
           <div className="w-16 h-16 rounded-2xl bg-[#d0e1fb] dark:bg-[#32353c] border border-[#c2c6d6] dark:border-[#424754] flex items-center justify-center mb-6">
@@ -112,13 +130,25 @@ export function ChatMessageList({
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6" role="list">
           <AnimatePresence initial={false}>
             {messages.map((msg) => (
               <motion.div
                 key={msg.id}
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
+                role="listitem"
+                aria-label={
+                  msg.role === "user" ? "User message" : "Assistant message"
+                }
+                initial={
+                  prefersReducedMotion
+                    ? { opacity: 0 }
+                    : { opacity: 0, y: 10, scale: 0.95 }
+                }
+                animate={
+                  prefersReducedMotion
+                    ? { opacity: 1 }
+                    : { opacity: 1, y: 0, scale: 1 }
+                }
                 className={`flex gap-4 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
                 {/* Avatar */}
                 <div
@@ -133,7 +163,18 @@ export function ChatMessageList({
 
                 {/* Bubble Container */}
                 <div
-                  className={`flex flex-col gap-2 ${msg.role === "user" ? "max-w-[80%] items-end" : "w-full max-w-[min(100%,76ch)] items-start"}`}>
+                  className={`flex flex-col gap-2 ${msg.role === "user" ? "max-w-[82%] items-end" : "w-full max-w-[min(100%,74ch)] items-start"}`}>
+                  <div
+                    className={`flex items-center gap-2 text-[11px] font-medium ${msg.role === "user" ? "text-[#6f4ab3] dark:text-[#cba6ff]" : "text-[#727785] dark:text-[#8c909f]"}`}>
+                    <span>
+                      {msg.role === "user" ? "You" : "Gemma CogniVault AI"}
+                    </span>
+                    {formatMessageTime(msg.id) && (
+                      <span className="opacity-70">
+                        {formatMessageTime(msg.id)}
+                      </span>
+                    )}
+                  </div>
                   <div
                     className={`rounded-2xl p-5 text-base leading-relaxed
                     ${
@@ -142,10 +183,14 @@ export function ChatMessageList({
                         : "w-full bg-white text-[#191c1e] border border-[#c2c6d6] dark:bg-[#1d2027] dark:text-[#e1e2ec] dark:border-[#424754] rounded-tl-sm"
                     }`}>
                     {msg.role === "ai" && !msg.content && isLoading ? (
-                      <div className="flex items-center gap-1 h-6">
+                      <div
+                        className="flex items-center gap-2 min-h-6"
+                        aria-live="polite">
                         <motion.div
                           className="w-2 h-2 rounded-full bg-[#a855f7]"
-                          animate={{ y: [0, -5, 0] }}
+                          animate={
+                            prefersReducedMotion ? undefined : { y: [0, -5, 0] }
+                          }
                           transition={{
                             repeat: Infinity,
                             duration: 0.6,
@@ -154,7 +199,9 @@ export function ChatMessageList({
                         />
                         <motion.div
                           className="w-2 h-2 rounded-full bg-[#a855f7]"
-                          animate={{ y: [0, -5, 0] }}
+                          animate={
+                            prefersReducedMotion ? undefined : { y: [0, -5, 0] }
+                          }
                           transition={{
                             repeat: Infinity,
                             duration: 0.6,
@@ -163,13 +210,18 @@ export function ChatMessageList({
                         />
                         <motion.div
                           className="w-2 h-2 rounded-full bg-[#a855f7]"
-                          animate={{ y: [0, -5, 0] }}
+                          animate={
+                            prefersReducedMotion ? undefined : { y: [0, -5, 0] }
+                          }
                           transition={{
                             repeat: Infinity,
                             duration: 0.6,
                             delay: 0.2,
                           }}
                         />
+                        <span className="text-sm text-[#727785] dark:text-[#8c909f]">
+                          Generating answer...
+                        </span>
                       </div>
                     ) : msg.role === "ai" ? (
                       <div
@@ -189,7 +241,7 @@ export function ChatMessageList({
 
                   {/* AI Actions */}
                   {msg.role === "ai" && msg.content && (
-                    <div className="flex items-center gap-4 mt-1 self-center">
+                    <div className="flex items-center gap-4 mt-1 self-start">
                       <Tooltip
                         content={
                           copiedId === msg.id
@@ -199,6 +251,11 @@ export function ChatMessageList({
                         position="top">
                         <button
                           onClick={() => onCopy(msg.content, msg.id)}
+                          aria-label={
+                            copiedId === msg.id
+                              ? "Response copied"
+                              : "Copy response"
+                          }
                           className="flex items-center gap-1.5 text-xs font-medium text-[#727785] dark:text-[#8c909f] hover:text-[#191c1e] dark:hover:text-[#e1e2ec] transition-colors">
                           {copiedId === msg.id ? (
                             <Check size={14} className="text-emerald-500" />
@@ -213,6 +270,7 @@ export function ChatMessageList({
                         position="top">
                         <button
                           onClick={() => onExport(msg.content, msg.id)}
+                          aria-label="Export response as markdown"
                           className="flex items-center gap-1.5 text-xs font-medium text-[#727785] dark:text-[#8c909f] hover:text-[#0058be] dark:hover:text-[#adc6ff] transition-colors">
                           <Download size={14} /> Export
                         </button>

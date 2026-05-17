@@ -12,6 +12,7 @@ build/
 
 # Data (user-generated, not needed for the app to run)
 docs/
+docs/ui-ux-execution-plan.md
 vector_store.faiss
 vector_store.json
 chat_history.json
