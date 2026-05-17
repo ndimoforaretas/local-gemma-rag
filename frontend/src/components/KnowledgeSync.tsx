@@ -345,28 +345,14 @@ export function KnowledgeSync() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 h-full overflow-y-auto">
       <div className="max-w-5xl mx-auto flex flex-col gap-6 sm:gap-8">
-        {/* Action Bar: surface-container bg */}
-        <div
-          onDragEnter={handleDragEnter}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          className={`bg-[#eceef0] dark:bg-[#1d2027] border rounded-2xl p-4 sm:p-6 lg:p-8 flex flex-col gap-4 sm:gap-5 sm:flex-row sm:items-center sm:justify-between transition-colors duration-300 ${
-            isDragActive
-              ? "border-[#a855f7] ring-2 ring-[#a855f7]/35"
-              : "border-[#c2c6d6] dark:border-[#424754]"
-          }`}>
+        {/* Upload Panel + Drag-and-Drop Zone */}
+        <div className="bg-[#eceef0] dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-4 sm:p-6 lg:p-8 flex flex-col gap-5 transition-colors duration-300">
           <div className="min-w-0">
             <h3 className="text-xl sm:text-2xl font-semibold mb-1.5 sm:mb-2 text-[#191c1e] dark:text-[#e1e2ec]">
               Knowledge Base Management
             </h3>
             <p className="text-sm sm:text-base text-[#424754] dark:text-[#8c909f]">
               Upload PDFs and sync them into your local vector store.
-            </p>
-            <p className="mt-2 text-xs sm:text-sm text-[#727785] dark:text-[#8c909f]">
-              {isDragActive
-                ? "Drop PDF files to upload"
-                : "Drag and drop PDFs here, or use Upload Documents"}
             </p>
             <div className="mt-3 inline-flex items-center text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#d0e1fb] dark:bg-[#32353c] text-[#0058be] dark:text-[#adc6ff]">
               Status: {syncStatus}
@@ -382,21 +368,58 @@ export function KnowledgeSync() {
             className="hidden"
           />
 
-          <Tooltip
-            content="Select PDF files to add to your knowledge base"
-            position="left">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={!canUpload}
-              className="w-full sm:w-auto flex items-center justify-center gap-3 bg-[#a855f7] hover:bg-[#9333ea] disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 sm:px-6 py-3 rounded-xl font-medium shadow-lg shadow-[#a855f7]/25 hover:shadow-[#a855f7]/40 transition-all">
+          <div
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`rounded-2xl border-2 border-dashed px-4 py-8 sm:px-6 sm:py-10 text-center transition-all duration-300 ${
+              isDragActive
+                ? "border-[#a855f7] bg-[#d9c1f3]/45 dark:bg-[#3d2f4b]/55"
+                : "border-[#727785] dark:border-[#8c909f] bg-[#f2f4f6] dark:bg-[#191b23]"
+            }`}>
+            <div className="mx-auto max-w-md flex flex-col items-center gap-3 sm:gap-4">
               {syncStatus === "UPLOADING" ? (
-                <Loader2 className="animate-spin" size={20} />
+                <Loader2
+                  className="animate-spin text-[#0058be] dark:text-[#adc6ff]"
+                  size={46}
+                />
               ) : (
-                <UploadCloud size={20} />
+                <UploadCloud
+                  className="text-[#727785] dark:text-[#8c909f]"
+                  size={46}
+                />
               )}
-              {syncStatus === "UPLOADING" ? "Uploading..." : "Upload Documents"}
-            </button>
-          </Tooltip>
+
+              <p className="text-2xl sm:text-3xl font-semibold text-[#727785] dark:text-[#8c909f] tracking-tight">
+                {isDragActive
+                  ? "Drop PDFs to Upload"
+                  : "Drag & Drop Files Here"}
+              </p>
+
+              <p className="text-sm sm:text-base text-[#727785] dark:text-[#8c909f]">
+                or
+              </p>
+
+              <Tooltip
+                content="Select PDF files to add to your knowledge base"
+                position="top">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={!canUpload}
+                  className="inline-flex items-center justify-center gap-2 border border-[#0058be] dark:border-[#adc6ff] text-[#0058be] dark:text-[#adc6ff] bg-transparent hover:bg-[#d0e1fb] dark:hover:bg-[#32353c] disabled:opacity-50 disabled:cursor-not-allowed px-5 py-2.5 rounded-lg font-semibold transition-colors">
+                  {syncStatus === "UPLOADING" ? (
+                    <Loader2 className="animate-spin" size={18} />
+                  ) : null}
+                  {syncStatus === "UPLOADING" ? "Uploading..." : "Browse Files"}
+                </button>
+              </Tooltip>
+
+              <p className="text-xs sm:text-sm text-[#727785] dark:text-[#8c909f]">
+                PDF files only
+              </p>
+            </div>
+          </div>
         </div>
 
         {syncNotice && (
