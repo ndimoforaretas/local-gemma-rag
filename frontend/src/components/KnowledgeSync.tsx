@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Tooltip } from "./Tooltip";
 import { api } from "../lib/api";
-import type { KBFolder, WorkflowStatusResponse } from "../types/api";
+import type { KBFile, KBFolder, WorkflowStatusResponse } from "../types/api";
 
 interface Step {
   name: string;
@@ -20,6 +20,8 @@ interface Step {
 }
 
 export function KnowledgeSync() {
+  type SortOption = "name-asc" | "name-desc" | "date-newest" | "size-largest";
+
   const [syncStatus, setSyncStatus] = useState<
     "IDLE" | "UPLOADING" | "SYNCING" | "SUCCESS" | "ERROR"
   >("IDLE");
@@ -31,6 +33,7 @@ export function KnowledgeSync() {
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [deletingFilename, setDeletingFilename] = useState<string | null>(null);
+  const [sortOption, setSortOption] = useState<SortOption>("name-asc");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: kbFolders = [], refetch: refetchKB } = useQuery<KBFolder[]>({
@@ -230,6 +233,59 @@ export function KnowledgeSync() {
   const canUpload =
     syncStatus === "IDLE" || syncStatus === "SUCCESS" || syncStatus === "ERROR";
 
+  const parseSizeInBytes = (size: string): number => {
+    const match = size.match(/^\s*([\d.]+)\s*([A-Za-z]+)\s*$/);
+    if (!match) return 0;
+
+    const value = Number.parseFloat(match[1]);
+    const unit = match[2].toUpperCase();
+    if (Number.isNaN(value)) return 0;
+
+    const unitMap: Record<string, number> = {
+      B: 1,
+      KB: 1024,
+      MB: 1024 ** 2,
+      GB: 1024 ** 3,
+      TB: 1024 ** 4,
+    };
+
+    return value * (unitMap[unit] ?? 1);
+  };
+
+  const parseDate = (value: string): number => {
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  };
+
+  const sortFiles = (files: KBFile[]) => {
+    const sorted = [...files];
+
+    switch (sortOption) {
+      case "name-asc":
+        sorted.sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+        );
+        break;
+      case "name-desc":
+        sorted.sort((a, b) =>
+          b.name.localeCompare(a.name, undefined, { sensitivity: "base" }),
+        );
+        break;
+      case "date-newest":
+        sorted.sort((a, b) => parseDate(b.modified) - parseDate(a.modified));
+        break;
+      case "size-largest":
+        sorted.sort(
+          (a, b) => parseSizeInBytes(b.size) - parseSizeInBytes(a.size),
+        );
+        break;
+      default:
+        break;
+    }
+
+    return sorted;
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 h-full overflow-y-auto">
       <div className="max-w-5xl mx-auto flex flex-col gap-6 sm:gap-8">
@@ -393,12 +449,28 @@ export function KnowledgeSync() {
         syncStatus !== "SYNCING" &&
         syncStatus !== "UPLOADING" && (
           <div className="max-w-5xl mx-auto mt-8 flex flex-col gap-4 sm:gap-6">
-            <h3 className="text-xl sm:text-2xl font-semibold text-[#191c1e] dark:text-[#e1e2ec]">
-              Current Libraries
-            </h3>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h3 className="text-xl sm:text-2xl font-semibold text-[#191c1e] dark:text-[#e1e2ec]">
+                Current Libraries
+              </h3>
+
+              <label className="inline-flex items-center gap-2 text-sm font-medium text-[#424754] dark:text-[#8c909f]">
+                <span>Sort files</span>
+                <select
+                  value={sortOption}
+                  onChange={(e) => setSortOption(e.target.value as SortOption)}
+                  className="min-w-[220px] rounded-lg border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#272a31] px-3 py-2 text-sm text-[#191c1e] dark:text-[#e1e2ec] focus:outline-none focus:ring-2 focus:ring-[#0058be]/20 dark:focus:ring-[#a855f7]/30">
+                  <option value="name-asc">Name A-Z</option>
+                  <option value="name-desc">Name Z-A</option>
+                  <option value="date-newest">Date newest first</option>
+                  <option value="size-largest">File size largest first</option>
+                </select>
+              </label>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {kbFolders.map((f, i) => {
                 const allFiles = f.subfolders?.flatMap((s) => s.files) || [];
+                const sortedFiles = sortFiles(allFiles);
                 const isExpanded = !collapsedFolders.has(f.name);
                 return (
                   <div
@@ -422,7 +494,7 @@ export function KnowledgeSync() {
                     </div>
                     {isExpanded && allFiles.length > 0 && (
                       <div className="mt-2 pt-4 border-t border-[#c2c6d6] dark:border-[#424754] flex flex-col gap-3">
-                        {allFiles.map((file, fileIdx) => (
+                        {sortedFiles.map((file, fileIdx) => (
                           <div
                             key={fileIdx}
                             className="flex items-center justify-between bg-[#f2f4f6] dark:bg-[#272a31] p-3 rounded-lg border border-[#c2c6d6] dark:border-[#424754]">
