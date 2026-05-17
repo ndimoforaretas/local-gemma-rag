@@ -90,7 +90,9 @@ export function ChatInput({
             ? "Generating response..."
             : "Enter to send, Shift+Enter for new line"}
         </span>
-        <span id={charCountId} aria-live="polite">{input.length} chars</span>
+        <span id={charCountId} aria-live="polite">
+          {input.length} chars
+        </span>
       </div>
     </div>
   );

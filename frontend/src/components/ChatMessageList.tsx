@@ -136,9 +136,19 @@ export function ChatMessageList({
               <motion.div
                 key={msg.id}
                 role="listitem"
-                aria-label={msg.role === "user" ? "User message" : "Assistant message"}
-                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.95 }}
-                animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+                aria-label={
+                  msg.role === "user" ? "User message" : "Assistant message"
+                }
+                initial={
+                  prefersReducedMotion
+                    ? { opacity: 0 }
+                    : { opacity: 0, y: 10, scale: 0.95 }
+                }
+                animate={
+                  prefersReducedMotion
+                    ? { opacity: 1 }
+                    : { opacity: 1, y: 0, scale: 1 }
+                }
                 className={`flex gap-4 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
                 {/* Avatar */}
                 <div
@@ -173,10 +183,14 @@ export function ChatMessageList({
                         : "w-full bg-white text-[#191c1e] border border-[#c2c6d6] dark:bg-[#1d2027] dark:text-[#e1e2ec] dark:border-[#424754] rounded-tl-sm"
                     }`}>
                     {msg.role === "ai" && !msg.content && isLoading ? (
-                      <div className="flex items-center gap-2 min-h-6" aria-live="polite">
+                      <div
+                        className="flex items-center gap-2 min-h-6"
+                        aria-live="polite">
                         <motion.div
                           className="w-2 h-2 rounded-full bg-[#a855f7]"
-                          animate={prefersReducedMotion ? undefined : { y: [0, -5, 0] }}
+                          animate={
+                            prefersReducedMotion ? undefined : { y: [0, -5, 0] }
+                          }
                           transition={{
                             repeat: Infinity,
                             duration: 0.6,
@@ -185,7 +199,9 @@ export function ChatMessageList({
                         />
                         <motion.div
                           className="w-2 h-2 rounded-full bg-[#a855f7]"
-                          animate={prefersReducedMotion ? undefined : { y: [0, -5, 0] }}
+                          animate={
+                            prefersReducedMotion ? undefined : { y: [0, -5, 0] }
+                          }
                           transition={{
                             repeat: Infinity,
                             duration: 0.6,
@@ -194,7 +210,9 @@ export function ChatMessageList({
                         />
                         <motion.div
                           className="w-2 h-2 rounded-full bg-[#a855f7]"
-                          animate={prefersReducedMotion ? undefined : { y: [0, -5, 0] }}
+                          animate={
+                            prefersReducedMotion ? undefined : { y: [0, -5, 0] }
+                          }
                           transition={{
                             repeat: Infinity,
                             duration: 0.6,
@@ -233,7 +251,11 @@ export function ChatMessageList({
                         position="top">
                         <button
                           onClick={() => onCopy(msg.content, msg.id)}
-                          aria-label={copiedId === msg.id ? "Response copied" : "Copy response"}
+                          aria-label={
+                            copiedId === msg.id
+                              ? "Response copied"
+                              : "Copy response"
+                          }
                           className="flex items-center gap-1.5 text-xs font-medium text-[#727785] dark:text-[#8c909f] hover:text-[#191c1e] dark:hover:text-[#e1e2ec] transition-colors">
                           {copiedId === msg.id ? (
                             <Check size={14} className="text-emerald-500" />
