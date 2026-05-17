@@ -14,9 +14,9 @@ import type {
   WorkflowStatusResponse,
   HealthResponse,
   ChatSession,
-} from '../types/api';
+} from "../types/api";
 
-const API_BASE = ''; // same-origin in dev and production
+const API_BASE = ""; // same-origin in dev and production
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -41,16 +41,18 @@ export const api = {
   // the body as a stream.  NOT parsed as JSON.
   ragStream: async (query: string): Promise<Response> => {
     const resp = await fetch(`${API_BASE}/rag`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query }),
     });
     if (!resp.ok) {
-      let msg = 'RAG request failed';
+      let msg = "RAG request failed";
       try {
         const body = await resp.json();
         msg = body.error ?? body.detail ?? msg;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
       throw new Error(msg);
     }
     return resp;
@@ -65,7 +67,7 @@ export const api = {
   // Upload PDF documents
   upload: async (formData: FormData): Promise<UploadResponse> => {
     const resp = await fetch(`${API_BASE}/upload`, {
-      method: 'POST',
+      method: "POST",
       body: formData,
     });
     return handleJsonResponse<UploadResponse>(resp);
@@ -73,21 +75,26 @@ export const api = {
 
   // Delete a document from the knowledge base
   deleteDoc: async (filename: string): Promise<StatusResponse> => {
-    const resp = await fetch(`${API_BASE}/api/docs/${encodeURIComponent(filename)}`, {
-      method: 'DELETE',
-    });
+    const resp = await fetch(
+      `${API_BASE}/api/docs/${encodeURIComponent(filename)}`,
+      {
+        method: "DELETE",
+      },
+    );
     return handleJsonResponse<StatusResponse>(resp);
   },
 
   // Start a durable ingestion workflow
   ingest: async (): Promise<IngestResponse> => {
-    const resp = await fetch(`${API_BASE}/ingest`, { method: 'POST' });
+    const resp = await fetch(`${API_BASE}/ingest`, { method: "POST" });
     return handleJsonResponse<IngestResponse>(resp);
   },
 
   // Poll ingestion workflow status
   ingestStatus: async (workflowId: string): Promise<WorkflowStatusResponse> => {
-    const resp = await fetch(`${API_BASE}/ingest/status/${encodeURIComponent(workflowId)}`);
+    const resp = await fetch(
+      `${API_BASE}/ingest/status/${encodeURIComponent(workflowId)}`,
+    );
     return handleJsonResponse<WorkflowStatusResponse>(resp);
   },
 
@@ -99,10 +106,20 @@ export const api = {
 
   saveHistory: async (sessions: ChatSession[]): Promise<StatusResponse> => {
     const resp = await fetch(`${API_BASE}/api/history`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(sessions),
     });
+    return handleJsonResponse<StatusResponse>(resp);
+  },
+
+  deleteHistorySession: async (sessionId: string): Promise<StatusResponse> => {
+    const resp = await fetch(
+      `${API_BASE}/api/history/${encodeURIComponent(sessionId)}`,
+      {
+        method: "DELETE",
+      },
+    );
     return handleJsonResponse<StatusResponse>(resp);
   },
 

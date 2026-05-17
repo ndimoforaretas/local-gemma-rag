@@ -12,6 +12,9 @@ import type { ChatSession, Message, ContextItem } from "../types/api";
 export function KnowledgeBase() {
   const queryClient = useQueryClient();
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(
+    null,
+  );
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -53,6 +56,10 @@ export function KnowledgeBase() {
 
   const saveHistoryMutation = useMutation({
     mutationFn: (newSessions: ChatSession[]) => api.saveHistory(newSessions),
+  });
+
+  const deleteHistoryMutation = useMutation({
+    mutationFn: (sessionId: string) => api.deleteHistorySession(sessionId),
   });
 
   // ── Derived state ─────────────────────────────────────────────────
@@ -344,6 +351,36 @@ export function KnowledgeBase() {
     setContextItems([]);
   };
 
+  const handleDeleteSession = async (id: string) => {
+    const target = sessions.find((s) => s.id === id);
+    if (!target) return;
+
+    const confirmed = window.confirm(
+      `Delete session "${target.title}"? This cannot be undone.`,
+    );
+    if (!confirmed) return;
+
+    setDeletingSessionId(id);
+    try {
+      await deleteHistoryMutation.mutateAsync(id);
+
+      queryClient.setQueryData<ChatSession[]>(["history"], (old = []) => {
+        const next = old.filter((s) => s.id !== id);
+
+        if (activeSessionId === id) {
+          setActiveSessionId(next.length > 0 ? next[0].id : null);
+          setContextItems([]);
+        }
+
+        return next;
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDeletingSessionId(null);
+    }
+  };
+
   // ── Render ────────────────────────────────────────────────────────
 
   return (
@@ -427,6 +464,8 @@ export function KnowledgeBase() {
           sessions={sessions}
           activeSessionId={activeSessionId}
           onSelectSession={handleSelectSession}
+          onDeleteSession={handleDeleteSession}
+          deletingSessionId={deletingSessionId}
         />
       </div>
     </div>

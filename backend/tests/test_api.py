@@ -203,6 +203,38 @@ class TestHistoryEndpoint:
         assert resp.status_code == 200
         assert resp.json()["status"] == "success"
 
+    def test_delete_history_session_success(self, client, tmp_path, monkeypatch):
+        history_file = tmp_path / "chat_history.json"
+        monkeypatch.setattr("backend.routers.history.HISTORY_FILE", str(history_file))
+
+        sessions = [
+            {"id": "1", "title": "Keep", "updatedAt": 123, "messages": []},
+            {"id": "2", "title": "Delete", "updatedAt": 456, "messages": []},
+        ]
+        history_file.write_text(json.dumps(sessions))
+
+        resp = client.delete("/api/history/2")
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "success"
+
+        with open(history_file, "r") as f:
+            saved = json.load(f)
+        assert len(saved) == 1
+        assert saved[0]["id"] == "1"
+
+    def test_delete_history_session_not_found(self, client, tmp_path, monkeypatch):
+        history_file = tmp_path / "chat_history.json"
+        monkeypatch.setattr("backend.routers.history.HISTORY_FILE", str(history_file))
+        history_file.write_text(json.dumps([]))
+
+        resp = client.delete("/api/history/missing")
+        assert resp.status_code == 404
+
+    def test_delete_history_session_rejects_invalid_id(self, client):
+        resp = client.delete("/api/history/..%2Fetc%2Fpasswd")
+        # Path may fail to match route (405) or be rejected by validator (400).
+        assert resp.status_code in (400, 405)
+
 
 class TestKBEndpoint:
     """Tests for GET /kb."""

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { History } from "lucide-react";
+import { History, Loader2, Trash2 } from "lucide-react";
 import type { ChatSession } from "../types/api";
 
 interface HistorySidebarProps {
@@ -7,6 +7,8 @@ interface HistorySidebarProps {
   sessions: ChatSession[];
   activeSessionId: string | null;
   onSelectSession: (id: string) => void;
+  onDeleteSession: (id: string) => void;
+  deletingSessionId: string | null;
 }
 
 function formatRecency(ts: number): string {
@@ -32,6 +34,8 @@ export function HistorySidebar({
   sessions,
   activeSessionId,
   onSelectSession,
+  onDeleteSession,
+  deletingSessionId,
 }: HistorySidebarProps) {
   return (
     <AnimatePresence>
@@ -57,23 +61,43 @@ export function HistorySidebar({
           </div>
           <div className="flex-1 overflow-y-auto px-4 pb-4 flex flex-col gap-2">
             {sessions.map((s) => (
-              <button
+              <div
                 key={s.id}
-                onClick={() => onSelectSession(s.id)}
-                className={`p-4 rounded-xl cursor-pointer transition-all border text-left ${
+                className={`p-2 rounded-xl transition-all border ${
                   activeSessionId === s.id
                     ? "bg-white dark:bg-[#272a31] border-[#a855f7] dark:border-[#a855f7]"
                     : "bg-transparent border-transparent hover:bg-[#e0e3e5] dark:hover:bg-[#272a31]"
-                }`}
-                aria-current={activeSessionId === s.id ? "true" : undefined}>
-                <h4 className="font-medium text-[#191c1e] dark:text-[#e1e2ec] truncate">
-                  {s.title}
-                </h4>
-                <div className="mt-1.5 flex items-center justify-between gap-3 text-xs text-[#727785] dark:text-[#8c909f]">
-                  <p className="truncate">{formatRecency(s.updatedAt)}</p>
-                  <span className="shrink-0">{s.messages.length} msgs</span>
+                }`}>
+                <div className="relative">
+                  <button
+                    onClick={() => onSelectSession(s.id)}
+                    className="w-full p-2 pr-12 rounded-lg cursor-pointer text-left"
+                    aria-current={
+                      activeSessionId === s.id ? "true" : undefined
+                    }>
+                    <h4 className="font-medium text-[#191c1e] dark:text-[#e1e2ec] truncate">
+                      {s.title}
+                    </h4>
+                    <div className="mt-1.5 flex items-center justify-between gap-3 text-xs text-[#727785] dark:text-[#8c909f]">
+                      <p className="truncate">{formatRecency(s.updatedAt)}</p>
+                      <span className="shrink-0">{s.messages.length} msgs</span>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDeleteSession(s.id)}
+                    disabled={deletingSessionId === s.id}
+                    aria-label={`Delete session ${s.title}`}
+                    title="Delete session"
+                    className="absolute right-2 top-2 p-2 rounded-lg text-[#727785] hover:text-[#8b1d2c] hover:bg-[#f3d9dd] dark:text-[#8c909f] dark:hover:text-[#ffb4ab] dark:hover:bg-[#3b2129] transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                    {deletingSessionId === s.id ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={16} />
+                    )}
+                  </button>
                 </div>
-              </button>
+              </div>
             ))}
             {sessions.length === 0 && (
               <div className="flex flex-col items-center justify-center h-40 opacity-50">
