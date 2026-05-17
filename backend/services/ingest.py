@@ -183,7 +183,7 @@ def ingest_workflow() -> int:
     # Step 4: Embed in batches
     logger.info("Generating embeddings for %d chunks", len(texts_to_embed))
     embeddings: List[List[float]] = []
-    batch_size = 5
+    batch_size = settings.embedding_batch_size
     for i in range(0, len(texts_to_embed), batch_size):
         batch = texts_to_embed[i : i + batch_size]
         batch_embeddings = embed_batch(batch)

@@ -228,10 +228,26 @@ def get_ingest_status(workflow_id: str):
 
     If the workflow has completed successfully, the in-memory
     vector database is automatically reloaded.
+
+    Validates:
+    - workflow_id format (alphanumeric + hyphens, max 100 chars)
+
+    Returns:
+    - 200: Workflow status with steps
+    - 400: Invalid workflow_id format
+    - 404: Workflow not found
+    - 500: Server error
     """
-    # Basic input validation.
-    if not workflow_id or len(workflow_id) > 200:
-        raise HTTPException(status_code=400, detail="Invalid workflow ID")
+    # Validate workflow_id format to prevent injection/traversal attacks.
+    if not workflow_id or len(workflow_id) > 100:
+        raise HTTPException(status_code=400, detail="Invalid workflow ID: must be 1-100 characters")
+
+    # Allow alphanumeric, hyphens, underscores only
+    if not all(c.isalnum() or c in "-_" for c in workflow_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid workflow ID: only alphanumeric, hyphens, and underscores allowed",
+        )
 
     try:
         status = ingest_dbos.get_workflow_status(workflow_id)
@@ -299,8 +315,8 @@ def get_ingest_status(workflow_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception("Error fetching workflow status")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Error fetching workflow status for %s", workflow_id)
+        raise HTTPException(status_code=500, detail="Error fetching workflow status")
 
 
 # ── Delete ───────────────────────────────────────────────────────────────────

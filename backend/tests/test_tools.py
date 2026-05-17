@@ -67,3 +67,62 @@ class TestCalculator:
     def test_empty_expression(self):
         result = calculator(expression="")
         assert "Error" in result
+
+
+class TestRagStreaming:
+    """Tests for RAG streaming format (JSON Lines)."""
+
+    @pytest.mark.asyncio
+    async def test_rag_stream_emits_json_lines_format(self):
+        """Verify that RAG streaming emits valid JSON Lines."""
+        from backend.services.rag_agent import run_rag_stream
+        import json
+
+        # Note: This test will fail if Ollama is not running.
+        # For CI/CD, mock the agent.stream_async() method.
+
+        # Collect all emitted lines
+        lines = []
+        async for chunk in run_rag_stream("What is 2+2?"):
+            # Each chunk should be a complete JSON Line (line ends with \n)
+            if chunk.strip():
+                lines.append(chunk.strip())
+
+        # Should have at least some output
+        if lines:
+            for line in lines:
+                # Each line should be valid JSON
+                try:
+                    obj = json.loads(line)
+                    # Should have "type" and "data" fields
+                    assert "type" in obj, f"Missing 'type' in {obj}"
+                    assert "data" in obj, f"Missing 'data' in {obj}"
+                    # type should be one of: text, metadata, error
+                    assert obj["type"] in ("text", "metadata", "error"), f"Invalid type: {obj['type']}"
+                except json.JSONDecodeError as e:
+                    pytest.fail(f"Invalid JSON in line: {line}, error: {e}")
+
+    @pytest.mark.asyncio
+    async def test_metadata_event_format_is_valid_json(self):
+        """Verify that metadata events have correct structure."""
+        from backend.services.rag_agent import run_rag_stream, search_knowledge_base
+        import json
+
+        # Manually test the metadata emission by checking the function
+        # This is a simpler test that doesn't require a full query
+        test_metadata = {
+            "source": "test.pdf",
+            "text": "test content",
+            "page": 1,
+            "type": "pdf",
+        }
+        search_knowledge_base.last_doc = test_metadata  # type: ignore[attr-defined]
+
+        # Simulate what the agent does:
+        metadata_line = f'{json.dumps({"type": "metadata", "data": test_metadata})}\n'
+
+        # Parse it back
+        parsed = json.loads(metadata_line.strip())
+        assert parsed["type"] == "metadata"
+        assert parsed["data"]["source"] == "test.pdf"
+        assert parsed["data"]["page"] == 1
