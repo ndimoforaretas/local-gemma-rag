@@ -34,7 +34,9 @@ export function KnowledgeSync() {
   const [syncError, setSyncError] = useState<string | null>(null);
   const [deletingFilename, setDeletingFilename] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState<SortOption>("name-asc");
+  const [isDragActive, setIsDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragDepthRef = useRef(0);
 
   const { data: kbFolders = [], refetch: refetchKB } = useQuery<KBFolder[]>({
     queryKey: ["kbFolders"],
@@ -170,17 +172,71 @@ export function KnowledgeSync() {
     },
   });
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
+  const uploadFiles = (files: FileList | File[]) => {
+    const selectedFiles = Array.from(files);
+    if (selectedFiles.length === 0) return;
+
+    const pdfFiles = selectedFiles.filter((file) =>
+      file.name.toLowerCase().endsWith(".pdf"),
+    );
+
+    if (pdfFiles.length === 0) {
+      setSyncStatus("ERROR");
+      setSyncNotice(null);
+      setSyncError("Only PDF files are supported.");
+      return;
+    }
+
     setSyncStatus("UPLOADING");
     setSyncNotice(null);
     setSyncError(null);
+
     const formData = new FormData();
-    for (let i = 0; i < e.target.files.length; i++) {
-      formData.append("files", e.target.files[i]);
+    for (const file of pdfFiles) {
+      formData.append("files", file);
     }
+
     uploadMutation.mutate(formData);
+  };
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    uploadFiles(e.target.files);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const isFileDrag = (e: React.DragEvent<HTMLDivElement>) =>
+    Array.from(e.dataTransfer.types).includes("Files");
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!canUpload || !isFileDrag(e)) return;
+    e.preventDefault();
+    dragDepthRef.current += 1;
+    setIsDragActive(true);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!canUpload || !isFileDrag(e)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!canUpload || !isFileDrag(e)) return;
+    e.preventDefault();
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) {
+      setIsDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!canUpload) return;
+    e.preventDefault();
+    dragDepthRef.current = 0;
+    setIsDragActive(false);
+    if (!e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
+    uploadFiles(e.dataTransfer.files);
   };
 
   // Helper to determine step status
@@ -290,13 +346,27 @@ export function KnowledgeSync() {
     <div className="p-4 sm:p-6 lg:p-8 h-full overflow-y-auto">
       <div className="max-w-5xl mx-auto flex flex-col gap-6 sm:gap-8">
         {/* Action Bar: surface-container bg */}
-        <div className="bg-[#eceef0] dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-4 sm:p-6 lg:p-8 flex flex-col gap-4 sm:gap-5 sm:flex-row sm:items-center sm:justify-between transition-colors duration-300">
+        <div
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`bg-[#eceef0] dark:bg-[#1d2027] border rounded-2xl p-4 sm:p-6 lg:p-8 flex flex-col gap-4 sm:gap-5 sm:flex-row sm:items-center sm:justify-between transition-colors duration-300 ${
+            isDragActive
+              ? "border-[#a855f7] ring-2 ring-[#a855f7]/35"
+              : "border-[#c2c6d6] dark:border-[#424754]"
+          }`}>
           <div className="min-w-0">
             <h3 className="text-xl sm:text-2xl font-semibold mb-1.5 sm:mb-2 text-[#191c1e] dark:text-[#e1e2ec]">
               Knowledge Base Management
             </h3>
             <p className="text-sm sm:text-base text-[#424754] dark:text-[#8c909f]">
               Upload PDFs and sync them into your local vector store.
+            </p>
+            <p className="mt-2 text-xs sm:text-sm text-[#727785] dark:text-[#8c909f]">
+              {isDragActive
+                ? "Drop PDF files to upload"
+                : "Drag and drop PDFs here, or use Upload Documents"}
             </p>
             <div className="mt-3 inline-flex items-center text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#d0e1fb] dark:bg-[#32353c] text-[#0058be] dark:text-[#adc6ff]">
               Status: {syncStatus}
