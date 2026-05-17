@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef, useEffect, useId } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
 interface TooltipProps {
   content: string;
@@ -24,6 +24,8 @@ const arrowClasses = {
 export function Tooltip({ content, position = 'top', children }: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tooltipId = useId();
+  const prefersReducedMotion = useReducedMotion();
 
   const showTooltip = () => {
     timerRef.current = setTimeout(() => setVisible(true), 300);
@@ -36,9 +38,21 @@ export function Tooltip({ content, position = 'top', children }: TooltipProps) {
 
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
+  useEffect(() => {
+    const onEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        hideTooltip();
+      }
+    };
+
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, []);
+
   return (
     <div
       className="relative inline-flex items-center justify-center"
+      aria-describedby={visible ? tooltipId : undefined}
       onMouseEnter={showTooltip}
       onMouseLeave={hideTooltip}
       onFocus={showTooltip}
@@ -48,11 +62,12 @@ export function Tooltip({ content, position = 'top', children }: TooltipProps) {
       <AnimatePresence>
         {visible && (
           <motion.div
+            id={tooltipId}
             role="tooltip"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.12 }}
+            initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.9 }}
+            animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.9 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.12 }}
             className={`absolute z-50 pointer-events-none whitespace-nowrap ${positionClasses[position]}`}
           >
             <div className="bg-slate-800 dark:bg-slate-900 text-white text-xs font-medium px-2.5 py-1.5 rounded-lg shadow-xl border border-slate-700 dark:border-slate-600">
