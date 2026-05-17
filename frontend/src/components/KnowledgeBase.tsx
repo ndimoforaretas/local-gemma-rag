@@ -154,7 +154,11 @@ export function KnowledgeBase() {
       let fullText = "";
       let buffer = "";
       let streamMode: "unknown" | "ndjson" | "plain" = "unknown";
-      const READ_TIMEOUT_MS = 8000;
+      const FIRST_CHUNK_TIMEOUT_MS = 30000;
+      const STREAM_IDLE_TIMEOUT_MS = 15000;
+      const MAX_TIMEOUT_RETRIES = 2;
+      let hasReceivedChunk = false;
+      let timeoutRetries = 0;
 
       const aiMsgId = Date.now().toString() + "-ai";
       updateSessionMessages(currentSessionId, (prev) => [
@@ -214,9 +218,9 @@ export function KnowledgeBase() {
           .join("\n");
       };
 
-      const readWithTimeout = async (): Promise<
-        ReadableStreamReadResult<Uint8Array>
-      > => {
+      const readWithTimeout = async (
+        timeoutMs: number,
+      ): Promise<ReadableStreamReadResult<Uint8Array>> => {
         let timeoutId: ReturnType<typeof setTimeout> | null = null;
         try {
           return await Promise.race([
@@ -224,7 +228,7 @@ export function KnowledgeBase() {
             new Promise<never>((_, reject) => {
               timeoutId = setTimeout(() => {
                 reject(new Error("Stream read timeout"));
-              }, READ_TIMEOUT_MS);
+              }, timeoutMs);
             }),
           ]);
         } finally {
@@ -237,10 +241,21 @@ export function KnowledgeBase() {
         let value: Uint8Array | undefined;
 
         try {
-          const result = await readWithTimeout();
+          const result = await readWithTimeout(
+            hasReceivedChunk ? STREAM_IDLE_TIMEOUT_MS : FIRST_CHUNK_TIMEOUT_MS,
+          );
           done = result.done;
           value = result.value;
+          timeoutRetries = 0;
         } catch (err) {
+          const isTimeoutError =
+            err instanceof Error && err.message.includes("Stream read timeout");
+
+          if (isTimeoutError && timeoutRetries < MAX_TIMEOUT_RETRIES) {
+            timeoutRetries += 1;
+            continue;
+          }
+
           // If we already have useful text, end gracefully instead of hanging forever.
           if (fullText.trim()) {
             await reader.cancel().catch(() => undefined);
@@ -263,6 +278,7 @@ export function KnowledgeBase() {
           break;
         }
 
+        hasReceivedChunk = true;
         const chunk = decoder.decode(value, { stream: true });
 
         // Fallback compatibility: handle plain text/SSE streams in addition to NDJSON.
