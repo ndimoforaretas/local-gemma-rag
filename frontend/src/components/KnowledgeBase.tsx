@@ -153,6 +153,8 @@ export function KnowledgeBase() {
       const decoder = new TextDecoder();
       let fullText = "";
       let buffer = "";
+      let streamMode: "unknown" | "ndjson" | "plain" = "unknown";
+      const READ_TIMEOUT_MS = 8000;
 
       const aiMsgId = Date.now().toString() + "-ai";
       updateSessionMessages(currentSessionId, (prev) => [
@@ -160,47 +162,147 @@ export function KnowledgeBase() {
         { id: aiMsgId, role: "ai", content: "" },
       ]);
 
+      const appendText = (text: string) => {
+        if (!text) return;
+        fullText += text;
+        updateSessionMessages(currentSessionId, (prev) =>
+          prev.map((msg) =>
+            msg.id === aiMsgId ? { ...msg, content: fullText } : msg,
+          ),
+        );
+      };
+
+      const handleMetadataEvent = (meta: any) => {
+        const path = meta.source.includes(" > ")
+          ? meta.source.split(" > ").slice(0, 2).join(" > ")
+          : "Documents > Uploads";
+        const title = meta.source.includes(" > ")
+          ? meta.source.split(" > ").pop()
+          : meta.source;
+
+        setContextItems((prev) => {
+          if (prev.some((item) => item.title === title)) return prev;
+          return [...prev, { title, type: meta.type, path }];
+        });
+      };
+
+      const processNdjsonLine = (line: string): boolean => {
+        try {
+          const event = JSON.parse(line);
+
+          if (event.type === "text" && event.data) {
+            appendText(String(event.data));
+          } else if (event.type === "metadata" && event.data) {
+            handleMetadataEvent(event.data);
+          } else if (event.type === "error") {
+            console.error("RAG error:", event.data);
+          }
+          return true;
+        } catch {
+          return false;
+        }
+      };
+
+      const normalizeSseText = (raw: string): string => {
+        if (!raw.includes("data:")) return raw;
+        return raw
+          .split("\n")
+          .map((line) => {
+            if (line.startsWith("data:")) return line.slice(5).trimStart();
+            return "";
+          })
+          .join("\n");
+      };
+
+      const readWithTimeout = async (): Promise<
+        ReadableStreamReadResult<Uint8Array>
+      > => {
+        let timeoutId: ReturnType<typeof setTimeout> | null = null;
+        try {
+          return await Promise.race([
+            reader.read(),
+            new Promise<never>((_, reject) => {
+              timeoutId = setTimeout(() => {
+                reject(new Error("Stream read timeout"));
+              }, READ_TIMEOUT_MS);
+            }),
+          ]);
+        } finally {
+          if (timeoutId) clearTimeout(timeoutId);
+        }
+      };
+
       while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+        let done = false;
+        let value: Uint8Array | undefined;
 
-        buffer += decoder.decode(value, { stream: true });
+        try {
+          const result = await readWithTimeout();
+          done = result.done;
+          value = result.value;
+        } catch (err) {
+          // If we already have useful text, end gracefully instead of hanging forever.
+          if (fullText.trim()) {
+            await reader.cancel().catch(() => undefined);
+            break;
+          }
+          throw err;
+        }
 
-        // Process complete lines (JSON Lines format)
+        if (done) {
+          const tail = buffer.trim();
+          if (tail) {
+            if (streamMode === "ndjson") {
+              if (!processNdjsonLine(tail)) {
+                appendText(normalizeSseText(tail));
+              }
+            } else {
+              appendText(normalizeSseText(buffer));
+            }
+          }
+          break;
+        }
+
+        const chunk = decoder.decode(value, { stream: true });
+
+        // Fallback compatibility: handle plain text/SSE streams in addition to NDJSON.
+        if (streamMode === "plain") {
+          appendText(normalizeSseText(chunk));
+          continue;
+        }
+
+        buffer += chunk;
+
+        if (streamMode === "unknown") {
+          const probe = buffer.trimStart();
+          if (probe && !probe.startsWith("{")) {
+            streamMode = "plain";
+            appendText(normalizeSseText(buffer));
+            buffer = "";
+            continue;
+          }
+        }
+
+        // Process complete lines for NDJSON mode.
         const lines = buffer.split("\n");
-        buffer = lines.pop() || ""; // Keep the incomplete line in buffer
+        buffer = lines.pop() || "";
 
         for (const line of lines) {
-          if (!line.trim()) continue;
+          const trimmed = line.trim();
+          if (!trimmed) continue;
 
-          try {
-            const event = JSON.parse(line);
+          if (processNdjsonLine(trimmed)) {
+            streamMode = "ndjson";
+            continue;
+          }
 
-            if (event.type === "text" && event.data) {
-              fullText += event.data;
-              updateSessionMessages(currentSessionId, (prev) =>
-                prev.map((msg) =>
-                  msg.id === aiMsgId ? { ...msg, content: fullText } : msg,
-                ),
-              );
-            } else if (event.type === "metadata" && event.data) {
-              const meta = event.data;
-              const path = meta.source.includes(" > ")
-                ? meta.source.split(" > ").slice(0, 2).join(" > ")
-                : "Documents > Uploads";
-              const title = meta.source.includes(" > ")
-                ? meta.source.split(" > ").pop()
-                : meta.source;
-
-              setContextItems((prev) => {
-                if (prev.some((item) => item.title === title)) return prev;
-                return [...prev, { title, type: meta.type, path }];
-              });
-            } else if (event.type === "error") {
-              console.error("RAG error:", event.data);
-            }
-          } catch (e) {
-            console.error("Failed to parse JSON Line:", line, e);
+          if (streamMode === "unknown") {
+            streamMode = "plain";
+            appendText(normalizeSseText(trimmed + "\n"));
+          } else if (streamMode === "plain") {
+            appendText(normalizeSseText(trimmed + "\n"));
+          } else {
+            console.error("Failed to parse NDJSON line:", line);
           }
         }
       }
