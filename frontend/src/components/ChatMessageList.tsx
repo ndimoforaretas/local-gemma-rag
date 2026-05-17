@@ -9,6 +9,76 @@ marked.setOptions({
   breaks: true,
 });
 
+function isLikelyNumericCell(value: string): boolean {
+  const normalized = value.replace(/\u00a0/g, " ").trim();
+  if (!normalized) {
+    return false;
+  }
+
+  const compact = normalized
+    .replace(/^[\s$€£¥₹]+/, "")
+    .replace(/[,%\s$€£¥₹()]/g, "")
+    .replace(/,/g, "");
+
+  return /^[-+]?\d*\.?\d+$/.test(compact);
+}
+
+function addNumericColumnClasses(html: string): string {
+  if (typeof window === "undefined" || typeof DOMParser === "undefined") {
+    return html;
+  }
+
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const tables = doc.querySelectorAll("table");
+
+  tables.forEach((table) => {
+    const allRows = Array.from(table.querySelectorAll("tr"));
+    if (allRows.length < 2) {
+      return;
+    }
+
+    const bodyRows = Array.from(table.querySelectorAll("tbody tr"));
+    const sampleRows = bodyRows.length > 0 ? bodyRows : allRows.slice(1);
+    const maxCols = allRows.reduce(
+      (max, row) => Math.max(max, row.children.length),
+      0,
+    );
+
+    for (let col = 0; col < maxCols; col += 1) {
+      let numericCount = 0;
+      let checkedCount = 0;
+
+      sampleRows.forEach((row) => {
+        const cell = row.children[col] as HTMLElement | undefined;
+        if (!cell) {
+          return;
+        }
+
+        const text = cell.textContent?.trim() ?? "";
+        if (!text) {
+          return;
+        }
+
+        checkedCount += 1;
+        if (isLikelyNumericCell(text)) {
+          numericCount += 1;
+        }
+      });
+
+      if (checkedCount > 0 && numericCount / checkedCount >= 0.75) {
+        allRows.forEach((row) => {
+          const cell = row.children[col] as HTMLElement | undefined;
+          if (cell) {
+            cell.classList.add("is-numeric-column");
+          }
+        });
+      }
+    }
+  });
+
+  return doc.body.innerHTML;
+}
+
 interface ChatMessageListProps {
   messages: Message[];
   isLoading: boolean;
@@ -105,7 +175,9 @@ export function ChatMessageList({
                       <div
                         className="ai-response prose prose-slate dark:prose-invert max-w-none"
                         dangerouslySetInnerHTML={{
-                          __html: marked.parse(msg.content) as string,
+                          __html: addNumericColumnClasses(
+                            marked.parse(msg.content) as string,
+                          ),
                         }}
                       />
                     ) : (
