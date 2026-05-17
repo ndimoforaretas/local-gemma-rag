@@ -25,7 +25,9 @@ export function KnowledgeSync() {
   >("IDLE");
   const [steps, setSteps] = useState<Step[]>([]);
   const [workflowId, setWorkflowId] = useState<string | null>(null);
-  const [expandedFolder, setExpandedFolder] = useState<string | null>(null);
+  const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [deletingFilename, setDeletingFilename] = useState<string | null>(null);
@@ -113,6 +115,18 @@ export function KnowledgeSync() {
     );
     if (!confirmed) return;
     deleteMutation.mutate(filename);
+  };
+
+  const toggleFolder = (folderName: string) => {
+    setCollapsedFolders((prev) => {
+      const next = new Set(prev);
+      if (next.has(folderName)) {
+        next.delete(folderName);
+      } else {
+        next.add(folderName);
+      }
+      return next;
+    });
   };
 
   const startSyncMutation = useMutation({
@@ -385,13 +399,11 @@ export function KnowledgeSync() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {kbFolders.map((f, i) => {
                 const allFiles = f.subfolders?.flatMap((s) => s.files) || [];
-                const isExpanded = expandedFolder === f.name;
+                const isExpanded = !collapsedFolders.has(f.name);
                 return (
                   <div
                     key={i}
-                    onClick={() =>
-                      setExpandedFolder(isExpanded ? null : f.name)
-                    }
+                    onClick={() => toggleFolder(f.name)}
                     className="bg-[#ffffff] dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-4 sm:p-6 transition-all hover:border-[#a855f7] dark:hover:border-[#a855f7] cursor-pointer flex flex-col">
                     <div className="flex items-start justify-between mb-4">
                       <div className="w-12 h-12 rounded-xl bg-[#d0e1fb] dark:bg-[#32353c] flex items-center justify-center text-[#0058be] dark:text-[#adc6ff]">
