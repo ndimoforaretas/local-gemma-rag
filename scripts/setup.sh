@@ -31,6 +31,7 @@ command -v python3 >/dev/null 2>&1 || { print_err "Python 3 not found. Install f
 command -v node >/dev/null 2>&1 || { print_err "Node.js not found. Install from https://nodejs.org"; exit 1; }
 command -v docker >/dev/null 2>&1 || { print_err "Docker not found. Install Docker Desktop from https://docker.com"; exit 1; }
 command -v ollama >/dev/null 2>&1 || { print_err "Ollama not found. Install from https://ollama.com/download"; exit 1; }
+ollama list >/dev/null 2>&1 || { print_err "Ollama is installed but not running. Open the Ollama app first, then re-run this script."; exit 1; }
 
 echo "  ✓ Python $(python3 --version 2>&1 | awk '{print $2}')"
 echo "  ✓ Node $(node --version)"
@@ -76,7 +77,7 @@ if [ ! -d ".venv" ]; then
 fi
 source .venv/bin/activate
 pip install --upgrade pip --quiet
-pip install -r requirements.txt --quiet
+pip install -r requirements.txt --quiet --no-cache-dir
 echo "  ✓ Python dependencies installed"
 
 # ── DBOS migration ────────────────────────────────────────
@@ -86,7 +87,7 @@ dbos migrate
 # ── Frontend build ────────────────────────────────────────
 print_step "Building frontend..."
 cd frontend
-npm install --silent 2>/dev/null
+npm install --silent
 npm run build
 cd "$ROOT_DIR"
 

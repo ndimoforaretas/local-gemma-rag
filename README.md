@@ -210,8 +210,8 @@ cd local-gemma-rag
 Make sure the **Ollama** application is running, then pull the two models:
 
 ```bash
-ollama pull gemma4:e4b          # Chat model (~2.8 GB)
-ollama pull embeddinggemma      # Embedding model (~1.6 GB)
+ollama pull gemma4:e4b          # Chat model (~9.6 GB)
+ollama pull embeddinggemma      # Embedding model (~622 MB)
 ```
 
 ### 3. Start the PostgreSQL database
