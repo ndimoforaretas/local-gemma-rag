@@ -31,8 +31,14 @@ router = APIRouter(tags=["Knowledge Base"])
 settings = get_settings()
 
 # Upload constraints
-_ALLOWED_EXTENSIONS = {".pdf"}
-_ALLOWED_MIME_TYPES = {"application/pdf", "application/octet-stream"}
+_ALLOWED_EXTENSIONS = {".pdf", ".txt", ".md", ".csv"}
+_ALLOWED_MIME_TYPES = {
+    "application/pdf",
+    "application/octet-stream",
+    "text/plain",
+    "text/markdown",
+    "text/csv",
+}
 _MAX_FILES_PER_REQUEST = 20
 _MAX_FILE_SIZE_BYTES = settings.max_upload_size_mb * 1024 * 1024
 
@@ -145,7 +151,7 @@ def _validate_upload(file: UploadFile) -> Optional[str]:
     _, ext = os.path.splitext(safe_name)
 
     if ext.lower() not in _ALLOWED_EXTENSIONS:
-        return f"Rejected '{safe_name}': only PDF files are accepted"
+        return f"Rejected '{safe_name}': only {', '.join(_ALLOWED_EXTENSIONS)} files are accepted"
 
     if file.content_type and file.content_type not in _ALLOWED_MIME_TYPES:
         return f"Rejected '{safe_name}': invalid MIME type '{file.content_type}'"
@@ -367,3 +373,74 @@ async def delete_document(filename: str):
     except Exception as e:
         logger.exception("Error deleting document %s", safe_name)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Save-to-KB from chat attachments ────────────────────────────────────────
+
+import base64
+from pydantic import BaseModel
+
+
+class _SaveToKBFileItem(BaseModel):
+    name: str
+    mime_type: str
+    data: str  # base64
+
+
+class _SaveToKBRequest(BaseModel):
+    files: list[_SaveToKBFileItem]
+
+
+@router.post(
+    "/api/save-to-kb",
+    responses={
+        200: {"description": "Files saved and ingestion started"},
+        400: {"description": "No valid files provided"},
+    },
+)
+async def save_to_kb(request: _SaveToKBRequest):
+    """
+    Accept base64-encoded text files from the chat UI, save them to the
+    docs directory, and trigger the durable ingestion workflow.
+    """
+    os.makedirs(settings.docs_dir, exist_ok=True)
+    saved: list[str] = []
+
+    for item in request.files:
+        # Sanitise filename
+        safe_name = os.path.basename(item.name).strip()
+        if not safe_name:
+            continue
+
+        _, ext = os.path.splitext(safe_name)
+        if ext.lower() not in _ALLOWED_EXTENSIONS:
+            logger.warning("save-to-kb: skipping '%s' (unsupported extension)", safe_name)
+            continue
+
+        try:
+            raw = base64.b64decode(item.data)
+            dest = os.path.join(settings.docs_dir, safe_name)
+            with open(dest, "wb") as f:
+                f.write(raw)
+            saved.append(safe_name)
+            logger.info("save-to-kb: wrote %s (%d bytes)", safe_name, len(raw))
+        except Exception:
+            logger.exception("save-to-kb: failed to write %s", safe_name)
+
+    if not saved:
+        raise HTTPException(status_code=400, detail="No valid files could be saved")
+
+    # Auto-trigger ingestion
+    try:
+        handle = ingest_dbos.start_workflow(ingest_workflow)
+        workflow_id = handle.workflow_id
+        logger.info("save-to-kb: ingestion workflow started: %s", workflow_id)
+    except Exception:
+        logger.exception("save-to-kb: failed to start ingestion")
+        workflow_id = None
+
+    return {
+        "status": "success",
+        "saved_files": saved,
+        "workflow_id": workflow_id,
+    }

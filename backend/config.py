@@ -40,7 +40,7 @@ class Settings(BaseSettings):
 
     # --- Server ---
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:8000"]
-    max_upload_size_mb: int = 50
+    max_upload_size_mb: int = 200
 
     # --- Logging ---
     log_level: str = "INFO"

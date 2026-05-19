@@ -53,6 +53,17 @@ def get_pdf_pages(path: str) -> List[Tuple[str, int]]:
         logger.exception("Error reading PDF %s", path)
         return []
 
+def get_text_pages(path: str) -> List[Tuple[str, int]]:
+    """Extract text from a plain text, markdown, or csv file."""
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            text = f.read()
+            if text.strip():
+                return [(text.strip(), 1)]
+    except Exception:
+        logger.exception("Error reading text file %s", path)
+    return []
+
 
 # ── Durable workflow steps ───────────────────────────────────────────────────
 
@@ -73,7 +84,7 @@ def list_document_files() -> List[str]:
     files: List[str] = []
     if os.path.exists(settings.docs_dir):
         for filename in os.listdir(settings.docs_dir):
-            if filename.endswith(".pdf") and filename not in indexed_files:
+            if any(filename.lower().endswith(ext) for ext in [".pdf", ".txt", ".md", ".csv"]) and filename not in indexed_files:
                 files.append(filename)
 
     logger.info("Found %d new documents to ingest", len(files))
@@ -82,17 +93,27 @@ def list_document_files() -> List[str]:
 
 @DBOS.step()
 def process_single_document(filename: str) -> List[Dict]:
-    """Process a single PDF and extract page-level content."""
+    """Process a single document and extract content."""
     path = os.path.join(settings.docs_dir, filename)
     logger.info("Processing document: %s", filename)
 
-    pages = get_pdf_pages(path)
+    ext = os.path.splitext(filename)[1].lower()
+    if ext == ".pdf":
+        pages = get_pdf_pages(path)
+        doc_type = "pdf"
+    elif ext in [".txt", ".md", ".csv"]:
+        pages = get_text_pages(path)
+        doc_type = "text"
+    else:
+        logger.warning("Unsupported file type: %s", ext)
+        return []
+
     docs: List[Dict] = []
     for text, page_num in pages:
         docs.append({
             "source": filename,
             "content": text,
-            "type": "pdf",
+            "type": doc_type,
             "page": page_num,
         })
     return docs

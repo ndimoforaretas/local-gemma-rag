@@ -191,14 +191,15 @@ export function KnowledgeSync() {
     const selectedFiles = Array.from(files);
     if (selectedFiles.length === 0) return;
 
-    const pdfFiles = selectedFiles.filter((file) =>
-      file.name.toLowerCase().endsWith(".pdf"),
-    );
+    const validFiles = selectedFiles.filter((file) => {
+      const name = file.name.toLowerCase();
+      return name.endsWith(".pdf") || name.endsWith(".txt") || name.endsWith(".md") || name.endsWith(".csv");
+    });
 
-    if (pdfFiles.length === 0) {
+    if (validFiles.length === 0) {
       setSyncStatus("ERROR");
       setSyncNotice(null);
-      setSyncError("Only PDF files are supported.");
+      setSyncError("Only PDF, TXT, MD, and CSV files are supported.");
       return;
     }
 
@@ -207,7 +208,7 @@ export function KnowledgeSync() {
     setSyncError(null);
 
     const formData = new FormData();
-    for (const file of pdfFiles) {
+    for (const file of validFiles) {
       formData.append("files", file);
     }
 
@@ -393,7 +394,7 @@ export function KnowledgeSync() {
               Knowledge Base Management
             </h3>
             <p className="text-sm sm:text-base text-[#424754] dark:text-[#8c909f]">
-              Upload PDFs and sync them into your local vector store.
+              Upload documents and sync them into your local vector store.
             </p>
             <div className="mt-3 inline-flex items-center text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#d0e1fb] dark:bg-[#32353c] text-[#0058be] dark:text-[#adc6ff]">
               Status: {syncStatus}
@@ -405,7 +406,7 @@ export function KnowledgeSync() {
             ref={fileInputRef}
             onChange={handleUpload}
             multiple
-            accept=".pdf"
+            accept=".pdf,.txt,.md,.csv"
             className="hidden"
             aria-hidden="true"
           />
@@ -441,7 +442,7 @@ export function KnowledgeSync() {
 
               <p className="text-2xl sm:text-3xl font-semibold text-[#727785] dark:text-[#8c909f] tracking-tight">
                 {isDragActive
-                  ? "Drop PDFs to Upload"
+                  ? "Drop Files to Upload"
                   : "Drag & Drop Files Here"}
               </p>
 
@@ -450,7 +451,7 @@ export function KnowledgeSync() {
               </p>
 
               <Tooltip
-                content="Select PDF files to add to your knowledge base"
+                content="Select files to add to your knowledge base"
                 position="top">
                 <button
                   onClick={() => fileInputRef.current?.click()}
@@ -466,7 +467,7 @@ export function KnowledgeSync() {
               <p
                 id={dropZoneHintId}
                 className="text-xs sm:text-sm text-[#727785] dark:text-[#8c909f]">
-                PDF files only
+                PDF, TXT, MD, CSV files only
               </p>
             </div>
           </div>
@@ -725,7 +726,7 @@ export function KnowledgeSync() {
                 No documents yet
               </h4>
               <p className="mt-2 text-sm sm:text-base text-[#424754] dark:text-[#8c909f]">
-                Upload PDFs to build your knowledge base and enable
+                Upload documents to build your knowledge base and enable
                 document-grounded answers.
               </p>
             </div>

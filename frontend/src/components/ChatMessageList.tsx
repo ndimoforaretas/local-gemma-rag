@@ -1,8 +1,8 @@
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Bot, User, Copy, Check, Download } from "lucide-react";
+import { Bot, User, Copy, Check, Download, FileText } from "lucide-react";
 import { marked } from "marked";
 import { Tooltip } from "./Tooltip";
-import type { Message } from "../types/api";
+import type { Message, MessageAttachment } from "../types/api";
 
 marked.setOptions({
   gfm: true,
@@ -233,9 +233,32 @@ export function ChatMessageList({
                         }}
                       />
                     ) : (
-                      <p className="whitespace-pre-wrap break-words leading-relaxed">
-                        {msg.content}
-                      </p>
+                      <div>
+                        {msg.attachments && msg.attachments.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {msg.attachments.map((att: MessageAttachment, i: number) =>
+                              att.mime_type.startsWith("image/") && att.thumbnail ? (
+                                <img
+                                  key={i}
+                                  src={att.thumbnail}
+                                  alt={att.name || "attachment"}
+                                  className="w-16 h-16 rounded-lg object-cover border border-white/30"
+                                />
+                              ) : (
+                                <div
+                                  key={i}
+                                  className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/20 text-white/90 text-xs font-medium">
+                                  <FileText size={14} />
+                                  <span className="max-w-[100px] truncate">{att.name || "file"}</span>
+                                </div>
+                              )
+                            )}
+                          </div>
+                        )}
+                        <p className="whitespace-pre-wrap break-words leading-relaxed">
+                          {msg.content}
+                        </p>
+                      </div>
                     )}
                   </div>
 
