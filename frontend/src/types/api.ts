@@ -10,6 +10,7 @@
 export interface Attachment {
   mime_type: string;
   data: string; // base64 encoded string
+  name?: string;
 }
 
 export interface RagRequest {

@@ -14,6 +14,7 @@ from typing import Optional
 class Attachment(BaseModel):
     mime_type: str
     data: str
+    name: Optional[str] = None
 
 
 class RagRequest(BaseModel):

@@ -25,7 +25,7 @@ export function ChatInput({
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-    const newAttachments: (Attachment & { name?: string })[] = [];
+    const newAttachments: Attachment[] = [];
     for (const file of Array.from(e.target.files)) {
       if (!file.type.startsWith("image/") && !file.type.startsWith("text/")) continue;
       

@@ -157,11 +157,11 @@ export function KnowledgeBase() {
     for (const att of attachments) {
       if (att.mime_type.startsWith("image/")) {
         const thumb = await generateThumbnail(att.data, att.mime_type);
-        messagePreviews.push({ mime_type: att.mime_type, thumbnail: thumb, name: (att as any).name });
+        messagePreviews.push({ mime_type: att.mime_type, thumbnail: thumb, name: att.name });
       } else {
-        messagePreviews.push({ mime_type: att.mime_type, name: (att as any).name || "file.txt" });
+        messagePreviews.push({ mime_type: att.mime_type, name: att.name || "file.txt" });
         textFilesForKB.push({
-          name: (att as any).name || `file_${Date.now()}.txt`,
+          name: att.name || `file_${Date.now()}.txt`,
           mime_type: att.mime_type,
           data: att.data,
         });

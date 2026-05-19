@@ -74,6 +74,15 @@ async def run_rag_stream(query: str, attachments: Optional[list] = None) -> Asyn
                             "source": {"bytes": image_bytes},
                         }
                     })
+                elif att.mime_type.startswith("text/"):
+                    try:
+                        file_text = base64.b64decode(att.data).decode("utf-8", errors="replace")
+                        file_label = att.name or "attached file"
+                        content_blocks.append({
+                            "text": f"\n--- Attached file: {file_label} ---\n{file_text}\n--- End of file ---\n"
+                        })
+                    except Exception:
+                        logger.warning("Failed to decode text attachment")
             if content_blocks:
                 user_input = content_blocks
 
