@@ -599,9 +599,7 @@ export function KnowledgeBase() {
       </div>
 
       {/* Context Sidebar */}
-      <div className="hidden xl:block">
-        <ContextSidebar contextItems={contextItems} />
-      </div>
+      <ContextSidebar contextItems={contextItems} />
 
       {/* History Sidebar */}
       <div className="hidden lg:block">

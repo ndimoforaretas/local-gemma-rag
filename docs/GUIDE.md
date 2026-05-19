@@ -63,14 +63,13 @@ The Chat view is your primary interface with the AI. Open it by clicking **Chat*
 
 ### 3.1 Suggestion Cards
 
-When you start a **fresh conversation** (no messages yet), a grid of four clickable suggestion cards appears below the welcome message.
+When you start a **fresh conversation** (no messages yet), a grid of six clickable suggestion cards appears below the welcome message.
 
-- Each card contains a starter question tailored to what is actually in your knowledge base. If the KB is empty, you get four general-purpose questions instead.
-- **Click any card** — the question is pre-filled into the input box so you can read and edit it before sending.
+- Each card covers a common app feature or workflow.
+- **Click any card** — the question is sent immediately, triggering a full AI response.
 - The cards disappear automatically as soon as the conversation begins.
-- Suggestions are refreshed from the AI whenever the page loads, at most once every five minutes.
 
-> **Tip:** The cards are especially useful when someone else hands you a pre-loaded knowledge base and you want to quickly discover what topics it covers.
+> **Tip:** The cards are a quick way to explore what the app can do without having to type anything.
 
 ---
 
@@ -119,7 +118,7 @@ After you send a text file attachment, a **green bridge card** appears at the bo
 📁  Add "report.csv" to Knowledge Base?    [Add to KB]  [✕]
 ```
 
-- Click **Add to KB** to permanently save and index that file so future questions can reference it.
+- Click **Add to KB** (KB = Knowledge Base) to permanently save and index that file so future questions can reference it.
 - Click **✕** to dismiss without saving.
 - A spinner confirms the save is in progress; a green tick confirms success.
 
@@ -208,13 +207,17 @@ Open the Knowledge Base by clicking **Knowledge Base** in the sidebar. This is w
 
 ### 4.1 Uploading Documents
 
-**Method 1 — Click to browse:**
+Navigate to the **Knowledge Base** view and locate the dashed drop zone at the top of the page. You can add files using either of the following methods:
+
+#### Method 1 — Click to browse:
 
 1. Click anywhere inside the dashed drop zone.
-2. A file browser opens. Select one or more files.
-3. The upload and ingestion pipeline starts automatically.
+2. A file browser opens.
+3. Select one or more files.
+4. Click **Open** to confirm your selection.
+5. The upload and ingestion pipeline starts automatically.
 
-**Method 2 — Drag and drop:**
+#### Method 2 — Drag and drop:
 
 1. Drag one or more files from your file manager.
 2. Drop them anywhere onto the drop zone (it highlights in purple when a valid drag is detected).
@@ -264,11 +267,13 @@ Below the upload area, all indexed documents are displayed in a folder tree.
 
 ### 4.4 Deleting Documents
 
-Click the **trash icon** on any file row. A confirmation modal asks you to confirm before the file is removed. After deletion:
-
-- The file is soft-deleted from the vector index (marked as deleted, not physically removed from disk).
-- The document list refreshes immediately.
-- The AI will no longer find this document in future searches.
+- Click on **Knowledge Base** in the sidebar to open the document manager.
+- Click the **trash icon** on any file row.
+- A confirmation modal asks you to confirm before the file is removed.
+- After deletion:
+  - The file is soft-deleted from the vector index (marked as deleted, not physically removed from disk).
+  - The document list refreshes immediately.
+  - The AI will no longer find this document in future searches.
 
 > **To permanently remove the file** from disk, delete it from the `docs/` folder directly.
 
@@ -285,23 +290,6 @@ Click the **trash icon** on any file row. A confirmation modal asks you to confi
 | You want the AI to **synthesise across multiple documents** | Add all of them to the Knowledge Base                      |
 | You're uploading a **PDF**                                  | Knowledge Base only (chat attachments don't support PDF)   |
 | You want the AI to **see an image**                         | Chat attachment only (Knowledge Base doesn't index images) |
-
-### Recommended Knowledge Base organisation
-
-The ingestion pipeline preserves file paths, so organising your `docs/` folder in meaningful subfolders gives you better source citations:
-
-```
-docs/
-  Research/
-    paper-a.pdf
-    paper-b.pdf
-  Manuals/
-    product-manual.pdf
-  Notes/
-    meeting-notes.md
-```
-
-Citations in the Context sidebar will then appear as `Research > paper-a.pdf` rather than a flat filename.
 
 ---
 
@@ -323,8 +311,8 @@ Citations in the Context sidebar will then appear as `Research > paper-a.pdf` ra
 
 ### Use the suggestion cards strategically
 
-- When you load a new knowledge base prepared by someone else, click the suggestion cards to get an instant orientation of what topics are available.
-- The cards are regenerated every five minutes, so after a major ingestion they will reflect the new content if you refresh.
+- Click a suggestion card to instantly send a question about a common feature without typing anything.
+- The cards are always available at the start of a new conversation.
 
 ### Keyboard workflow
 
@@ -368,7 +356,7 @@ Not directly. PDFs must be indexed through the Knowledge Base. For one-off text 
 ---
 
 **Q: How many documents can I index?**
-There is no hard limit enforced by the app. Performance of the FAISS search will degrade gracefully as the index grows. For very large collections (thousands of large PDFs), consider grouping questions by topic and keeping the most relevant documents in separate `docs/` subfolders.
+There is no hard limit enforced by the app. Performance of the FAISS search will degrade gracefully as the index grows. For very large collections, consider whether you need all documents indexed simultaneously or can rotate subsets in and out.
 
 ---
 
@@ -378,12 +366,12 @@ Yes. The AI also has access to a calculator tool and a real-time clock tool. For
 ---
 
 **Q: What is the "Save to KB" card that appears after sending a file?**
-When you attach a text file in chat, the app offers to permanently index it into the Knowledge Base so you can continue querying it in future sessions. Click **Add to KB** to accept, or **✕** to skip. The file will then appear in the Knowledge Base view after the ingestion completes.
+When you attach a text file in chat, the app offers to permanently index it into the Knowledge Base (KB) so you can continue querying it in future sessions. Click **Add to KB** to accept, or **✕** to skip. The file will then appear in the Knowledge Base view after the ingestion completes.
 
 ---
 
-**Q: Why do the suggestion cards show generic questions instead of ones about my documents?**
-The knowledge base is empty or no documents have been successfully indexed yet. Upload and sync your documents (see §4) and the next time the cards refresh (on page load or after five minutes) they will reflect your actual content.
+**Q: What do the suggestion cards show?**
+The cards cover the most common app features and workflows. Click any card to send it as a question — the AI will answer from the knowledge base if relevant content is indexed.
 
 ---
 
