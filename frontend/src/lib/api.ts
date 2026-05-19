@@ -14,6 +14,10 @@ import type {
   WorkflowStatusResponse,
   HealthResponse,
   ChatSession,
+  Attachment,
+  RagRequest,
+  SaveToKBFile,
+  SaveToKBResponse,
 } from "../types/api";
 
 const API_BASE = ""; // same-origin in dev and production
@@ -39,11 +43,15 @@ async function handleJsonResponse<T>(resp: Response): Promise<T> {
 export const api = {
   // RAG streaming — returns the raw Response so the caller can read
   // the body as a stream.  NOT parsed as JSON.
-  ragStream: async (query: string): Promise<Response> => {
+  ragStream: async (query: string, attachments?: Attachment[]): Promise<Response> => {
+    const payload: RagRequest = { query };
+    if (attachments && attachments.length > 0) {
+      payload.attachments = attachments;
+    }
     const resp = await fetch(`${API_BASE}/rag`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify(payload),
     });
     if (!resp.ok) {
       let msg = "RAG request failed";
@@ -121,6 +129,16 @@ export const api = {
       },
     );
     return handleJsonResponse<StatusResponse>(resp);
+  },
+
+  // Save chat attachments to KB
+  saveToKB: async (files: SaveToKBFile[]): Promise<SaveToKBResponse> => {
+    const resp = await fetch(`${API_BASE}/api/save-to-kb`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ files }),
+    });
+    return handleJsonResponse<SaveToKBResponse>(resp);
   },
 
   // System health

@@ -7,8 +7,15 @@
 
 // ── Requests ────────────────────────────────────────────────────────
 
+export interface Attachment {
+  mime_type: string;
+  data: string; // base64 encoded string
+  name?: string;
+}
+
 export interface RagRequest {
   query: string;
+  attachments?: Attachment[];
 }
 
 // ── Generic ─────────────────────────────────────────────────────────
@@ -24,10 +31,17 @@ export interface ErrorResponse {
 
 // ── RAG / Chat ──────────────────────────────────────────────────────
 
+export interface MessageAttachment {
+  mime_type: string;
+  thumbnail?: string; // small base64 data URI for images
+  name?: string;      // original file name
+}
+
 export interface Message {
   id: string;
   role: 'user' | 'ai';
   content: string;
+  attachments?: MessageAttachment[];
 }
 
 export interface ContextItem {
@@ -90,6 +104,19 @@ export interface WorkflowStatusResponse {
   workflow_id: string;
   status: string;
   steps: WorkflowStep[];
+}
+
+// ── Save to KB ──────────────────────────────────────────────────────
+
+export interface SaveToKBFile {
+  name: string;
+  mime_type: string;
+  data: string; // base64
+}
+
+export interface SaveToKBResponse extends StatusResponse {
+  workflow_id?: string;
+  saved_files: string[];
 }
 
 // ── System ──────────────────────────────────────────────────────────

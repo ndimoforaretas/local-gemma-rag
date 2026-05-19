@@ -1,5 +1,13 @@
 import { useState, useRef, useEffect } from "react";
-import { Bot, History, Plus } from "lucide-react";
+import {
+  Bot,
+  History,
+  Plus,
+  FolderPlus,
+  Loader2,
+  CheckCircle2,
+  X,
+} from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tooltip } from "./Tooltip";
 import { ChatMessageList } from "./ChatMessageList";
@@ -8,7 +16,35 @@ import { ContextSidebar } from "./ContextSidebar";
 import { HistorySidebar } from "./HistorySidebar";
 import { ConfirmationModal } from "./ConfirmationModal";
 import { api } from "../lib/api";
-import type { ChatSession, Message, ContextItem } from "../types/api";
+import type {
+  ChatSession,
+  Message,
+  ContextItem,
+  Attachment,
+  MessageAttachment,
+  SaveToKBFile,
+} from "../types/api";
+
+function generateThumbnail(
+  base64: string,
+  mimeType: string,
+  maxSize = 120,
+): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", 0.6));
+    };
+    img.onerror = () => resolve("");
+    img.src = `data:${mimeType};base64,${base64}`;
+  });
+}
 
 export function KnowledgeBase() {
   const queryClient = useQueryClient();
@@ -21,12 +57,19 @@ export function KnowledgeBase() {
   const [isLoading, setIsLoading] = useState(false);
   const [contextItems, setContextItems] = useState<ContextItem[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [pendingKBFiles, setPendingKBFiles] = useState<SaveToKBFile[]>([]);
+  const [kbSaveStatus, setKbSaveStatus] = useState<"idle" | "saving" | "done">(
+    "idle",
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isNewChatRef = useRef(false);
 
   // Custom modal state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [sessionToDelete, setSessionToDelete] = useState<{ id: string; title: string } | null>(null);
+  const [sessionToDelete, setSessionToDelete] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
   // ── Data fetching ─────────────────────────────────────────────────
 
@@ -123,12 +166,38 @@ export function KnowledgeBase() {
 
   // ── Send message (streaming) ──────────────────────────────────────
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const handleSend = async (attachments: Attachment[] = []) => {
+    if ((!input.trim() && attachments.length === 0) || isLoading) return;
 
-    const userMessage = input.trim();
+    const userMessage = input.trim() || "[Attached files]";
     setInput("");
     setIsLoading(true);
+    setPendingKBFiles([]);
+    setKbSaveStatus("idle");
+
+    // Build lightweight previews for chat history persistence
+    const messagePreviews: MessageAttachment[] = [];
+    const textFilesForKB: SaveToKBFile[] = [];
+    for (const att of attachments) {
+      if (att.mime_type.startsWith("image/")) {
+        const thumb = await generateThumbnail(att.data, att.mime_type);
+        messagePreviews.push({
+          mime_type: att.mime_type,
+          thumbnail: thumb,
+          name: att.name,
+        });
+      } else {
+        messagePreviews.push({
+          mime_type: att.mime_type,
+          name: att.name || "file.txt",
+        });
+        textFilesForKB.push({
+          name: att.name || `file_${Date.now()}.txt`,
+          mime_type: att.mime_type,
+          data: att.data,
+        });
+      }
+    }
 
     let currentSessionId = activeSessionId;
     if (!currentSessionId) {
@@ -154,11 +223,16 @@ export function KnowledgeBase() {
     const newMsgId = Date.now().toString();
     updateSessionMessages(currentSessionId, (prev) => [
       ...prev,
-      { id: newMsgId, role: "user", content: userMessage },
+      {
+        id: newMsgId,
+        role: "user",
+        content: userMessage,
+        attachments: messagePreviews.length > 0 ? messagePreviews : undefined,
+      },
     ]);
 
     try {
-      const res = await api.ragStream(userMessage);
+      const res = await api.ragStream(userMessage, attachments);
 
       if (!res.body) throw new Error("No response body");
 
@@ -347,6 +421,9 @@ export function KnowledgeBase() {
       ]);
     } finally {
       setIsLoading(false);
+      if (textFilesForKB.length > 0) {
+        setPendingKBFiles(textFilesForKB);
+      }
     }
   };
 
@@ -450,6 +527,62 @@ export function KnowledgeBase() {
           onExport={handleExportMessage}
           messagesEndRef={messagesEndRef}
         />
+
+        {/* KB Bridge Action Card */}
+        {pendingKBFiles.length > 0 && !isLoading && (
+          <div className="shrink-0 rounded-xl border border-emerald-500/40 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3 flex items-center justify-between gap-3 transition-all">
+            <div className="flex items-center gap-3 min-w-0">
+              <FolderPlus
+                size={20}
+                className="text-emerald-600 dark:text-emerald-400 shrink-0"
+              />
+              <span className="text-sm text-[#191c1e] dark:text-[#e1e2ec] font-medium truncate">
+                {kbSaveStatus === "done"
+                  ? `✅ "${pendingKBFiles[0].name}" added & ingestion started`
+                  : `Add "${pendingKBFiles[0].name}" to Knowledge Base?`}
+              </span>
+            </div>
+            {kbSaveStatus === "idle" && (
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={async () => {
+                    setKbSaveStatus("saving");
+                    try {
+                      await api.saveToKB(pendingKBFiles);
+                      setKbSaveStatus("done");
+                      setTimeout(() => {
+                        setPendingKBFiles([]);
+                        setKbSaveStatus("idle");
+                      }, 4000);
+                    } catch (e) {
+                      console.error(e);
+                      setKbSaveStatus("idle");
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors">
+                  Add to KB
+                </button>
+                <button
+                  onClick={() => {
+                    setPendingKBFiles([]);
+                    setKbSaveStatus("idle");
+                  }}
+                  className="p-1.5 rounded-lg text-[#727785] hover:text-[#191c1e] dark:hover:text-[#e1e2ec] hover:bg-[#e0e3e5] dark:hover:bg-[#32353c] transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+            {kbSaveStatus === "saving" && (
+              <Loader2
+                size={18}
+                className="animate-spin text-emerald-600 dark:text-emerald-400 shrink-0"
+              />
+            )}
+            {kbSaveStatus === "done" && (
+              <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+            )}
+          </div>
+        )}
 
         {/* Input */}
         <ChatInput

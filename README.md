@@ -4,7 +4,7 @@
 
 ![Gemma Cognivault Logo with the tagline "Durable Local RAG Pipeline - Private AI . No Cloud . Your Data" ](frontend/public/gemma-cognivault-banner.jpg)
 
-A full-stack **Local RAG** (Retrieval-Augmented Generation) application that lets you build a private Intelligence Chatbot querying your own PDF documents. All data stays on your machine — no cloud APIs required.
+A full-stack **Local RAG** (Retrieval-Augmented Generation) application that lets you build a private Intelligence Chatbot querying your own documents — PDFs, Markdown, plain text, and CSV files. Attach images directly in chat for multimodal analysis. All data stays on your machine — no cloud APIs required.
 
 _This is a submission for the [Gemma 4 Challenge: Build with Gemma 4](https://dev.to/challenges/google-gemma-2026-05-06)_
 
@@ -88,10 +88,12 @@ Gemma 4 proved that you don't need a 100B+ parameter cloud model to achieve true
 
 ## ✨ Key Features
 
-- **Durable Ingestion** — Upload PDFs and watch them embed in real-time. If the app crashes midway, DBOS resumes from the exact batch it left off on.
+- **Multi-Format Ingestion** — Upload PDFs, Markdown, plain text, and CSV files. DBOS durable workflows ensure crash-resilient ingestion that resumes from the exact batch it left off on.
+- **Multimodal Chat** — Attach images directly in the chat for vision analysis with Gemma 4. Image thumbnails persist in your chat history.
+- **Chat → KB Bridge** — Attach text files in chat, discuss them with the AI, then add them to your Knowledge Base with one click — no view switching required.
 - **Multi-Session Chat** — Juggle independent research threads with a history sidebar and auto-generated titles.
 - **Smart Knowledge Base** — View, manage, and soft-delete documents from the vector database without re-indexing.
-- **Interactive Citations** — Click AI citations to open the exact source PDF.
+- **Interactive Citations** — Click AI citations to open the exact source document.
 - **Per-Message Actions** — Copy responses to clipboard or export as formatted Markdown.
 - **Agentic Tools** — The AI agent has access to a safe calculator, clock, and knowledge base search tool.
 
@@ -105,8 +107,8 @@ Gemma 4 proved that you don't need a 100B+ parameter cloud model to achieve true
 │   ├── config.py             # Centralized config (pydantic-settings)
 │   ├── middleware.py          # Request tracing & error handlers
 │   ├── routers/
-│   │   ├── rag.py            # /rag streaming chat endpoint
-│   │   ├── knowledge.py      # /kb, /upload, /ingest, /api/docs
+│   │   ├── rag.py            # /rag streaming chat (multimodal)
+│   │   ├── knowledge.py      # /kb, /upload, /ingest, /api/docs, /api/save-to-kb
 │   │   └── history.py        # /api/history persistence
 │   ├── services/
 │   │   ├── vector_db.py      # FAISS index management
@@ -259,7 +261,7 @@ cp .env.example .env
 | `OLLAMA_HOST`        | `http://localhost:11434`                             | Ollama server URL           |
 | `DB_URL`             | `postgresql://postgres:password@localhost:5432/dbos` | PostgreSQL connection       |
 | `CORS_ORIGINS`       | `["http://localhost:5173"]`                          | Allowed CORS origins        |
-| `MAX_UPLOAD_SIZE_MB` | `50`                                                 | Max PDF upload size         |
+| `MAX_UPLOAD_SIZE_MB` | `200`                                                | Max document upload size    |
 
 ---
 
@@ -278,12 +280,12 @@ cp .env.example .env
 
 ## 🧠 Why DBOS? (The Durable Workflow Philosophy)
 
-Processing large PDF libraries involves extracting text, chunking, and generating dense embeddings — any step can fail due to memory limits, LLM timeouts, or crashes.
+Processing large document libraries involves extracting text, chunking, and generating dense embeddings — any step can fail due to memory limits, LLM timeouts, or crashes.
 
 Instead of corrupt states or re-ingesting thousands of pages, the ingestion pipeline uses **DBOS durable workflows**:
 
-1. **`list_document_files`** — Scans `docs/` and identifies new PDFs.
-2. **`process_single_document`** — Extracts text page-by-page with metadata.
+1. **`list_document_files`** — Scans `docs/` and identifies new documents (PDF, TXT, MD, CSV).
+2. **`process_single_document`** — Extracts text with format-appropriate parsers (PyPDF for PDFs, raw text for others).
 3. **Text Chunking** — `RecursiveCharacterTextSplitter` breaks documents into 1000-char segments with overlap.
 4. **`embed_batch`** — Sends chunks in batches to Ollama. Failed batches are retried individually.
 5. **`save_vector_store`** — Durably persists embeddings and metadata to disk.

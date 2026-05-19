@@ -11,9 +11,16 @@ from typing import Optional
 
 # ── Requests ─────────────────────────────────────────────────────────────────
 
+class Attachment(BaseModel):
+    mime_type: str
+    data: str
+    name: Optional[str] = None
+
+
 class RagRequest(BaseModel):
     """Body for the /rag streaming chat endpoint."""
     query: str = Field(..., min_length=1, max_length=5000)
+    attachments: Optional[list[Attachment]] = None
 
 
 # ── Responses ────────────────────────────────────────────────────────────────
