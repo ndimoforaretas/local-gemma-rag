@@ -26,11 +26,27 @@ ollama_model = OllamaModel(
     model_id=settings.llm_model,
 )
 
+# Shared agent instance — preserves conversation context within a session.
+# History is trimmed when it grows too large (see _trim_history).
 agent = Agent(
     model=ollama_model,
     tools=[search_knowledge_base, calculator, current_time],
     system_prompt=settings.agent_system_prompt,
 )
+
+# Maximum conversation turns to retain (each turn = 1 user + 1 assistant msg).
+_MAX_HISTORY_TURNS = 10
+
+
+def _trim_history() -> None:
+    """Keep agent memory bounded to prevent context-window overflow."""
+    try:
+        messages = getattr(agent, "messages", None)
+        if messages is not None and len(messages) > _MAX_HISTORY_TURNS * 2:
+            # Keep only the most recent turns.
+            del messages[: len(messages) - _MAX_HISTORY_TURNS * 2]
+    except Exception:
+        pass  # Agent internals may vary; never crash the request.
 
 
 def _mime_to_format(mime_type: str) -> str:
@@ -57,16 +73,15 @@ async def run_rag_stream(query: str, attachments: Optional[list] = None) -> Asyn
     content containing special delimiters.
     """
     search_knowledge_base.last_doc = {}  # type: ignore[attr-defined]
+    _trim_history()
 
     try:
         # Build the prompt: plain string for text-only, list[ContentBlock] for multimodal
         user_input: any = query
         if attachments:
-            # Collect all text into a single prompt string (Ollama merges only the
-            # last text block, so we must consolidate) and keep images as separate
-            # content blocks for the vision encoder.
-            combined_text = query or ""
+            # Separate text files and images.
             image_blocks = []
+            text_files: list[tuple[str, str]] = []  # (label, content)
             for att in attachments:
                 if att.mime_type.startswith("image/"):
                     image_bytes = base64.b64decode(att.data)
@@ -80,15 +95,32 @@ async def run_rag_stream(query: str, attachments: Optional[list] = None) -> Asyn
                     try:
                         file_text = base64.b64decode(att.data).decode("utf-8", errors="replace")
                         file_label = att.name or "attached file"
-                        combined_text += f"\n\n--- Attached file: {file_label} ---\n{file_text}\n--- End of file ---"
+                        text_files.append((file_label, file_text))
                     except Exception:
                         logger.warning("Failed to decode text attachment")
+
+            # Build a self-contained prompt with all file content inline.
+            if text_files:
+                parts = []
+                parts.append(query)
+                parts.append("")
+                parts.append(f"[{len(text_files)} attached file(s) follow — "
+                             "analyze and respond to each one]")
+                parts.append("")
+                for i, (label, content) in enumerate(text_files, 1):
+                    parts.append(f"=== FILE {i}/{len(text_files)}: {label} ===")
+                    parts.append(content)
+                    parts.append(f"=== END FILE {i} ===")
+                    parts.append("")
+                combined_text = "\n".join(parts)
+            else:
+                combined_text = query or ""
 
             if image_blocks:
                 # Multimodal: single text block + image blocks
                 content_blocks = [{"text": combined_text}] + image_blocks
                 user_input = content_blocks
-            elif combined_text != query:
+            elif text_files:
                 # Text-only with file attachments: send as plain string
                 user_input = combined_text
 
