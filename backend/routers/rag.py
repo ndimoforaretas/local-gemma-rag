@@ -5,11 +5,12 @@ Router for the RAG streaming chat endpoint.
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from backend.config import logger
+from backend.config import get_settings, logger
 from backend.models.schemas import ErrorResponse, RagRequest
 from backend.services.rag_agent import run_rag_stream
 
 router = APIRouter(tags=["RAG"])
+settings = get_settings()
 
 
 @router.post(
@@ -43,6 +44,15 @@ async def rag_endpoint(request: RagRequest):
             raise HTTPException(
                 status_code=422,
                 detail="Query cannot be empty or whitespace-only",
+            )
+
+        if request.attachments and len(request.attachments) > settings.max_attachments_per_message:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    "Only 1 file attachment per message is allowed. "
+                    "Use the Knowledge Base to index multiple documents."
+                ),
             )
 
         return StreamingResponse(

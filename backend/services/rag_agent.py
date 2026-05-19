@@ -7,6 +7,7 @@ that yields text chunks and metadata events for the frontend.
 
 import base64
 import json
+import os
 from typing import AsyncGenerator, Optional, List
 
 from strands import Agent
@@ -36,6 +37,32 @@ agent = Agent(
 
 # Maximum conversation turns to retain (each turn = 1 user + 1 assistant msg).
 _MAX_HISTORY_TURNS = 10
+_TEXT_MIME_TYPES = {
+    "application/json",
+    "application/xml",
+    "application/yaml",
+    "application/x-yaml",
+    "application/javascript",
+    "application/typescript",
+    "application/csv",
+}
+_TEXT_FILE_EXTENSIONS = {
+    ".txt",
+    ".md",
+    ".markdown",
+    ".csv",
+    ".json",
+    ".xml",
+    ".yaml",
+    ".yml",
+    ".log",
+    ".py",
+    ".js",
+    ".ts",
+    ".tsx",
+    ".jsx",
+    ".sql",
+}
 
 
 def _trim_history() -> None:
@@ -59,6 +86,17 @@ def _mime_to_format(mime_type: str) -> str:
         "image/webp": "webp",
     }
     return mapping.get(mime_type, mime_type.split("/")[-1])
+
+
+def _is_text_attachment(att: any) -> bool:
+    """Treat common text-like files as text even when browser MIME is generic."""
+    mime_type = (getattr(att, "mime_type", "") or "").lower()
+    if mime_type.startswith("text/") or mime_type in _TEXT_MIME_TYPES:
+        return True
+
+    name = getattr(att, "name", None) or ""
+    _, ext = os.path.splitext(name.lower())
+    return ext in _TEXT_FILE_EXTENSIONS
 
 
 async def run_rag_stream(query: str, attachments: Optional[list] = None) -> AsyncGenerator[str, None]:
@@ -91,7 +129,7 @@ async def run_rag_stream(query: str, attachments: Optional[list] = None) -> Asyn
                             "source": {"bytes": image_bytes},
                         }
                     })
-                elif att.mime_type.startswith("text/"):
+                elif _is_text_attachment(att):
                     try:
                         file_text = base64.b64decode(att.data).decode("utf-8", errors="replace")
                         file_label = att.name or "attached file"
@@ -117,8 +155,8 @@ async def run_rag_stream(query: str, attachments: Optional[list] = None) -> Asyn
                 combined_text = query or ""
 
             if image_blocks:
-                # Multimodal: single text block + image blocks
-                content_blocks = [{"text": combined_text}] + image_blocks
+                # Gemma4 best practice #4: modalities before text for optimal performance
+                content_blocks = image_blocks + [{"text": combined_text}]
                 user_input = content_blocks
             elif text_files:
                 # Text-only with file attachments: send as plain string

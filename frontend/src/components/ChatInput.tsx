@@ -4,10 +4,70 @@ import { Tooltip } from "./Tooltip";
 import type { Attachment } from "../types/api";
 
 // ── Attachment limits ─────────────────────────────────────────────────────
-const MAX_IMAGES = 3;
-const MAX_TEXT_FILES = 3;
 const MAX_IMAGE_SIZE_MB = 10;
 const MAX_TEXT_SIZE_MB = 5;
+const TEXT_MIME_TYPES = new Set([
+  "application/json",
+  "application/xml",
+  "application/yaml",
+  "application/x-yaml",
+  "application/javascript",
+  "application/typescript",
+  "application/csv",
+]);
+const TEXT_FILE_EXTENSIONS = new Set([
+  ".txt",
+  ".md",
+  ".markdown",
+  ".csv",
+  ".json",
+  ".xml",
+  ".yaml",
+  ".yml",
+  ".log",
+  ".py",
+  ".js",
+  ".ts",
+  ".tsx",
+  ".jsx",
+  ".sql",
+]);
+
+function getFileExtension(filename: string): string {
+  const idx = filename.lastIndexOf(".");
+  return idx >= 0 ? filename.slice(idx).toLowerCase() : "";
+}
+
+function inferMimeType(file: File): string {
+  const raw = file.type?.trim().toLowerCase();
+  if (raw) return raw;
+
+  const ext = getFileExtension(file.name);
+  const byExt: Record<string, string> = {
+    ".md": "text/markdown",
+    ".markdown": "text/markdown",
+    ".csv": "text/csv",
+    ".json": "application/json",
+    ".xml": "application/xml",
+    ".yaml": "application/yaml",
+    ".yml": "application/x-yaml",
+    ".log": "text/plain",
+    ".txt": "text/plain",
+    ".py": "text/x-python",
+    ".js": "application/javascript",
+    ".ts": "application/typescript",
+    ".tsx": "application/typescript",
+    ".jsx": "application/javascript",
+    ".sql": "text/plain",
+  };
+  return byExt[ext] ?? "application/octet-stream";
+}
+
+function isTextLikeFile(file: File, mimeType: string): boolean {
+  if (mimeType.startsWith("text/") || TEXT_MIME_TYPES.has(mimeType))
+    return true;
+  return TEXT_FILE_EXTENSIONS.has(getFileExtension(file.name));
+}
 
 interface ChatInputProps {
   input: string;
@@ -29,7 +89,8 @@ export function ChatInput({
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [warning, setWarning] = useState<string | null>(null);
   const warningTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
-  const canSend = (input.trim().length > 0 || attachments.length > 0) && !isLoading;
+  const canSend =
+    (input.trim().length > 0 || attachments.length > 0) && !isLoading;
 
   const showWarning = (msg: string) => {
     setWarning(msg);
@@ -38,65 +99,55 @@ export function ChatInput({
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
+    if (!e.target.files || e.target.files.length === 0) return;
 
-    const currentImages = attachments.filter((a) => a.mime_type.startsWith("image/")).length;
-    const currentTexts = attachments.filter((a) => !a.mime_type.startsWith("image/")).length;
-    let addedImages = 0;
-    let addedTexts = 0;
-
-    const newAttachments: Attachment[] = [];
-    for (const file of Array.from(e.target.files)) {
-      if (!file.type.startsWith("image/") && !file.type.startsWith("text/")) continue;
-
-      const isImage = file.type.startsWith("image/");
-      const maxSizeBytes = (isImage ? MAX_IMAGE_SIZE_MB : MAX_TEXT_SIZE_MB) * 1024 * 1024;
-
-      // Size check
-      if (file.size > maxSizeBytes) {
-        showWarning(
-          `"${file.name}" exceeds the ${isImage ? MAX_IMAGE_SIZE_MB : MAX_TEXT_SIZE_MB}MB limit and was skipped.`
-        );
-        continue;
-      }
-
-      // Count check
-      if (isImage && currentImages + addedImages >= MAX_IMAGES) {
-        showWarning(
-          `Maximum ${MAX_IMAGES} images per message. Use the Knowledge Base for bulk document processing.`
-        );
-        continue;
-      }
-      if (!isImage && currentTexts + addedTexts >= MAX_TEXT_FILES) {
-        showWarning(
-          `Maximum ${MAX_TEXT_FILES} text files per message. Use the Knowledge Base to index more documents.`
-        );
-        continue;
-      }
-
-      const buffer = await file.arrayBuffer();
-      const base64String = btoa(
-        new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+    if (attachments.length > 0) {
+      showWarning(
+        "You can only attach 1 file per message. Remove the current attachment to add a different one.",
       );
-
-      newAttachments.push({
-        mime_type: file.type,
-        data: base64String,
-        name: file.name,
-      });
-
-      if (isImage) addedImages++;
-      else addedTexts++;
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
     }
 
-    if (newAttachments.length > 0) {
-      setAttachments((prev) => [...prev, ...newAttachments]);
+    // Only process the first selected file.
+    const file = e.target.files[0];
+    const mimeType = inferMimeType(file);
+    const isImage = mimeType.startsWith("image/");
+    const isText = isTextLikeFile(file, mimeType);
+
+    if (!isImage && !isText) {
+      showWarning(`"${file.name}" is not a supported file type.`);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
     }
+
+    const maxSizeBytes =
+      (isImage ? MAX_IMAGE_SIZE_MB : MAX_TEXT_SIZE_MB) * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      showWarning(
+        `"${file.name}" exceeds the ${isImage ? MAX_IMAGE_SIZE_MB : MAX_TEXT_SIZE_MB} MB limit.`,
+      );
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    const buffer = await file.arrayBuffer();
+    const base64String = btoa(
+      new Uint8Array(buffer).reduce(
+        (data, byte) => data + String.fromCharCode(byte),
+        "",
+      ),
+    );
+
+    setAttachments([
+      { mime_type: mimeType, data: base64String, name: file.name },
+    ]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const removeAttachment = (index: number) => {
     setAttachments((prev) => prev.filter((_, i) => i !== index));
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   useEffect(() => {
@@ -119,9 +170,6 @@ export function ChatInput({
     }
   };
 
-  const imageCount = attachments.filter((a) => a.mime_type.startsWith("image/")).length;
-  const textCount = attachments.filter((a) => !a.mime_type.startsWith("image/")).length;
-
   return (
     <div className="flex flex-col gap-2">
       {/* Warning toast */}
@@ -141,17 +189,24 @@ export function ChatInput({
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-2 px-1">
           {attachments.map((att, idx) => (
-            <div key={idx} className="relative w-14 h-14 bg-white dark:bg-[#272a31] rounded-lg border border-[#c2c6d6] dark:border-[#424754] flex items-center justify-center overflow-hidden group">
+            <div
+              key={idx}
+              className="relative w-14 h-14 bg-white dark:bg-[#272a31] rounded-lg border border-[#c2c6d6] dark:border-[#424754] flex items-center justify-center overflow-hidden group">
               {att.mime_type.startsWith("image/") ? (
-                <img src={`data:${att.mime_type};base64,${att.data}`} alt="attachment" className="w-full h-full object-cover" />
+                <img
+                  src={`data:${att.mime_type};base64,${att.data}`}
+                  alt="attachment"
+                  className="w-full h-full object-cover"
+                />
               ) : (
-                <span className="text-xs text-center break-words px-1 font-semibold text-[#727785] dark:text-[#8c909f]">TXT</span>
+                <span className="text-xs text-center break-words px-1 font-semibold text-[#727785] dark:text-[#8c909f]">
+                  TXT
+                </span>
               )}
               <button
                 type="button"
                 onClick={() => removeAttachment(idx)}
-                className="absolute top-1 right-1 w-5 h-5 bg-black/50 hover:bg-red-500/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              >
+                className="absolute top-1 right-1 w-5 h-5 bg-black/50 hover:bg-red-500/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <X size={12} />
               </button>
             </div>
@@ -159,23 +214,36 @@ export function ChatInput({
         </div>
       )}
       <div className="bg-white dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl px-3 py-2 flex items-end gap-2 transition-all focus-within:border-[#0058be] dark:focus-within:border-[#a855f7] focus-within:ring-2 focus-within:ring-[#0058be]/20 dark:focus-within:ring-[#a855f7]/20">
-        <Tooltip content={`Attach image or text (${imageCount}/${MAX_IMAGES} img, ${textCount}/${MAX_TEXT_FILES} files)`} position="right">
+        <Tooltip
+          content={
+            attachments.length > 0
+              ? "Remove the attachment to add a different file"
+              : "Attach a file (image or text)"
+          }
+          position="top-start">
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              if (!isLoading && attachments.length === 0) {
+                fileInputRef.current?.click();
+              }
+            }}
             aria-label="Attach a file"
-            disabled={isLoading || (imageCount >= MAX_IMAGES && textCount >= MAX_TEXT_FILES)}
-            className="w-9 h-9 mb-1 flex items-center justify-center rounded-full text-[#727785] dark:text-[#988d9f] hover:text-[#0058be] dark:hover:text-[#ddb7ff] hover:bg-[#d0e1fb] dark:hover:bg-[#3d2f4b] disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+            aria-disabled={isLoading || attachments.length > 0}
+            className={`w-9 h-9 mb-1 flex items-center justify-center rounded-full transition-all ${
+              isLoading || attachments.length > 0
+                ? "opacity-40 cursor-not-allowed text-[#727785] dark:text-[#988d9f]"
+                : "text-[#727785] dark:text-[#988d9f] hover:text-[#0058be] dark:hover:text-[#ddb7ff] hover:bg-[#d0e1fb] dark:hover:bg-[#3d2f4b]"
+            }`}>
             <Paperclip size={18} />
           </button>
         </Tooltip>
-        <input 
-          type="file" 
-          ref={fileInputRef} 
-          onChange={handleFileChange} 
-          accept="image/*,text/*,.md,.csv" 
-          multiple 
-          className="hidden" 
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*,text/*,.md,.csv,.json,.xml,.yaml,.yml,.log,.py,.js,.ts,.tsx,.jsx,.sql"
+          className="hidden"
         />
 
         <textarea

@@ -8,6 +8,7 @@ arithmetic and rejects dangerous inputs (no eval() exploits).
 from backend.tools.agent_tools import calculator, _safe_eval
 import ast
 import pytest
+from types import SimpleNamespace
 
 
 class TestCalculator:
@@ -126,3 +127,19 @@ class TestRagStreaming:
         assert parsed["type"] == "metadata"
         assert parsed["data"]["source"] == "test.pdf"
         assert parsed["data"]["page"] == 1
+
+
+class TestAttachmentClassification:
+    """Tests for backend text attachment recognition."""
+
+    def test_is_text_attachment_accepts_application_json(self):
+        from backend.services.rag_agent import _is_text_attachment
+
+        att = SimpleNamespace(mime_type="application/json", name="data.json")
+        assert _is_text_attachment(att) is True
+
+    def test_is_text_attachment_accepts_text_by_extension(self):
+        from backend.services.rag_agent import _is_text_attachment
+
+        att = SimpleNamespace(mime_type="application/octet-stream", name="notes.md")
+        assert _is_text_attachment(att) is True

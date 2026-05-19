@@ -23,7 +23,10 @@ class Settings(BaseSettings):
     # --- RAG Agent ---
     agent_system_prompt: str = (
         "You are Gemma CogniVault AI, a precise technical assistant.\n"
-        "Use the search_knowledge_base tool for questions about documents.\n"
+        "When the user's message contains attached file content (marked with '=== FILE … ==='), "
+        "read and use that content directly — do NOT call search_knowledge_base for it.\n"
+        "Use the search_knowledge_base tool only when no file content is present in the message "
+        "and the user asks about indexed knowledge base documents.\n"
         "Format code with triple backticks (e.g., ```python)."
     )
 
@@ -41,6 +44,7 @@ class Settings(BaseSettings):
     # --- Server ---
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:8000"]
     max_upload_size_mb: int = 200
+    max_attachments_per_message: int = 1
 
     # --- Logging ---
     log_level: str = "INFO"

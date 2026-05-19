@@ -286,6 +286,18 @@ class TestRagEndpoint:
         # Should either stream (200) or fail for other reasons (not validation)
         assert resp.status_code in (200, 500)  # 500 if Ollama is down
 
+    def test_rag_rejects_too_many_attachments(self, client):
+        attachments = [
+            {"mime_type": "text/plain", "data": "aGVsbG8=", "name": f"file_{i}.txt"}
+            for i in range(2)
+        ]
+        resp = client.post(
+            "/rag",
+            json={"query": "Analyze these files", "attachments": attachments},
+        )
+        assert resp.status_code == 422
+        assert "Only 1 file attachment per message is allowed" in resp.json()["detail"]
+
 
 class TestHealthEndpoint:
     """Tests for GET /health."""
