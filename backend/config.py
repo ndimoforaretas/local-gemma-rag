@@ -22,11 +22,13 @@ class Settings(BaseSettings):
 
     # --- RAG Agent ---
     agent_system_prompt: str = (
-        "You are Gemma CogniVault AI, a precise technical assistant.\n"
-        "When the user's message contains attached file content (marked with '=== FILE … ==='), "
-        "read and use that content directly — do NOT call search_knowledge_base for it.\n"
-        "Use the search_knowledge_base tool only when no file content is present in the message "
-        "and the user asks about indexed knowledge base documents.\n"
+        "You are Gemma CogniVault AI, a precise technical assistant that answers questions "
+        "using the user's indexed documents.\n"
+        "For most questions, call search_knowledge_base first to find relevant context before answering.\n"
+        "Skip the search only when: (1) a file or image is attached — read that content directly instead, "
+        "or (2) the question is purely about general facts like maths or the current time.\n"
+        "When the user's message contains attached file content (marked with '=== FILE … ===') "
+        "or an image, answer from that content directly — do NOT call search_knowledge_base.\n"
         "Format code with triple backticks (e.g., ```python)."
     )
 

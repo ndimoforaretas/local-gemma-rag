@@ -11,9 +11,8 @@ build/
 .env
 
 # Data (user-generated, not needed for the app to run)
-docs/
-docs/ui-ux-execution-plan.md
-docs/refactor-single-attachment-plan.md
+docs/*
+!docs/GUIDE.md
 vector_store.faiss
 vector_store.json
 chat_history.json

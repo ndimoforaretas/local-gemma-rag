@@ -31,15 +31,24 @@ export interface ErrorResponse {
 
 // ── RAG / Chat ──────────────────────────────────────────────────────
 
+export interface Suggestion {
+  label: string;
+  prompt: string;
+}
+
+export interface SuggestionsResponse {
+  suggestions: Suggestion[];
+}
+
 export interface MessageAttachment {
   mime_type: string;
   thumbnail?: string; // small base64 data URI for images
-  name?: string;      // original file name
+  name?: string; // original file name
 }
 
 export interface Message {
   id: string;
-  role: 'user' | 'ai';
+  role: "user" | "ai";
   content: string;
   attachments?: MessageAttachment[];
 }

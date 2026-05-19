@@ -71,8 +71,9 @@ def current_time() -> str:
 
 @tool
 def search_knowledge_base(query: str) -> str:
-    """Search the local knowledge base, corporate documents, and research archives.
-    Use this for ANY questions about specific projects, people, or technical documentation.
+    """Search the user's indexed documents in the local knowledge base.
+    Call this for most questions — the knowledge base likely contains relevant context.
+    Do NOT call this when the user has attached a file or image to their current message.
     Provide a clear, specific query for the best results."""
     results = vector_db.search(query, top_k=7)
     if not results:
