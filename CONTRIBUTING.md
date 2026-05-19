@@ -29,10 +29,13 @@ pip install -r requirements.txt
 # 4. Initialize DBOS
 dbos migrate
 
-# 5. Build the frontend
+# 6. Seed the default knowledge base
+python scripts/seed_knowledge_base.py
+
+# 7. Build the frontend
 cd frontend && npm install && npm run build && cd ..
 
-# 6. Start the app
+# 8. Start the app
 python -m backend.main
 ```
 
