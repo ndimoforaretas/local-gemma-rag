@@ -62,13 +62,15 @@ async def run_rag_stream(query: str, attachments: Optional[list] = None) -> Asyn
         # Build the prompt: plain string for text-only, list[ContentBlock] for multimodal
         user_input: any = query
         if attachments:
-            content_blocks = []
-            if query:
-                content_blocks.append({"text": query})
+            # Collect all text into a single prompt string (Ollama merges only the
+            # last text block, so we must consolidate) and keep images as separate
+            # content blocks for the vision encoder.
+            combined_text = query or ""
+            image_blocks = []
             for att in attachments:
                 if att.mime_type.startswith("image/"):
                     image_bytes = base64.b64decode(att.data)
-                    content_blocks.append({
+                    image_blocks.append({
                         "image": {
                             "format": _mime_to_format(att.mime_type),
                             "source": {"bytes": image_bytes},
@@ -78,13 +80,17 @@ async def run_rag_stream(query: str, attachments: Optional[list] = None) -> Asyn
                     try:
                         file_text = base64.b64decode(att.data).decode("utf-8", errors="replace")
                         file_label = att.name or "attached file"
-                        content_blocks.append({
-                            "text": f"\n--- Attached file: {file_label} ---\n{file_text}\n--- End of file ---\n"
-                        })
+                        combined_text += f"\n\n--- Attached file: {file_label} ---\n{file_text}\n--- End of file ---"
                     except Exception:
                         logger.warning("Failed to decode text attachment")
-            if content_blocks:
+
+            if image_blocks:
+                # Multimodal: single text block + image blocks
+                content_blocks = [{"text": combined_text}] + image_blocks
                 user_input = content_blocks
+            elif combined_text != query:
+                # Text-only with file attachments: send as plain string
+                user_input = combined_text
 
         async for event in agent.stream_async(user_input):
             ev = event.get("event", {})
