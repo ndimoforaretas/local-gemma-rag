@@ -30,13 +30,39 @@ print_step "Checking prerequisites..."
 command -v python3 >/dev/null 2>&1 || { print_err "Python 3 not found. Install from https://python.org"; exit 1; }
 command -v node >/dev/null 2>&1 || { print_err "Node.js not found. Install from https://nodejs.org"; exit 1; }
 command -v docker >/dev/null 2>&1 || { print_err "Docker not found. Install Docker Desktop from https://docker.com"; exit 1; }
+if ! docker info >/dev/null 2>&1; then
+    print_warn "Docker is not running — attempting to start Docker Desktop..."
+    open -a Docker 2>/dev/null || { print_err "Could not launch Docker Desktop. Please open it manually and re-run."; exit 1; }
+    echo -n "  Waiting for Docker"
+    ELAPSED=0
+    until docker info >/dev/null 2>&1; do
+        if [ $ELAPSED -ge 60 ]; then
+            echo ""; print_err "Docker did not start after 60s. Please open Docker Desktop manually and re-run."; exit 1
+        fi
+        echo -n "."; sleep 2; ((ELAPSED+=2))
+    done
+    echo -e " ${GREEN}ready${NC}"
+fi
+
 command -v ollama >/dev/null 2>&1 || { print_err "Ollama not found. Install from https://ollama.com/download"; exit 1; }
-ollama list >/dev/null 2>&1 || { print_err "Ollama is installed but not running. Open the Ollama app first, then re-run this script."; exit 1; }
+if ! ollama list >/dev/null 2>&1; then
+    print_warn "Ollama is not running — attempting to start it..."
+    open -a Ollama 2>/dev/null || { print_err "Could not launch Ollama. Please open it manually and re-run."; exit 1; }
+    echo -n "  Waiting for Ollama"
+    ELAPSED=0
+    until ollama list >/dev/null 2>&1; do
+        if [ $ELAPSED -ge 30 ]; then
+            echo ""; print_err "Ollama did not start after 30s. Please open the Ollama app manually and re-run."; exit 1
+        fi
+        echo -n "."; sleep 1; ((ELAPSED++))
+    done
+    echo -e " ${GREEN}ready${NC}"
+fi
 
 echo "  ✓ Python $(python3 --version 2>&1 | awk '{print $2}')"
 echo "  ✓ Node $(node --version)"
-echo "  ✓ Docker found"
-echo "  ✓ Ollama found"
+echo "  ✓ Docker running"
+echo "  ✓ Ollama running"
 
 # ── Copy .env if not present ──────────────────────────────
 if [ ! -f ".env" ]; then

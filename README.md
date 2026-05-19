@@ -184,12 +184,11 @@ In the terminal where the server is running,
 
 ### What the scripts do
 
-| Script              | Purpose                                                                                                                                                                                            |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scripts/setup.sh`  | Checks prerequisites, copies `.env.example` → `.env`, pulls Ollama models, starts PostgreSQL (waits until ready), creates Python venv, installs dependencies, runs DBOS migration, builds frontend |
-| `scripts/start.sh`  | Checks Ollama is running, frees port 8000 if needed, guards against missing `.venv`, starts database, launches the backend, polls `/health` and confirms the server is up                          |
-| `scripts/stop.sh`   | Stops the backend server and shuts down the database                                                                                                                                               |
-| `scripts/verify.sh` | Standalone diagnostic script — checks every prerequisite, setup artifact, and running service, and prints a clear pass/fail report with fix hints                                                  |
+| Script             | Purpose                                                                                                                                                                                            |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/setup.sh` | Checks prerequisites, copies `.env.example` → `.env`, pulls Ollama models, starts PostgreSQL (waits until ready), creates Python venv, installs dependencies, runs DBOS migration, builds frontend |
+| `scripts/start.sh` | Checks Ollama is running, frees port 8000 if needed, guards against missing `.venv`, starts database, launches the backend, polls `/health` and confirms the server is up                          |
+| `scripts/stop.sh`  | Stops the backend server and shuts down the database                                                                                                                                               |
 
 ---
 
@@ -277,14 +276,6 @@ cp .env.example .env
 ---
 
 ## 🔧 Troubleshooting
-
-If the server doesn't start, run the diagnostic script first:
-
-```bash
-./scripts/verify.sh
-```
-
-It checks every prerequisite and running service, and prints actionable fix hints for each failure.
 
 | Problem                                                    | Cause                                       | Fix                                                |
 | ---------------------------------------------------------- | ------------------------------------------- | -------------------------------------------------- |

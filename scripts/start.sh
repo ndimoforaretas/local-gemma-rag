@@ -20,8 +20,17 @@ echo -e "${BOLD}═════════════════════�
 
 # ── Check Ollama ──────────────────────────────────────────
 if ! ollama list >/dev/null 2>&1; then
-    echo -e "${RED}✖  Ollama is not running. Please open the Ollama app first.${NC}"
-    exit 1
+    echo -e "  ${YELLOW}⚠${NC}  Ollama is not running — attempting to start it..."
+    open -a Ollama 2>/dev/null || { echo -e "${RED}✖  Could not launch Ollama. Please open it manually.${NC}"; exit 1; }
+    echo -n "  Waiting for Ollama"
+    ELAPSED=0
+    until ollama list >/dev/null 2>&1; do
+        if [ $ELAPSED -ge 30 ]; then
+            echo ""; echo -e "${RED}✖  Ollama did not start after 30s. Please open the Ollama app manually.${NC}"; exit 1
+        fi
+        echo -n "."; sleep 1; ((ELAPSED++))
+    done
+    echo ""
 fi
 echo -e "  ${GREEN}✓${NC} Ollama is running"
 
@@ -31,6 +40,22 @@ if lsof -ti :8000 >/dev/null 2>&1; then
     lsof -ti :8000 | xargs kill -9 2>/dev/null
     sleep 1
 fi
+
+# ── Check Docker ──────────────────────────────────────────
+if ! docker info >/dev/null 2>&1; then
+    echo -e "  ${YELLOW}⚠${NC}  Docker is not running — attempting to start Docker Desktop..."
+    open -a Docker 2>/dev/null || { echo -e "${RED}✖  Could not launch Docker Desktop. Please open it manually.${NC}"; exit 1; }
+    echo -n "  Waiting for Docker"
+    ELAPSED=0
+    until docker info >/dev/null 2>&1; do
+        if [ $ELAPSED -ge 60 ]; then
+            echo ""; echo -e "${RED}✖  Docker did not start after 60s. Please open Docker Desktop manually.${NC}"; exit 1
+        fi
+        echo -n "."; sleep 2; ((ELAPSED+=2))
+    done
+    echo ""
+fi
+echo -e "  ${GREEN}✓${NC} Docker is running"
 
 # ── Start database ────────────────────────────────────────
 echo -e "  ${GREEN}▶${NC} Starting PostgreSQL..."
@@ -74,7 +99,7 @@ if $SERVER_UP; then
     wait "$BACKEND_PID"
 else
     echo -e "  ${RED}✖  Server did not become ready after ${MAX_WAIT}s.${NC}"
-    echo -e "   Run ${BOLD}./scripts/verify.sh${NC} to diagnose the issue."
+    echo -e "   Check the output above for errors, or re-run ${BOLD}./scripts/setup.sh${NC} if this is a first run."
     kill "$BACKEND_PID" 2>/dev/null || true
     exit 1
 fi
