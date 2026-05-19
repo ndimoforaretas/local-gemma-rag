@@ -4,7 +4,7 @@
 #
 # Usage:  ./scripts/start.sh
 # ──────────────────────────────────────────────────────────
-set -e
+set -euo pipefail
 
 BOLD="\033[1m"
 GREEN="\033[0;32m"
@@ -38,9 +38,43 @@ docker compose up -d db --remove-orphans 2>/dev/null || docker-compose up -d db 
 echo -e "  ${GREEN}✓${NC} Database is ready"
 
 # ── Activate venv and launch ──────────────────────────────
+if [ ! -d ".venv" ]; then
+    echo -e "${RED}✖  Virtual environment not found.${NC}"
+    echo -e "   Run ${BOLD}./scripts/setup.sh${NC} first, then try again."
+    exit 1
+fi
 source .venv/bin/activate
 
 echo -e "  ${GREEN}▶${NC} Launching backend on http://localhost:8000"
 echo ""
 
-python -m backend.main
+python -m backend.main &
+BACKEND_PID=$!
+
+# ── Wait for server to be ready ───────────────────────────
+echo -e "  Waiting for server to be ready..."
+MAX_WAIT=20
+ELAPSED=0
+SERVER_UP=false
+while [ $ELAPSED -lt $MAX_WAIT ]; do
+    if curl -s --max-time 2 http://localhost:8000/health >/dev/null 2>&1; then
+        SERVER_UP=true
+        break
+    fi
+    # Check if the process has already died
+    if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
+        break
+    fi
+    sleep 1
+    ((ELAPSED++))
+done
+
+if $SERVER_UP; then
+    echo -e "  ${GREEN}✓${NC} Server is up — open ${BOLD}http://localhost:8000${NC}"
+    wait "$BACKEND_PID"
+else
+    echo -e "  ${RED}✖  Server did not become ready after ${MAX_WAIT}s.${NC}"
+    echo -e "   Run ${BOLD}./scripts/verify.sh${NC} to diagnose the issue."
+    kill "$BACKEND_PID" 2>/dev/null || true
+    exit 1
+fi

@@ -5,7 +5,7 @@
 # Run once after cloning:
 #   chmod +x scripts/setup.sh && ./scripts/setup.sh
 # ──────────────────────────────────────────────────────────
-set -e
+set -euo pipefail
 
 BOLD="\033[1m"
 GREEN="\033[0;32m"
@@ -37,6 +37,15 @@ echo "  ✓ Node $(node --version)"
 echo "  ✓ Docker found"
 echo "  ✓ Ollama found"
 
+# ── Copy .env if not present ──────────────────────────────
+if [ ! -f ".env" ]; then
+    print_step "Creating .env from .env.example..."
+    cp .env.example .env
+    echo "  ✓ .env created — edit it to override any defaults"
+else
+    echo -e "\n  .env already exists — skipping"
+fi
+
 # ── Pull Ollama models ────────────────────────────────────
 print_step "Pulling Ollama models (this may take a few minutes)..."
 ollama pull gemma4:e4b
@@ -45,6 +54,20 @@ ollama pull embeddinggemma
 # ── Start PostgreSQL ──────────────────────────────────────
 print_step "Starting PostgreSQL database..."
 docker compose up -d db --remove-orphans 2>/dev/null || docker-compose up -d db --remove-orphans 2>/dev/null
+
+# Wait until Postgres is actually accepting connections
+echo "  Waiting for PostgreSQL to be ready..."
+MAX_WAIT=30
+ELAPSED=0
+until docker compose exec -T db pg_isready -q 2>/dev/null || docker-compose exec -T db pg_isready -q 2>/dev/null; do
+    if [ $ELAPSED -ge $MAX_WAIT ]; then
+        print_err "PostgreSQL did not become ready after ${MAX_WAIT}s. Check Docker logs: docker compose logs db"
+        exit 1
+    fi
+    sleep 1
+    ((ELAPSED++))
+done
+echo "  ✓ PostgreSQL is ready"
 
 # ── Python environment ────────────────────────────────────
 print_step "Creating Python virtual environment..."

@@ -133,7 +133,14 @@ else:
 
 if __name__ == "__main__":
     logger.info("Launching DBOS durable workflow engine")
-    ingest_dbos.launch()
+    try:
+        ingest_dbos.launch()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "DBOS failed to launch (durable workflows disabled): %s — "
+            "check that PostgreSQL is running and DB_URL is correct.",
+            exc,
+        )
 
     logger.info("Starting Gemma CogniVault on http://0.0.0.0:8000")
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -164,21 +164,32 @@ That's it! Open **[http://localhost:8000](http://localhost:8000)** and start cha
 
 ### Stopping & Restarting
 
+In the terminal where the server is running,
+
+- press **`Ctrl + C`** to stop the backend process,
+- then shut down the database with the following command:
+
 ```bash
-# Stop everything (backend + database)
+# Then shut down the database
 ./scripts/stop.sh
 
+```
+
+- To restart the server later, simply run:
+
+```bash
 # Start again later (no setup needed)
 ./scripts/start.sh
 ```
 
 ### What the scripts do
 
-| Script             | Purpose                                                                                                                                        |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scripts/setup.sh` | Checks prerequisites, pulls Ollama models, starts PostgreSQL, creates Python venv, installs dependencies, runs DBOS migration, builds frontend |
-| `scripts/start.sh` | Checks Ollama is running, frees port 8000 if needed, starts database, launches the backend                                                     |
-| `scripts/stop.sh`  | Stops the backend server and shuts down the database                                                                                           |
+| Script              | Purpose                                                                                                                                                                                            |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/setup.sh`  | Checks prerequisites, copies `.env.example` → `.env`, pulls Ollama models, starts PostgreSQL (waits until ready), creates Python venv, installs dependencies, runs DBOS migration, builds frontend |
+| `scripts/start.sh`  | Checks Ollama is running, frees port 8000 if needed, guards against missing `.venv`, starts database, launches the backend, polls `/health` and confirms the server is up                          |
+| `scripts/stop.sh`   | Stops the backend server and shuts down the database                                                                                                                                               |
+| `scripts/verify.sh` | Standalone diagnostic script — checks every prerequisite, setup artifact, and running service, and prints a clear pass/fail report with fix hints                                                  |
 
 ---
 
@@ -267,6 +278,14 @@ cp .env.example .env
 
 ## 🔧 Troubleshooting
 
+If the server doesn't start, run the diagnostic script first:
+
+```bash
+./scripts/verify.sh
+```
+
+It checks every prerequisite and running service, and prints actionable fix hints for each failure.
+
 | Problem                                                    | Cause                                       | Fix                                                |
 | ---------------------------------------------------------- | ------------------------------------------- | -------------------------------------------------- |
 | `"An internal error occurred while processing your query"` | Ollama is not running                       | Open the Ollama app and verify with `ollama list`  |
@@ -275,6 +294,7 @@ cp .env.example .env
 | `"can't open file 'api.py'"`                               | Using an outdated start command             | Use `python -m backend.main` (not `python api.py`) |
 | `"Failed to connect to Ollama"`                            | Ollama crashed or was closed                | Reopen the Ollama app                              |
 | `"DBOS system database"` connection error                  | PostgreSQL container is not running         | Run `docker compose up -d db`                      |
+| `.venv not found` error in `start.sh`                      | Setup was never completed or failed         | Run `./scripts/setup.sh` first                     |
 
 ---
 
