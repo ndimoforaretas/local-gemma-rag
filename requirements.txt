@@ -15,6 +15,17 @@ rank-bm25
 # Document processing
 pypdf
 langchain-text-splitters
+python-docx     # DOCX extraction
+python-pptx     # PPTX extraction
+openpyxl        # XLSX extraction
+httpx           # URL fetching
+trafilatura     # Clean web text extraction (also used for HTML files)
+pymupdf         # PDF page rendering (used by OCR fallback)
+pytesseract     # Tesseract OCR wrapper (requires: brew/apt install tesseract)
+Pillow          # Image manipulation (pytesseract dependency)
+
+# Audio transcription (local Whisper — optional, enables mic button)
+faster-whisper  # lightweight CTranslate2-based Whisper inference
 
 # Durable workflows
 dbos

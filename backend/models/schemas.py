@@ -21,6 +21,13 @@ class RagRequest(BaseModel):
     """Body for the /rag streaming chat endpoint."""
     query: str = Field(..., min_length=1, max_length=5000)
     attachments: Optional[list[Attachment]] = None
+    # Frontend session identifier for per-session conversation isolation.
+    session_id: Optional[str] = None
+    # When set, restricts search_knowledge_base to only these source filenames.
+    document_filter: Optional[list[str]] = None
+    # When set, rewinds the agent's conversation history to this many turn-pairs
+    # before processing the new query.  Used by edit-and-resend / regenerate.
+    trim_history_to_turns: Optional[int] = Field(None, ge=0)
 
 
 # ── Responses ────────────────────────────────────────────────────────────────

@@ -150,9 +150,42 @@ class VectorDB:
             for key in sorted(scores, key=lambda k: scores[k], reverse=True)
         ]
 
+    # ── Deletion ──────────────────────────────────────────────────────────────
+
+    def delete_by_source(self, filename: str) -> int:
+        """Soft-delete all chunks belonging to *filename*.
+
+        Marks matching, non-deleted chunks with ``deleted=True`` in the
+        in-memory metadata and persists the change to disk.  The FAISS index
+        is left unchanged (IndexFlatIP does not support removal); stale vectors
+        are silently ignored during search because the metadata lookup filters
+        them out.
+
+        Returns the number of chunks marked as deleted.
+        """
+        count = 0
+        for chunk in self.metadata:
+            if chunk.get("source") == filename and not chunk.get("deleted"):
+                chunk["deleted"] = True
+                count += 1
+
+        if count > 0:
+            settings = get_settings()
+            with open(settings.metadata_file, "w") as f:
+                json.dump(self.metadata, f)
+            self._build_bm25()
+            logger.info("Soft-deleted %d chunk(s) from '%s'", count, filename)
+
+        return count
+
     # ── Public API ────────────────────────────────────────────────────────────
 
-    def search(self, query: str, top_k: int = 5) -> List[Dict]:
+    def search(
+        self,
+        query: str,
+        top_k: int = 5,
+        source_filter: Optional[List[str]] = None,
+    ) -> List[Dict]:
         """
         Hybrid semantic + keyword search with Reciprocal Rank Fusion.
 
@@ -160,11 +193,18 @@ class VectorDB:
         (sparse), fuses the two ranked lists with RRF, and returns the
         top `top_k` results.  Falls back gracefully to dense-only when the
         BM25 index is not available (empty KB).
+
+        Parameters
+        ----------
+        source_filter
+            When provided, only chunks whose ``source`` field appears in this
+            list are returned.  ``None`` (default) means search all documents.
         """
         if self.index is None:
             return []
 
-        # Over-retrieve candidates so fusion has enough signal.
+        # Over-retrieve candidates so fusion has enough signal, especially
+        # when a source filter is active (many candidates may be discarded).
         candidate_k = max(top_k * 4, 20)
 
         dense_results = self._dense_search(query, candidate_k)
@@ -172,12 +212,40 @@ class VectorDB:
 
         # If only one method produced results, skip fusion overhead.
         if not bm25_results:
-            return dense_results[:top_k]
-        if not dense_results:
-            return bm25_results[:top_k]
+            results = dense_results
+        elif not dense_results:
+            results = bm25_results
+        else:
+            results = self._rrf_fuse([dense_results, bm25_results])
 
-        fused = self._rrf_fuse([dense_results, bm25_results])
-        return fused[:top_k]
+        # Apply document-scoped filter after fusion so RRF scoring is unaffected.
+        if source_filter:
+            source_set = set(source_filter)
+            results = [r for r in results if r.get("source") in source_set]
+
+        return results[:top_k]
+
+    def list_documents(self) -> List[Dict]:
+        """Return metadata for every non-deleted indexed document.
+
+        Each entry: ``{"name": str, "type": str, "chunk_count": int}``.
+        Sorted alphabetically by name.
+        """
+        docs: Dict[str, Dict] = {}
+        for chunk in self.metadata:
+            if chunk.get("deleted"):
+                continue
+            source = chunk.get("source", "")
+            if not source:
+                continue
+            if source not in docs:
+                docs[source] = {
+                    "name": source,
+                    "type": chunk.get("type", "unknown"),
+                    "chunk_count": 0,
+                }
+            docs[source]["chunk_count"] += 1
+        return sorted(docs.values(), key=lambda d: d["name"])
 
 
 # Module-level singleton — imported by tools and routers.

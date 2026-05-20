@@ -6,6 +6,8 @@ decorated as a ``@DBOS.step()`` so that the workflow can resume from
 the last completed step after a crash.
 """
 
+import csv
+import hashlib
 import json
 import os
 import re
@@ -15,10 +17,11 @@ import faiss
 import numpy as np
 import ollama
 from dbos import DBOS
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 from pypdf import PdfReader
 
 from backend.config import get_settings, logger
+from backend.services.vector_db import vector_db
 
 settings = get_settings()
 
@@ -37,17 +40,88 @@ if __name__ == "__main__":
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
+def _file_sha256(path: str) -> str:
+    """Return the SHA-256 hex digest of a file's contents."""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for block in iter(lambda: f.read(65_536), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
+# Minimum character count from pypdf before we try OCR on a page.
+_OCR_TEXT_THRESHOLD = 50
+
+
+def _ocr_pdf_page(pdf_path: str, page_index: int) -> str:
+    """Render a single PDF page to an image and return OCR text.
+
+    Uses pymupdf for rendering and pytesseract for OCR.  Both are lazily
+    imported so the app degrades gracefully when they are not installed or
+    when the tesseract binary is absent.
+
+    Returns an empty string on any failure.
+    """
+    try:
+        import fitz  # pymupdf
+    except ImportError:
+        logger.debug("pymupdf not installed — OCR fallback unavailable")
+        return ""
+    try:
+        import pytesseract
+        from PIL import Image
+    except ImportError:
+        logger.debug("pytesseract/Pillow not installed — OCR fallback unavailable")
+        return ""
+
+    try:
+        doc = fitz.open(pdf_path)
+        page = doc[page_index]
+        # 2× scale gives 144 dpi — good enough for most scans without being slow.
+        mat = fitz.Matrix(2.0, 2.0)
+        pix = page.get_pixmap(matrix=mat)
+        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        doc.close()
+
+        text = pytesseract.image_to_string(img, lang="eng")
+        return re.sub(r"\s+", " ", text).strip()
+    except pytesseract.TesseractNotFoundError:
+        logger.warning("Tesseract binary not found — OCR fallback unavailable. "
+                       "Install with: brew install tesseract  (macOS) "
+                       "or: apt install tesseract-ocr  (Debian/Ubuntu)")
+        return ""
+    except Exception:
+        logger.exception("OCR failed for page %d of %s", page_index + 1, pdf_path)
+        return ""
+
+
 def get_pdf_pages(path: str) -> List[Tuple[str, int]]:
-    """Extract text from a PDF file, keeping track of page numbers."""
+    """Extract text from a PDF file, keeping track of page numbers.
+
+    For pages where pypdf extracts fewer than ``_OCR_TEXT_THRESHOLD``
+    characters (scanned/image-only pages), an OCR pass is attempted via
+    ``_ocr_pdf_page()``.  OCR is skipped silently when pymupdf, pytesseract,
+    or the tesseract binary are absent.
+    """
     try:
         reader = PdfReader(path)
         pages: List[Tuple[str, int]] = []
         for i, page in enumerate(reader.pages):
-            text = page.extract_text()
+            text = page.extract_text() or ""
+            text = re.sub(r"\s+", " ", text).strip()
+
+            if len(text) < _OCR_TEXT_THRESHOLD:
+                # Page looks like a scan — try OCR.
+                ocr_text = _ocr_pdf_page(path, i)
+                if ocr_text:
+                    logger.info(
+                        "OCR recovered %d chars from page %d of %s",
+                        len(ocr_text), i + 1, path,
+                    )
+                    text = ocr_text
+
             if text:
-                text = re.sub(r"\s+", " ", text).strip()
-                if text:
-                    pages.append((text, i + 1))
+                pages.append((text, i + 1))
         return pages
     except Exception:
         logger.exception("Error reading PDF %s", path)
@@ -65,35 +139,346 @@ def get_text_pages(path: str) -> List[Tuple[str, int]]:
     return []
 
 
+_MD_HEADERS = [("#", "H1"), ("##", "H2"), ("###", "H3")]
+
+
+def get_markdown_chunks(path: str) -> List[Tuple[str, int]]:
+    """Split a Markdown file on its header structure.
+
+    Each chunk corresponds to one section bounded by H1/H2/H3 headers.
+    A breadcrumb prefix ``[Section: H1 > H2 > H3]`` is prepended so the
+    embedding always contains the section hierarchy even if the raw content
+    gives no context.  Sections longer than ``settings.chunk_size`` will be
+    split again by the generic splitter in ``ingest_workflow()``.
+
+    Falls back to ``get_text_pages()`` on parse errors or empty results.
+    """
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            text = f.read()
+        if not text.strip():
+            return []
+
+        splitter = MarkdownHeaderTextSplitter(
+            headers_to_split_on=_MD_HEADERS,
+            strip_headers=True,   # headers go into doc.metadata; content stays clean
+        )
+        docs = splitter.split_text(text)
+
+        chunks: List[Tuple[str, int]] = []
+        for i, doc in enumerate(docs):
+            meta = doc.metadata            # e.g. {"H1": "Intro", "H2": "Overview"}
+            content = doc.page_content.strip()
+            if not content:
+                continue
+
+            # Build the full breadcrumb from outer → inner heading.
+            breadcrumb = " > ".join(
+                meta[level] for level in ("H1", "H2", "H3") if level in meta
+            )
+            chunk_text = f"[Section: {breadcrumb}]\n\n{content}" if breadcrumb else content
+            chunks.append((chunk_text, i + 1))
+
+        return chunks if chunks else get_text_pages(path)
+    except Exception:
+        logger.exception("Error parsing Markdown %s", path)
+        return get_text_pages(path)
+
+
+# Number of CSV data rows bundled into each chunk.  Keep small enough that a
+# chunk (header + N rows) usually fits within settings.chunk_size characters.
+_CSV_ROWS_PER_CHUNK = 20
+
+
+def get_csv_chunks(path: str) -> List[Tuple[str, int]]:
+    """Split a CSV file into header-prefixed row-group chunks.
+
+    Every chunk starts with the header row so the LLM always knows the column
+    names, even when the chunk is not the first one.  Falls back to the plain
+    text extractor if the file cannot be parsed as CSV.
+    """
+    try:
+        with open(path, "r", encoding="utf-8", newline="") as f:
+            rows = list(csv.reader(f))
+    except Exception:
+        logger.exception("Error reading CSV %s", path)
+        return get_text_pages(path)
+
+    if not rows:
+        return []
+
+    header = rows[0]
+    data_rows = rows[1:]
+    header_line = ", ".join(str(c) for c in header)
+
+    if not data_rows:
+        return [(header_line, 1)] if header_line.strip() else []
+
+    chunks: List[Tuple[str, int]] = []
+    for chunk_num, start in enumerate(range(0, len(data_rows), _CSV_ROWS_PER_CHUNK), 1):
+        batch = data_rows[start : start + _CSV_ROWS_PER_CHUNK]
+        lines = [header_line] + [", ".join(str(c) for c in row) for row in batch]
+        chunk_text = "\n".join(lines).strip()
+        if chunk_text:
+            chunks.append((chunk_text, chunk_num))
+
+    return chunks if chunks else get_text_pages(path)
+
+
+def get_pptx_pages(path: str) -> List[Tuple[str, int]]:
+    """Extract text from a PPTX file, one chunk per slide.
+
+    Each slide's title and body placeholder text are concatenated into a
+    single string.  Empty slides are skipped.  Requires ``python-pptx``;
+    returns an empty list (and logs a warning) if the package is absent.
+    """
+    try:
+        from pptx import Presentation  # python-pptx
+    except ImportError:
+        logger.warning("python-pptx not installed — PPTX ingestion unavailable. "
+                       "Install with: pip install python-pptx")
+        return []
+
+    try:
+        prs = Presentation(path)
+        pages: List[Tuple[str, int]] = []
+        for slide_num, slide in enumerate(prs.slides, 1):
+            parts: List[str] = []
+            for shape in slide.shapes:
+                if shape.has_text_frame:
+                    text = shape.text_frame.text.strip()
+                    if text:
+                        parts.append(text)
+            slide_text = "\n".join(parts).strip()
+            if slide_text:
+                pages.append((slide_text, slide_num))
+        return pages
+    except Exception:
+        logger.exception("Error reading PPTX %s", path)
+        return []
+
+
+def get_xlsx_chunks(path: str) -> List[Tuple[str, int]]:
+    """Extract text from an XLSX workbook, one row-group chunk per sheet batch.
+
+    Each chunk starts with ``[Sheet: <name>]`` followed by the header row so
+    the model always knows column names.  Multiple sheets are processed in
+    order; chunk numbering is global across the workbook.  Requires
+    ``openpyxl``; returns an empty list (and logs a warning) if absent.
+    """
+    try:
+        import openpyxl
+    except ImportError:
+        logger.warning("openpyxl not installed — XLSX ingestion unavailable. "
+                       "Install with: pip install openpyxl")
+        return []
+
+    try:
+        wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+        chunks: List[Tuple[str, int]] = []
+        chunk_num = 1
+
+        for sheet_name in wb.sheetnames:
+            ws = wb[sheet_name]
+            rows = list(ws.iter_rows(values_only=True))
+            if not rows:
+                continue
+
+            header = [str(c) if c is not None else "" for c in rows[0]]
+            data_rows = rows[1:]
+            # Prefix with sheet name so multi-sheet workbooks stay distinguishable.
+            header_line = f"[Sheet: {sheet_name}] " + ", ".join(header)
+
+            if not data_rows:
+                # Header-only sheet — still index it so the column names are searchable.
+                if header_line.strip():
+                    chunks.append((header_line, chunk_num))
+                    chunk_num += 1
+                continue
+
+            for start in range(0, len(data_rows), _CSV_ROWS_PER_CHUNK):
+                batch = data_rows[start : start + _CSV_ROWS_PER_CHUNK]
+                lines = [header_line] + [
+                    ", ".join(str(c) if c is not None else "" for c in row)
+                    for row in batch
+                ]
+                chunk_text = "\n".join(lines).strip()
+                if chunk_text:
+                    chunks.append((chunk_text, chunk_num))
+                    chunk_num += 1
+
+        wb.close()
+        return chunks
+    except Exception:
+        logger.exception("Error reading XLSX %s", path)
+        return []
+
+
+def get_html_pages(path: str) -> List[Tuple[str, int]]:
+    """Extract clean readable text from an HTML file.
+
+    Tries trafilatura first (already a project dependency for URL ingestion).
+    Falls back to Python's stdlib ``html.parser`` on failure.  Returns the
+    whole document as a single page; ``RecursiveCharacterTextSplitter`` in
+    the workflow handles further chunking.
+    """
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            html = f.read()
+        if not html.strip():
+            return []
+
+        # Primary path: trafilatura gives clean article-style text.
+        try:
+            import trafilatura
+            text = trafilatura.extract(html, include_tables=True, include_links=False)
+            if text and text.strip():
+                return [(text.strip(), 1)]
+        except Exception:
+            pass
+
+        # Fallback: stdlib html.parser strips tags but keeps all text nodes.
+        from html.parser import HTMLParser
+
+        class _TextExtractor(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self._parts: List[str] = []
+                self._skip = False
+
+            def handle_starttag(self, tag, attrs):
+                if tag in ("script", "style", "head"):
+                    self._skip = True
+
+            def handle_endtag(self, tag):
+                if tag in ("script", "style", "head"):
+                    self._skip = False
+
+            def handle_data(self, data):
+                if not self._skip and data.strip():
+                    self._parts.append(data.strip())
+
+            @property
+            def clean_text(self) -> str:
+                return re.sub(r"\s+", " ", " ".join(self._parts)).strip()
+
+        extractor = _TextExtractor()
+        extractor.feed(html)
+        text = extractor.clean_text
+        return [(text, 1)] if text else []
+    except Exception:
+        logger.exception("Error reading HTML %s", path)
+        return []
+
+
+def get_docx_pages(path: str) -> List[Tuple[str, int]]:
+    """Extract text from a DOCX file (paragraphs + table cells) as a single page."""
+    try:
+        from docx import Document  # python-docx
+        doc = Document(path)
+        parts: List[str] = []
+
+        # Paragraphs
+        for para in doc.paragraphs:
+            text = para.text.strip()
+            if text:
+                parts.append(text)
+
+        # Table cells (each row as a pipe-delimited line)
+        for table in doc.tables:
+            for row in table.rows:
+                row_text = " | ".join(
+                    cell.text.strip() for cell in row.cells if cell.text.strip()
+                )
+                if row_text:
+                    parts.append(row_text)
+
+        full_text = "\n".join(parts)
+        if full_text.strip():
+            return [(full_text.strip(), 1)]
+        return []
+    except Exception:
+        logger.exception("Error reading DOCX %s", path)
+        return []
+
+
 # ── Durable workflow steps ───────────────────────────────────────────────────
+
+_ALLOWED_EXTENSIONS = (".pdf", ".txt", ".md", ".csv", ".docx", ".pptx", ".xlsx", ".html", ".htm")
+
 
 @DBOS.step()
 def list_document_files() -> List[str]:
-    """List new PDF files in the docs directory that are not yet indexed."""
-    indexed_files: set[str] = set()
+    """Return filenames that need (re-)ingestion: new files or content-changed files.
+
+    Change detection uses a SHA-256 content hash stored per chunk.  A file is
+    re-ingested when:
+    - It has never been indexed (new file), or
+    - Its current hash differs from the stored hash (edited file).
+
+    When a changed file is detected its old chunks are soft-deleted
+    (``deleted=True``) so stale vectors are excluded from future searches while
+    the FAISS index structure remains intact.
+    """
+    # Build filename → stored_hash from existing metadata.
+    # A filename present in metadata but without a hash (legacy chunks) is
+    # treated as "unknown hash" → will be re-ingested to add the hash.
+    stored_hashes: Dict[str, str | None] = {}
     if os.path.exists(settings.metadata_file):
         try:
             with open(settings.metadata_file, "r") as f:
                 meta = json.load(f)
-                for item in meta:
-                    if "source" in item:
-                        indexed_files.add(item["source"])
+            for item in meta:
+                fname = item.get("source")
+                if fname and fname not in stored_hashes:
+                    stored_hashes[fname] = item.get("file_hash")  # may be None
         except Exception:
             logger.exception("Failed to read existing metadata")
 
-    files: List[str] = []
-    if os.path.exists(settings.docs_dir):
-        for filename in os.listdir(settings.docs_dir):
-            if any(filename.lower().endswith(ext) for ext in [".pdf", ".txt", ".md", ".csv"]) and filename not in indexed_files:
-                files.append(filename)
+    files_to_ingest: List[str] = []
+    if not os.path.exists(settings.docs_dir):
+        return files_to_ingest
 
-    logger.info("Found %d new documents to ingest", len(files))
-    return sorted(files)
+    for filename in os.listdir(settings.docs_dir):
+        if not any(filename.lower().endswith(ext) for ext in _ALLOWED_EXTENSIONS):
+            continue
+
+        path = os.path.join(settings.docs_dir, filename)
+        current_hash = _file_sha256(path)
+
+        if filename not in stored_hashes:
+            # Brand-new file — never seen before.
+            files_to_ingest.append(filename)
+        elif stored_hashes[filename] != current_hash:
+            # File was edited (or previously indexed without a hash).
+            # Soft-delete stale chunks so they are excluded from search.
+            deleted = vector_db.delete_by_source(filename)
+            logger.info(
+                "File '%s' changed (old hash=%s, new hash=%s); "
+                "soft-deleted %d old chunk(s)",
+                filename,
+                stored_hashes[filename],
+                current_hash,
+                deleted,
+            )
+            files_to_ingest.append(filename)
+        # else: hash unchanged → skip
+
+    logger.info(
+        "Found %d file(s) to ingest (%d already up-to-date)",
+        len(files_to_ingest),
+        len(stored_hashes) - len(files_to_ingest),
+    )
+    return sorted(files_to_ingest)
 
 
 @DBOS.step()
 def process_single_document(filename: str) -> List[Dict]:
-    """Process a single document and extract content."""
+    """Process a single document and extract content.
+
+    Each returned page dict includes a ``file_hash`` field (SHA-256 of the
+    raw file bytes) so chunks stored later can be compared on re-ingest.
+    """
     path = os.path.join(settings.docs_dir, filename)
     logger.info("Processing document: %s", filename)
 
@@ -101,12 +486,40 @@ def process_single_document(filename: str) -> List[Dict]:
     if ext == ".pdf":
         pages = get_pdf_pages(path)
         doc_type = "pdf"
-    elif ext in [".txt", ".md", ".csv"]:
+        min_chunk_length = 100
+    elif ext == ".docx":
+        pages = get_docx_pages(path)
+        doc_type = "docx"
+        min_chunk_length = 100
+    elif ext == ".txt":
         pages = get_text_pages(path)
         doc_type = "text"
+        min_chunk_length = 100
+    elif ext == ".md":
+        pages = get_markdown_chunks(path)
+        doc_type = "markdown"
+        min_chunk_length = 20   # short sections (e.g. "## Contact\n\ninfo@…") are valid
+    elif ext == ".csv":
+        pages = get_csv_chunks(path)
+        doc_type = "csv"
+        min_chunk_length = 20   # header + a handful of rows may be brief
+    elif ext == ".pptx":
+        pages = get_pptx_pages(path)
+        doc_type = "pptx"
+        min_chunk_length = 20   # single-line slides are meaningful
+    elif ext == ".xlsx":
+        pages = get_xlsx_chunks(path)
+        doc_type = "xlsx"
+        min_chunk_length = 20   # header-only sheets are still indexable
+    elif ext in (".html", ".htm"):
+        pages = get_html_pages(path)
+        doc_type = "html"
+        min_chunk_length = 100
     else:
         logger.warning("Unsupported file type: %s", ext)
         return []
+
+    file_hash = _file_sha256(path)
 
     docs: List[Dict] = []
     for text, page_num in pages:
@@ -115,6 +528,8 @@ def process_single_document(filename: str) -> List[Dict]:
             "content": text,
             "type": doc_type,
             "page": page_num,
+            "file_hash": file_hash,
+            "min_chunk_length": min_chunk_length,
         })
     return docs
 
@@ -189,8 +604,11 @@ def ingest_workflow() -> int:
     logger.info("Chunking %d document pages", len(all_documents))
     for doc in all_documents:
         chunks = splitter.split_text(doc["content"])
+        # Structured types (markdown sections, CSV row-groups) use a lower
+        # minimum so short-but-meaningful chunks aren't discarded.
+        min_len = doc.get("min_chunk_length", 100)
         for i, chunk in enumerate(chunks):
-            if len(chunk.strip()) < 100:
+            if len(chunk.strip()) < min_len:
                 continue
             chunks_metadata.append({
                 "source": doc["source"],
@@ -198,6 +616,7 @@ def ingest_workflow() -> int:
                 "content": chunk,
                 "chunk_id": i,
                 "page": doc["page"],
+                "file_hash": doc.get("file_hash"),   # SHA-256 for change detection
             })
             texts_to_embed.append(chunk)
 

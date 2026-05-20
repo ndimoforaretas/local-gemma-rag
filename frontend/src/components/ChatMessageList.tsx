@@ -1,5 +1,6 @@
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Bot, User, Copy, Check, Download, FileText } from "lucide-react";
+import { Bot, User, Copy, Check, Download, FileText, ChevronDown, Pencil, RefreshCw, X as XIcon, CornerDownLeft } from "lucide-react";
 import { marked } from "marked";
 import { Tooltip } from "./Tooltip";
 import { SuggestionCards } from "./SuggestionCards";
@@ -88,6 +89,10 @@ interface ChatMessageListProps {
   onExport: (content: string, id: string) => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   onSuggestionSelect: (prompt: string) => void;
+  /** Called when the user submits an edited version of a user message. */
+  onEdit?: (messageIndex: number, newContent: string) => void;
+  /** Called when the user clicks Regenerate on an AI message. */
+  onRegenerate?: (messageIndex: number) => void;
 }
 
 function formatMessageTime(id: string): string {
@@ -101,6 +106,61 @@ function formatMessageTime(id: string): string {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+// ── Thinking Panel ────────────────────────────────────────────────────────────
+
+interface ThinkingPanelProps {
+  thinking: string;
+  /** True while the stream is still writing thinking tokens for this message. */
+  isStreaming?: boolean;
+}
+
+function ThinkingPanel({ thinking, isStreaming = false }: ThinkingPanelProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
+
+  return (
+    <div className="w-full mb-1">
+      {/* Toggle button */}
+      <button
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-expanded={isOpen}
+        className="flex items-center gap-1.5 text-xs font-medium text-[#727785] dark:text-[#8c909f] hover:text-[#191c1e] dark:hover:text-[#e1e2ec] transition-colors select-none group"
+      >
+        <span className="text-[13px]">🧠</span>
+        <span>Reasoning</span>
+        {isStreaming && (
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#a855f7] animate-pulse ml-0.5" />
+        )}
+        <ChevronDown
+          size={13}
+          className={`transition-transform duration-200 ${isOpen ? "rotate-180" : "rotate-0"} text-[#727785] dark:text-[#8c909f]`}
+        />
+      </button>
+
+      {/* Collapsible content */}
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            key="thinking-panel"
+            initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
+            animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, height: "auto" }}
+            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="mt-2 p-3 rounded-xl bg-[#f5f0ff] dark:bg-[#1e1a2e] border border-[#d8b4fe] dark:border-[#4c1d95] text-xs text-[#6b21a8] dark:text-[#c4b5fd] font-mono leading-relaxed whitespace-pre-wrap break-words max-h-72 overflow-y-auto">
+              {thinking}
+              {isStreaming && (
+                <span className="inline-block w-1.5 h-3 bg-[#a855f7] animate-pulse ml-0.5 align-middle" />
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export function ChatMessageList({
   messages,
   isLoading,
@@ -109,8 +169,42 @@ export function ChatMessageList({
   onExport,
   messagesEndRef,
   onSuggestionSelect,
+  onEdit,
+  onRegenerate,
 }: ChatMessageListProps) {
   const prefersReducedMotion = useReducedMotion();
+
+  // ── Edit state ────────────────────────────────────────────────────────────
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState("");
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-focus and auto-resize the textarea when edit mode opens.
+  useEffect(() => {
+    if (editingIndex !== null && editTextareaRef.current) {
+      const el = editTextareaRef.current;
+      el.focus();
+      el.selectionStart = el.selectionEnd = el.value.length;
+    }
+  }, [editingIndex]);
+
+  const startEdit = (index: number, currentContent: string) => {
+    setEditingIndex(index);
+    setEditDraft(currentContent);
+  };
+
+  const cancelEdit = () => {
+    setEditingIndex(null);
+    setEditDraft("");
+  };
+
+  const submitEdit = (index: number) => {
+    const trimmed = editDraft.trim();
+    if (!trimmed) return;
+    setEditingIndex(null);
+    setEditDraft("");
+    onEdit?.(index, trimmed);
+  };
 
   return (
     <div className="flex-1 rounded-2xl bg-[#f2f4f6] dark:bg-[#191b23] border border-[#c2c6d6] dark:border-[#424754] transition-colors duration-300 overflow-hidden relative">
@@ -143,7 +237,7 @@ export function ChatMessageList({
         ) : (
           <div className="flex flex-col gap-6" role="list">
             <AnimatePresence initial={false}>
-              {messages.map((msg) => (
+              {messages.map((msg, msgIndex) => (
                 <motion.div
                   key={msg.id}
                   role="listitem"
@@ -190,6 +284,15 @@ export function ChatMessageList({
                         </span>
                       )}
                     </div>
+
+                    {/* Thinking panel — only for AI messages that have reasoning data */}
+                    {msg.role === "ai" && msg.thinking && (
+                      <ThinkingPanel
+                        thinking={msg.thinking}
+                        isStreaming={isLoading && !msg.content}
+                      />
+                    )}
+
                     <div
                       className={`rounded-2xl p-5 text-base leading-relaxed
                     ${
@@ -253,6 +356,44 @@ export function ChatMessageList({
                             ),
                           }}
                         />
+                      ) : editingIndex === msgIndex ? (
+                        /* ── Inline edit textarea ───────────────────────── */
+                        <div className="flex flex-col gap-2 w-full min-w-[220px]">
+                          <textarea
+                            ref={editTextareaRef}
+                            value={editDraft}
+                            onChange={(e) => setEditDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                                e.preventDefault();
+                                submitEdit(msgIndex);
+                              }
+                              if (e.key === "Escape") cancelEdit();
+                            }}
+                            rows={3}
+                            className="w-full rounded-xl bg-white/15 text-white placeholder-white/50 text-sm leading-relaxed p-2 resize-none border border-white/30 focus:outline-none focus:border-white/60"
+                            aria-label="Edit your message"
+                          />
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={cancelEdit}
+                              className="flex items-center gap-1 text-xs font-medium text-white/70 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-white/10"
+                              aria-label="Cancel edit"
+                            >
+                              <XIcon size={12} /> Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => submitEdit(msgIndex)}
+                              disabled={!editDraft.trim()}
+                              className="flex items-center gap-1 text-xs font-semibold text-white bg-white/20 hover:bg-white/30 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1 rounded-lg transition-colors"
+                              aria-label="Send edited message"
+                            >
+                              <CornerDownLeft size={12} /> Send
+                            </button>
+                          </div>
+                        </div>
                       ) : (
                         <div>
                           {msg.attachments && msg.attachments.length > 0 && (
@@ -321,6 +462,30 @@ export function ChatMessageList({
                             aria-label="Export response as markdown"
                             className="flex items-center gap-1.5 text-xs font-medium text-[#727785] dark:text-[#8c909f] hover:text-[#0058be] dark:hover:text-[#adc6ff] transition-colors">
                             <Download size={14} /> Export
+                          </button>
+                        </Tooltip>
+                        {onRegenerate && !isLoading && (
+                          <Tooltip content="Regenerate this response" position="top">
+                            <button
+                              onClick={() => onRegenerate(msgIndex)}
+                              aria-label="Regenerate response"
+                              className="flex items-center gap-1.5 text-xs font-medium text-[#727785] dark:text-[#8c909f] hover:text-[#a855f7] dark:hover:text-[#ddb7ff] transition-colors">
+                              <RefreshCw size={14} /> Regenerate
+                            </button>
+                          </Tooltip>
+                        )}
+                      </div>
+                    )}
+
+                    {/* User message edit button */}
+                    {msg.role === "user" && onEdit && !isLoading && editingIndex !== msgIndex && (
+                      <div className="flex justify-end mt-1">
+                        <Tooltip content="Edit and resend" position="top">
+                          <button
+                            onClick={() => startEdit(msgIndex, msg.content)}
+                            aria-label="Edit message"
+                            className="flex items-center gap-1 text-xs font-medium text-[#c4a3f0] hover:text-white transition-colors opacity-60 hover:opacity-100">
+                            <Pencil size={12} /> Edit
                           </button>
                         </Tooltip>
                       </div>

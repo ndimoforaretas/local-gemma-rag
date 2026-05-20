@@ -19,6 +19,7 @@ import type {
   SaveToKBFile,
   SaveToKBResponse,
   SuggestionsResponse,
+  IndexedDocument,
 } from "../types/api";
 
 const API_BASE = ""; // same-origin in dev and production
@@ -47,10 +48,22 @@ export const api = {
   ragStream: async (
     query: string,
     attachments?: Attachment[],
+    sessionId?: string,
+    documentFilter?: string[],
+    trimHistoryToTurns?: number,
   ): Promise<Response> => {
     const payload: RagRequest = { query };
     if (attachments && attachments.length > 0) {
       payload.attachments = attachments;
+    }
+    if (sessionId) {
+      payload.session_id = sessionId;
+    }
+    if (documentFilter && documentFilter.length > 0) {
+      payload.document_filter = documentFilter;
+    }
+    if (trimHistoryToTurns !== undefined) {
+      payload.trim_history_to_turns = trimHistoryToTurns;
     }
     const resp = await fetch(`${API_BASE}/rag`, {
       method: "POST",
@@ -102,6 +115,16 @@ export const api = {
     return handleJsonResponse<IngestResponse>(resp);
   },
 
+  // Fetch a URL, extract text, save to docs/, and trigger ingestion
+  ingestUrl: async (url: string): Promise<{ status: string; filename: string; workflow_id: string; chars_extracted: number }> => {
+    const resp = await fetch(`${API_BASE}/ingest/url`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    return handleJsonResponse(resp);
+  },
+
   // Poll ingestion workflow status
   ingestStatus: async (workflowId: string): Promise<WorkflowStatusResponse> => {
     const resp = await fetch(
@@ -143,6 +166,45 @@ export const api = {
       body: JSON.stringify({ files }),
     });
     return handleJsonResponse<SaveToKBResponse>(resp);
+  },
+
+  // Flat list of indexed documents (for the scope filter)
+  listIndexedDocs: async (): Promise<{ documents: IndexedDocument[] }> => {
+    const resp = await fetch(`${API_BASE}/api/docs/list`);
+    return handleJsonResponse(resp);
+  },
+
+  // Privacy vault audit stats
+  getVaultStats: async (): Promise<{
+    total_documents: number;
+    total_chunks: number;
+    index_size_kb: number;
+    last_ingested_at: string | null;
+    ollama_host: string;
+    external_calls: number;
+    storage: { vector_index: string; metadata: string; documents: string };
+  }> => {
+    const resp = await fetch(`${API_BASE}/api/vault/stats`);
+    return handleJsonResponse(resp);
+  },
+
+  // Audio transcription (local Whisper)
+  transcriptionStatus: async (): Promise<{ available: boolean; model: string | null }> => {
+    const resp = await fetch(`${API_BASE}/api/transcribe/status`);
+    return handleJsonResponse(resp);
+  },
+
+  transcribeAudio: async (
+    audioBlob: Blob,
+    filename = "recording.webm",
+  ): Promise<{ text: string; language: string; duration_seconds: number }> => {
+    const form = new FormData();
+    form.append("file", audioBlob, filename);
+    const resp = await fetch(`${API_BASE}/api/transcribe`, {
+      method: "POST",
+      body: form,
+    });
+    return handleJsonResponse(resp);
   },
 
   // System health

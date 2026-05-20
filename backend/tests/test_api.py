@@ -292,16 +292,19 @@ class TestRagEndpoint:
         assert resp.status_code in (200, 500)  # 500 if Ollama is down
 
     def test_rag_rejects_too_many_attachments(self, client):
+        """Sending more than max_attachments_per_message files is rejected with 422."""
+        from backend.config import get_settings
+        max_att = get_settings().max_attachments_per_message
         attachments = [
             {"mime_type": "text/plain", "data": "aGVsbG8=", "name": f"file_{i}.txt"}
-            for i in range(2)
+            for i in range(max_att + 1)
         ]
         resp = client.post(
             "/rag",
             json={"query": "Analyze these files", "attachments": attachments},
         )
         assert resp.status_code == 422
-        assert "Only 1 file attachment per message is allowed" in resp.json()["detail"]
+        assert "Maximum" in resp.json()["detail"]
 
 
 class TestHealthEndpoint:

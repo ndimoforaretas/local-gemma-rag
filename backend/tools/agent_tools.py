@@ -10,9 +10,11 @@ import contextvars
 import datetime
 import operator
 
+import ollama
+
 from strands import tool
 
-from backend.config import logger
+from backend.config import get_settings, logger
 from backend.services.vector_db import vector_db
 
 # Per-asyncio-Task citation context.
@@ -20,6 +22,13 @@ from backend.services.vector_db import vector_db
 # visible to a concurrent request — no shared mutable state on the function.
 _last_doc_ctx: contextvars.ContextVar[dict] = contextvars.ContextVar(
     "last_doc", default={}
+)
+
+# Per-request document scope filter.
+# When set to a non-empty list, search_knowledge_base restricts results to
+# chunks whose source filename is in the list.  None = search all documents.
+_source_filter_ctx: contextvars.ContextVar[list[str] | None] = contextvars.ContextVar(
+    "source_filter", default=None
 )
 
 # Safe operators for the calculator — no eval().
@@ -81,8 +90,14 @@ def search_knowledge_base(query: str) -> str:
     Call this for most questions — the knowledge base likely contains relevant context.
     Do NOT call this when the user has attached a file or image to their current message.
     Provide a clear, specific query for the best results."""
-    results = vector_db.search(query, top_k=7)
+    source_filter = _source_filter_ctx.get()
+    results = vector_db.search(query, top_k=7, source_filter=source_filter or None)
     if not results:
+        if source_filter:
+            return (
+                f"No relevant information found in the selected document(s): "
+                f"{', '.join(source_filter)}. Try broadening the scope or asking differently."
+            )
         return "No relevant information found."
 
     formatted_results: list[str] = []
@@ -95,3 +110,150 @@ def search_knowledge_base(query: str) -> str:
         _last_doc_ctx.set(res)
 
     return "\n---\n".join(formatted_results)
+
+
+# ── Document Intelligence Tools ───────────────────────────────────────────────
+# These tools let the agent reason *about* the vault itself rather than just
+# searching it.  analyze_document and compare_documents call Gemma directly via
+# ollama.chat() (not through the agent) to avoid infinite tool-call recursion.
+
+_MAX_ANALYSIS_CHARS = 10_000   # ~2 500 tokens — keeps inner calls fast
+
+
+@tool
+def list_documents() -> str:
+    """List all documents currently indexed in the knowledge base,
+    with their file type and chunk count.
+    Use this to discover what documents are available before searching."""
+    active = [m for m in vector_db.metadata if not m.get("deleted")]
+    if not active:
+        return (
+            "The knowledge base is empty — no documents have been indexed yet. "
+            "Upload a file and run ingestion to get started."
+        )
+
+    # Group by source filename.
+    docs: dict[str, dict] = {}
+    for chunk in active:
+        source = chunk.get("source", "unknown")
+        dtype = chunk.get("type", "unknown")
+        if source not in docs:
+            docs[source] = {"type": dtype, "chunk_count": 0}
+        docs[source]["chunk_count"] += 1
+
+    lines = [f"📚 Knowledge Base — {len(docs)} document(s) indexed:\n"]
+    for name in sorted(docs):
+        info = docs[name]
+        lines.append(
+            f"  • {name}  [{info['type']}]  ({info['chunk_count']} chunk(s))"
+        )
+    return "\n".join(lines)
+
+
+@tool
+def analyze_document(filename: str) -> str:
+    """Produce a structured analysis of a single document in the knowledge base.
+
+    The analysis includes key topics, important entities (names, dates,
+    organisations), key facts, and a 2–3 sentence summary.
+
+    Args:
+        filename: The exact document name as returned by list_documents.
+    """
+    chunks = [
+        m for m in vector_db.metadata
+        if not m.get("deleted") and m.get("source", "") == filename
+    ]
+    if not chunks:
+        return (
+            f"Document '{filename}' was not found in the knowledge base. "
+            "Use list_documents() to see all available filenames."
+        )
+
+    # Concatenate chunk content (truncated to avoid overflowing context).
+    full_text = "\n\n".join(
+        c.get("content") or c.get("text", "") for c in chunks
+    )
+    if len(full_text) > _MAX_ANALYSIS_CHARS:
+        full_text = full_text[:_MAX_ANALYSIS_CHARS] + "\n\n[…content truncated…]"
+
+    settings = get_settings()
+    prompt = (
+        f"You are analyzing the following document: **{filename}**\n\n"
+        "Provide a structured analysis with these sections:\n"
+        "1. **Key Topics** — main subjects covered\n"
+        "2. **Key Entities** — important names, dates, organisations, places\n"
+        "3. **Key Facts** — the most important specific pieces of information\n"
+        "4. **Summary** — a 2–3 sentence overview of the document\n\n"
+        "Document content:\n"
+        f"{full_text}"
+    )
+
+    try:
+        response = ollama.chat(
+            model=settings.llm_model,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return response["message"]["content"]
+    except Exception as exc:
+        logger.error("analyze_document failed for %r: %s", filename, exc)
+        return f"Error analysing '{filename}': {exc}"
+
+
+@tool
+def compare_documents(doc_a: str, doc_b: str, question: str) -> str:
+    """Compare two documents in the knowledge base by answering a specific question.
+
+    Fetches content from both documents and asks Gemma to answer `question`
+    by comparing them side-by-side.
+
+    Args:
+        doc_a:     First document name (as returned by list_documents).
+        doc_b:     Second document name (as returned by list_documents).
+        question:  The comparison question, e.g. "Which document covers risk
+                   management more thoroughly?"
+    """
+    def _get_text(filename: str) -> str | None:
+        chunks = [
+            m for m in vector_db.metadata
+            if not m.get("deleted") and m.get("source", "") == filename
+        ]
+        if not chunks:
+            return None
+        text = "\n\n".join(c.get("content") or c.get("text", "") for c in chunks)
+        if len(text) > _MAX_ANALYSIS_CHARS:
+            text = text[:_MAX_ANALYSIS_CHARS] + "\n\n[…content truncated…]"
+        return text
+
+    text_a = _get_text(doc_a)
+    text_b = _get_text(doc_b)
+
+    if text_a is None:
+        return (
+            f"Document '{doc_a}' was not found in the knowledge base. "
+            "Use list_documents() to see all available filenames."
+        )
+    if text_b is None:
+        return (
+            f"Document '{doc_b}' was not found in the knowledge base. "
+            "Use list_documents() to see all available filenames."
+        )
+
+    settings = get_settings()
+    prompt = (
+        f"Compare the two documents below and answer this question:\n"
+        f"**{question}**\n\n"
+        f"--- Document A: {doc_a} ---\n{text_a}\n\n"
+        f"--- Document B: {doc_b} ---\n{text_b}\n\n"
+        "Provide a clear, structured comparison that directly answers the question."
+    )
+
+    try:
+        response = ollama.chat(
+            model=settings.llm_model,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return response["message"]["content"]
+    except Exception as exc:
+        logger.error("compare_documents failed for %r vs %r: %s", doc_a, doc_b, exc)
+        return f"Error comparing documents: {exc}"

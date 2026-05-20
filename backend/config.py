@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     ollama_host: str = "http://localhost:11434"
 
     # --- RAG Agent ---
+    # Set to False to disable Gemma 4 thinking mode (faster, no reasoning panel).
+    thinking_mode: bool = True
+
     agent_system_prompt: str = (
         "You are Gemma CogniVault AI, a precise technical assistant that answers questions "
         "using the user's indexed documents.\n"
@@ -49,7 +52,8 @@ class Settings(BaseSettings):
     # --- Server ---
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:8000"]
     max_upload_size_mb: int = 200
-    max_attachments_per_message: int = 1
+    # Allow up to 5 mixed attachments (images + documents) per chat message.
+    max_attachments_per_message: int = 5
 
     # --- Logging ---
     log_level: str = "INFO"

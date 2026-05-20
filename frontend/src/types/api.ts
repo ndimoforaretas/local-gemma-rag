@@ -16,6 +16,20 @@ export interface Attachment {
 export interface RagRequest {
   query: string;
   attachments?: Attachment[];
+  session_id?: string;
+  /** Restrict KB search to these source filenames. Empty/absent = all docs. */
+  document_filter?: string[];
+  /**
+   * Rewind the agent's conversation history to this many turn-pairs before
+   * processing the query. Used by edit-and-resend / regenerate (T3-K).
+   */
+  trim_history_to_turns?: number;
+}
+
+export interface IndexedDocument {
+  name: string;
+  type: string;
+  chunk_count: number;
 }
 
 // ── Generic ─────────────────────────────────────────────────────────
@@ -51,12 +65,18 @@ export interface Message {
   role: "user" | "ai";
   content: string;
   attachments?: MessageAttachment[];
+  /** Gemma 4 internal reasoning chain, streamed before the answer. */
+  thinking?: string;
 }
 
 export interface ContextItem {
   title: string;
   type: string;
   path: string;
+  /** Retrieved chunk text — available for inline preview. */
+  text?: string;
+  /** Page number within the source document (if applicable). */
+  page?: number;
 }
 
 export interface ChatSession {
