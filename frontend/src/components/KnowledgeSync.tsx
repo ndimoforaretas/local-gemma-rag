@@ -12,6 +12,7 @@ import { motion } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Tooltip } from "./Tooltip";
 import { ConfirmationModal } from "./ConfirmationModal";
+import { VaultAudit } from "./VaultAudit";
 import { api } from "../lib/api";
 import type { KBFile, KBFolder, WorkflowStatusResponse } from "../types/api";
 
@@ -423,6 +424,9 @@ export function KnowledgeSync() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 h-full overflow-y-auto">
       <div className="max-w-5xl mx-auto flex flex-col gap-6 sm:gap-8">
+        {/* Privacy Vault Audit Panel */}
+        <VaultAudit />
+
         {/* Upload Panel + Drag-and-Drop Zone */}
         <div className="bg-[#eceef0] dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-4 sm:p-6 lg:p-8 flex flex-col gap-5 transition-colors duration-300">
           <div className="min-w-0">

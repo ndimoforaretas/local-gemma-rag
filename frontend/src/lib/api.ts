@@ -155,6 +155,20 @@ export const api = {
     return handleJsonResponse<SaveToKBResponse>(resp);
   },
 
+  // Privacy vault audit stats
+  getVaultStats: async (): Promise<{
+    total_documents: number;
+    total_chunks: number;
+    index_size_kb: number;
+    last_ingested_at: string | null;
+    ollama_host: string;
+    external_calls: number;
+    storage: { vector_index: string; metadata: string; documents: string };
+  }> => {
+    const resp = await fetch(`${API_BASE}/api/vault/stats`);
+    return handleJsonResponse(resp);
+  },
+
   // System health
   health: async (): Promise<HealthResponse> => {
     const resp = await fetch(`${API_BASE}/health`);

@@ -252,7 +252,7 @@ A real Data Vault must stay current.
 
 ---
 
-### Step 4 — DOCX + URL Ingestion (T2-E / T2-F)  `[NEXT]`
+### Step 4 — DOCX + URL Ingestion (T2-E / T2-F)  ✅
 
 **Why it matters:** Enterprise documents live in Word files; demos always need a URL
 ingestion moment. Adds immediate enterprise credibility.
@@ -275,7 +275,7 @@ ingestion moment. Adds immediate enterprise credibility.
 
 ---
 
-### Step 5 — Privacy Vault Audit Panel
+### Step 5 — Privacy Vault Audit Panel  `[NEXT]`
 
 **Why it wins:** Ties together the entire "Local First Data Vault" narrative in one view.
 Shows the jury (and real users) exactly what's stored and proves nothing leaves the machine.

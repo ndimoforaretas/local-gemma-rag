@@ -374,6 +374,58 @@ def get_ingest_status(workflow_id: str):
         raise HTTPException(status_code=500, detail="Error fetching workflow status")
 
 
+# ── Vault Stats ──────────────────────────────────────────────────────────────
+
+@router.get("/api/vault/stats")
+def get_vault_stats():
+    """
+    Return a privacy-focused summary of the local knowledge vault.
+
+    All values are derived from on-disk files — no external calls are made.
+    The ``external_calls`` field is always 0 to prove the vault is fully local.
+    """
+    # Count documents and chunks from metadata
+    total_documents = 0
+    total_chunks = 0
+    last_ingested_at: str | None = None
+
+    if os.path.exists(settings.metadata_file):
+        try:
+            with open(settings.metadata_file, "r") as f:
+                metadata = json.load(f)
+
+            active = [m for m in metadata if not m.get("deleted")]
+            total_chunks = len(active)
+            unique_sources = {m.get("source") for m in active if m.get("source")}
+            total_documents = len(unique_sources)
+
+            # Derive last_ingested_at from the metadata file's mtime
+            mtime = os.path.getmtime(settings.metadata_file)
+            from datetime import datetime as _dt
+            last_ingested_at = _dt.fromtimestamp(mtime).isoformat(timespec="seconds")
+        except Exception:
+            logger.exception("Error reading metadata for vault stats")
+
+    # Index size in KB
+    index_size_kb = 0
+    if os.path.exists(settings.index_file):
+        index_size_kb = round(os.path.getsize(settings.index_file) / 1024, 1)
+
+    return {
+        "total_documents": total_documents,
+        "total_chunks": total_chunks,
+        "index_size_kb": index_size_kb,
+        "last_ingested_at": last_ingested_at,
+        "ollama_host": settings.ollama_host,
+        "external_calls": 0,
+        "storage": {
+            "vector_index": settings.index_file,
+            "metadata": settings.metadata_file,
+            "documents": settings.docs_dir,
+        },
+    }
+
+
 # ── URL Ingestion ─────────────────────────────────────────────────────────────
 
 class _URLIngestRequest(BaseModel):
