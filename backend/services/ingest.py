@@ -6,6 +6,7 @@ decorated as a ``@DBOS.step()`` so that the workflow can resume from
 the last completed step after a crash.
 """
 
+import csv
 import hashlib
 import json
 import os
@@ -16,7 +17,7 @@ import faiss
 import numpy as np
 import ollama
 from dbos import DBOS
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 from pypdf import PdfReader
 
 from backend.config import get_settings, logger
@@ -74,6 +75,92 @@ def get_text_pages(path: str) -> List[Tuple[str, int]]:
     except Exception:
         logger.exception("Error reading text file %s", path)
     return []
+
+
+_MD_HEADERS = [("#", "H1"), ("##", "H2"), ("###", "H3")]
+
+
+def get_markdown_chunks(path: str) -> List[Tuple[str, int]]:
+    """Split a Markdown file on its header structure.
+
+    Each chunk corresponds to one section bounded by H1/H2/H3 headers.
+    A breadcrumb prefix ``[Section: H1 > H2 > H3]`` is prepended so the
+    embedding always contains the section hierarchy even if the raw content
+    gives no context.  Sections longer than ``settings.chunk_size`` will be
+    split again by the generic splitter in ``ingest_workflow()``.
+
+    Falls back to ``get_text_pages()`` on parse errors or empty results.
+    """
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            text = f.read()
+        if not text.strip():
+            return []
+
+        splitter = MarkdownHeaderTextSplitter(
+            headers_to_split_on=_MD_HEADERS,
+            strip_headers=True,   # headers go into doc.metadata; content stays clean
+        )
+        docs = splitter.split_text(text)
+
+        chunks: List[Tuple[str, int]] = []
+        for i, doc in enumerate(docs):
+            meta = doc.metadata            # e.g. {"H1": "Intro", "H2": "Overview"}
+            content = doc.page_content.strip()
+            if not content:
+                continue
+
+            # Build the full breadcrumb from outer → inner heading.
+            breadcrumb = " > ".join(
+                meta[level] for level in ("H1", "H2", "H3") if level in meta
+            )
+            chunk_text = f"[Section: {breadcrumb}]\n\n{content}" if breadcrumb else content
+            chunks.append((chunk_text, i + 1))
+
+        return chunks if chunks else get_text_pages(path)
+    except Exception:
+        logger.exception("Error parsing Markdown %s", path)
+        return get_text_pages(path)
+
+
+# Number of CSV data rows bundled into each chunk.  Keep small enough that a
+# chunk (header + N rows) usually fits within settings.chunk_size characters.
+_CSV_ROWS_PER_CHUNK = 20
+
+
+def get_csv_chunks(path: str) -> List[Tuple[str, int]]:
+    """Split a CSV file into header-prefixed row-group chunks.
+
+    Every chunk starts with the header row so the LLM always knows the column
+    names, even when the chunk is not the first one.  Falls back to the plain
+    text extractor if the file cannot be parsed as CSV.
+    """
+    try:
+        with open(path, "r", encoding="utf-8", newline="") as f:
+            rows = list(csv.reader(f))
+    except Exception:
+        logger.exception("Error reading CSV %s", path)
+        return get_text_pages(path)
+
+    if not rows:
+        return []
+
+    header = rows[0]
+    data_rows = rows[1:]
+    header_line = ", ".join(str(c) for c in header)
+
+    if not data_rows:
+        return [(header_line, 1)] if header_line.strip() else []
+
+    chunks: List[Tuple[str, int]] = []
+    for chunk_num, start in enumerate(range(0, len(data_rows), _CSV_ROWS_PER_CHUNK), 1):
+        batch = data_rows[start : start + _CSV_ROWS_PER_CHUNK]
+        lines = [header_line] + [", ".join(str(c) for c in row) for row in batch]
+        chunk_text = "\n".join(lines).strip()
+        if chunk_text:
+            chunks.append((chunk_text, chunk_num))
+
+    return chunks if chunks else get_text_pages(path)
 
 
 def get_docx_pages(path: str) -> List[Tuple[str, int]]:
@@ -191,12 +278,23 @@ def process_single_document(filename: str) -> List[Dict]:
     if ext == ".pdf":
         pages = get_pdf_pages(path)
         doc_type = "pdf"
+        min_chunk_length = 100
     elif ext == ".docx":
         pages = get_docx_pages(path)
         doc_type = "docx"
-    elif ext in [".txt", ".md", ".csv"]:
+        min_chunk_length = 100
+    elif ext == ".txt":
         pages = get_text_pages(path)
         doc_type = "text"
+        min_chunk_length = 100
+    elif ext == ".md":
+        pages = get_markdown_chunks(path)
+        doc_type = "markdown"
+        min_chunk_length = 20   # short sections (e.g. "## Contact\n\ninfo@…") are valid
+    elif ext == ".csv":
+        pages = get_csv_chunks(path)
+        doc_type = "csv"
+        min_chunk_length = 20   # header + a handful of rows may be brief
     else:
         logger.warning("Unsupported file type: %s", ext)
         return []
@@ -211,6 +309,7 @@ def process_single_document(filename: str) -> List[Dict]:
             "type": doc_type,
             "page": page_num,
             "file_hash": file_hash,
+            "min_chunk_length": min_chunk_length,
         })
     return docs
 
@@ -285,8 +384,11 @@ def ingest_workflow() -> int:
     logger.info("Chunking %d document pages", len(all_documents))
     for doc in all_documents:
         chunks = splitter.split_text(doc["content"])
+        # Structured types (markdown sections, CSV row-groups) use a lower
+        # minimum so short-but-meaningful chunks aren't discarded.
+        min_len = doc.get("min_chunk_length", 100)
         for i, chunk in enumerate(chunks):
-            if len(chunk.strip()) < 100:
+            if len(chunk.strip()) < min_len:
                 continue
             chunks_metadata.append({
                 "source": doc["source"],
