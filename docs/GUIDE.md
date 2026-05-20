@@ -23,12 +23,12 @@ Gemma CogniVault is a **fully local, privacy-first AI assistant** that answers q
 
 Under the hood it combines:
 
-| Component                  | What it does                               |
-| -------------------------- | ------------------------------------------ |
-| **Ollama + Gemma**         | Runs the language model locally            |
-| **FAISS vector store**     | Indexes your documents for semantic search |
-| **DBOS durable workflows** | Makes ingestion crash-proof and resumable  |
-| **PostgreSQL**             | Stores workflow state and chat history     |
+| Component | What it does |
+|-----------|-------------|
+| **Ollama + Gemma 4 E4B** | Runs the language model locally — supports text, images, and audio |
+| **FAISS + BM25** | Hybrid retrieval: vector similarity search fused with keyword matching |
+| **DBOS durable workflows** | Makes ingestion crash-proof and resumable |
+| **PostgreSQL** | Stores workflow state and chat history |
 
 The app has two primary views: **Chat** and **Knowledge Base**.
 
@@ -38,20 +38,18 @@ The app has two primary views: **Chat** and **Knowledge Base**.
 
 ### Left Sidebar — Navigation
 
-| Item                               | What it does                     |
-| ---------------------------------- | -------------------------------- |
-| **Chat** (speech bubble icon)      | Opens the conversation interface |
-| **Knowledge Base** (database icon) | Opens the document manager       |
-
-The active view is highlighted with a purple-accented animated background pill.
+| Item | What it does |
+|------|-------------|
+| **Chat** (speech bubble icon) | Opens the conversation interface |
+| **Knowledge Base** (database icon) | Opens the document manager |
 
 ### Top Header — Utility Controls
 
-| Control                   | What it does                                                          |
-| ------------------------- | --------------------------------------------------------------------- |
-| **Local Workspace** badge | Confirms the app is running entirely locally                          |
-| **Sun / Moon button**     | Toggles between light and dark mode — preference is applied instantly |
-| **User avatar**           | Shows connection status (green = online / Ollama reachable)           |
+| Control | What it does |
+|---------|-------------|
+| **Local Workspace** badge | Confirms the app is running entirely locally |
+| **Sun / Moon button** | Toggles between light and dark mode instantly |
+| **User avatar** | Shows connection status (green = Ollama reachable) |
 
 ---
 
@@ -63,13 +61,12 @@ The Chat view is your primary interface with the AI. Open it by clicking **Chat*
 
 ### 3.1 Suggestion Cards
 
-When you start a **fresh conversation** (no messages yet), a grid of six clickable suggestion cards appears below the welcome message.
+When you start a **fresh conversation** (no messages yet), a grid of clickable suggestion cards appears below the welcome message.
 
-- Each card covers a common app feature or workflow.
-- **Click any card** — the question is sent immediately, triggering a full AI response.
-- The cards disappear automatically as soon as the conversation begins.
-
-> **Tip:** The cards are a quick way to explore what the app can do without having to type anything.
+- Each card covers a common feature or workflow.
+- **Click any card** to send it immediately — no typing required.
+- Cards disappear as soon as the conversation begins.
+- When documents are indexed, cards are tailored to your actual document titles.
 
 ---
 
@@ -77,125 +74,165 @@ When you start a **fresh conversation** (no messages yet), a grid of six clickab
 
 The text field at the bottom of the chat area supports:
 
-| Action                       | How                                                     |
-| ---------------------------- | ------------------------------------------------------- |
-| **Send a message**           | Type and press `Enter`                                  |
-| **New line without sending** | `Shift + Enter`                                         |
-| **Attach a file**            | Click the paperclip icon, or see §3.3                   |
-| **Character counter**        | Shown once you exceed ~80% of the 5 000-character limit |
+| Action | How |
+|--------|-----|
+| **Send a message** | Type and press `Enter` |
+| **New line without sending** | `Shift + Enter` |
+| **Attach a file or image** | Click the paperclip icon |
+| **Voice input** | Click the microphone icon (see §3.3) |
+| **Character counter** | Shown once you exceed ~80% of the 5,000-character limit |
 
-The input box **auto-resizes** vertically as you type, up to about five visible lines before it starts scrolling.
-
----
-
-### 3.3 File Attachments in Chat
-
-You can attach **one file per message** alongside your question. This is for ad-hoc files you want the AI to read on the fly — it does not permanently index them.
-
-**Supported types and limits:**
-
-| Category    | Formats                                                                                                      | Size limit |
-| ----------- | ------------------------------------------------------------------------------------------------------------ | ---------- |
-| Images      | JPG, PNG, GIF, WebP, and other common image types                                                            | 10 MB      |
-| Text / Code | `.txt`, `.md`, `.csv`, `.json`, `.xml`, `.yaml`, `.yml`, `.log`, `.py`, `.js`, `.ts`, `.tsx`, `.jsx`, `.sql` | 5 MB       |
-
-**What happens:**
-
-1. The file content (or image) is sent to the AI together with your message.
-2. The AI reads the file directly — it does **not** search the knowledge base for it.
-3. A thumbnail preview appears in the input area before you send.
-4. After sending, the message bubble shows the attachment preview.
-
-> **Note:** PDFs cannot be attached inline. To query a PDF, add it to the Knowledge Base first (see §4).
+The input box auto-resizes vertically as you type, up to about five visible lines before it scrolls.
 
 ---
 
-### 3.4 Save Attachment to Knowledge Base
+### 3.3 Voice Input
 
-After you send a text file attachment, a **green bridge card** appears at the bottom of the chat area:
+Click the **microphone icon** in the chat input bar to ask a question with your voice.
 
-```
-📁  Add "report.csv" to Knowledge Base?    [Add to KB]  [✕]
-```
+1. Click the mic icon — your browser will request microphone permission on first use.
+2. Speak your question clearly.
+3. Click the **stop icon** (square) when you are done.
+4. Your speech is transcribed locally by Whisper — no cloud service is used.
+5. The transcribed text appears in the input box. Review it, then press `Enter` to send.
 
-- Click **Add to KB** (KB = Knowledge Base) to permanently save and index that file so future questions can reference it.
-- Click **✕** to dismiss without saving.
-- A spinner confirms the save is in progress; a green tick confirms success.
+> **Note:** Voice input requires the Whisper model to be available. If the mic icon is not visible, Whisper may not be installed. See the README for setup instructions.
 
 ---
 
-### 3.5 Streaming AI Responses
+### 3.4 File Attachments in Chat
 
-The AI's answer streams to the screen in real time — you do not wait for the full reply before reading begins. While the AI is generating:
+Attach a file alongside your question for the AI to read on the fly. This is for one-off files — it does **not** permanently index them.
 
-- A three-dot bouncing animation appears in the response bubble.
+**Supported types:**
+
+| Category | Formats | Size limit |
+|----------|---------|------------|
+| Images | JPG, PNG, GIF, WebP | 10 MB |
+| Text / Code | `.txt`, `.md`, `.csv`, `.json`, `.xml`, `.yaml`, `.yml`, `.log`, `.py`, `.js`, `.ts`, `.tsx`, `.jsx`, `.sql` | 5 MB |
+
+After sending a text file, a **green bridge card** appears offering to save it to the Knowledge Base permanently. Click **Add to KB** to index it for future sessions.
+
+> **Tip:** To ask questions about a PDF, add it to the Knowledge Base first — PDFs cannot be attached inline.
+
+---
+
+### 3.5 Image Analysis
+
+Attach any image (screenshot, chart, photo, diagram) to your message and ask questions about it. The AI reads the image directly using its built-in vision capability.
+
+**Example uses:**
+- "What does this chart show and does it match what's in my Q3 report?"
+- "Summarise the text in this screenshot."
+- "Identify the key components in this architecture diagram."
+
+The AI combines what it sees in the image with any relevant content it retrieves from your knowledge base.
+
+---
+
+### 3.6 Streaming Responses and the Thinking Panel
+
+AI responses stream to the screen in real time. While the AI is generating:
+
+- A three-dot animation appears in the response bubble.
 - The input and send button are disabled until the stream completes.
 - The page scrolls automatically to keep the latest content in view.
 
----
+**The Thinking Panel** appears above the final answer when the AI uses its extended reasoning mode. It shows the model's internal reasoning chain — how it decided which tools to call, how it interpreted your question, and how it reconciled information from multiple sources.
 
-### 3.6 Context Sidebar — Source Citations
-
-Whenever the AI searches your knowledge base to answer a question, a **Context Used** panel slides in from the right side of the chat area.
-
-Each card in the panel shows:
-
-| Field           | Description                               |
-| --------------- | ----------------------------------------- |
-| **Title**       | The document filename                     |
-| **Path**        | The folder path within the knowledge base |
-| **Type badge**  | The file type (PDF, TXT, etc.)            |
-| **Open source** | A link to view the raw file               |
-
-The count of sources used is also shown as a blue pill badge in the chat header (e.g. `3 sources`).
-
-> **Tip:** If the AI gives an unexpected answer, check the Context sidebar to see exactly which documents it drew from — that tells you whether the right files are indexed.
+- Click the thinking panel header to expand or collapse the reasoning chain.
+- The thinking panel updates in real time as the model reasons, before the answer appears.
+- This is especially visible on complex, multi-document questions.
 
 ---
 
-### 3.7 Message Actions
+### 3.7 Context Sidebar — Source Citations
 
-Hover over any **AI message bubble** to reveal two action buttons:
+Whenever the AI searches your knowledge base, a **Context Used** panel appears on the right side of the chat area showing every source it retrieved.
 
-| Button                         | What it does                                                                                               |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| **Copy** (clipboard icon)      | Copies the raw markdown text to your clipboard. The icon turns into a tick for two seconds to confirm.     |
-| **Download** (arrow-down icon) | Saves the response as a `.md` file named `CogniVault_Response_<id>.md`. Useful for archiving long answers. |
+Each citation card shows:
+
+| Field | Description |
+|-------|-------------|
+| **Document name** | The source filename |
+| **File type badge** | PDF, DOCX, CSV, etc. |
+| **Page number** | The page within the document (where applicable) |
+| **View chunk** | Click to expand and read the exact text the AI retrieved |
+
+**On mobile:** tap the "N sources" badge in the chat header to open the context panel as a slide-in overlay.
+
+> **Tip:** If an answer seems wrong, open the Context sidebar to see which chunks the AI actually used. If the right document is not listed, it may not be indexed yet — check the Knowledge Base view.
 
 ---
 
-### 3.8 Markdown Rendering
+### 3.8 Document Scope Filter
+
+By default the AI searches all indexed documents. To restrict retrieval to specific files:
+
+1. Click the scope filter icon in the chat input area.
+2. A dropdown lists every indexed document.
+3. Select one or more documents to pin the search to those files only.
+4. The filter is shown as a badge on the input bar.
+5. Click the badge X to clear the filter and search all documents again.
+
+This is useful when you have many documents indexed and want focused answers from a specific file or project.
+
+---
+
+### 3.9 Edit-and-Resend and Regenerate
+
+You are not locked in to a conversation as it happened. You can rewind and try again.
+
+**Edit a previous message:**
+1. Hover over any message (user or AI) to reveal the pencil icon.
+2. Click it to open the inline editor.
+3. Modify the text. Press Cmd+Enter (Mac) or Ctrl+Enter (Windows) to resend, or Escape to cancel.
+4. The conversation history rewinds to that point and the AI re-reasons from there.
+
+**Regenerate an AI response:**
+1. Hover over any AI message to reveal the regenerate icon.
+2. Click it — the AI re-answers the preceding question from scratch.
+3. Useful if the first answer was incomplete or missed the point.
+
+> All earlier messages in the conversation are preserved — only the rewound portion is replaced.
+
+---
+
+### 3.10 Message Actions
+
+Hover over any AI message bubble to reveal:
+
+| Button | What it does |
+|--------|-------------|
+| **Copy** | Copies the raw markdown text. Icon turns to a tick for 2 seconds. |
+| **Download** | Saves the response as a .md file. |
+| **Regenerate** | Re-generates the answer (see section 3.9). |
+
+---
+
+### 3.11 Markdown Rendering
 
 AI responses render full Markdown:
 
-- **Bold**, _italic_, ~~strikethrough~~
-- `inline code` and full fenced code blocks with language hints
-- Numbered and bulleted lists
-- Blockquotes
-- Horizontal rules
-- **Tables** — numeric columns are detected automatically and right-aligned for readability
+- Bold, italic, strikethrough text
+- Inline code and fenced code blocks with syntax highlighting
+- Numbered and bulleted lists, blockquotes, horizontal rules
+- Tables — numeric columns are right-aligned automatically
 
 ---
 
-### 3.9 New Chat
+### 3.12 Chat History
 
-Click the **New Chat** button in the chat header to start a blank conversation. The current session is saved automatically and appears in the history panel.
+Click the history icon in the chat header to open the history panel.
 
----
+| Feature | Detail |
+|---------|--------|
+| **Session list** | All conversations, sorted newest first |
+| **Recency labels** | Today HH:MM, Yesterday HH:MM, or full date |
+| **Switch session** | Click any row to load it |
+| **Delete session** | Trash icon then confirmation modal |
 
-### 3.10 Chat History Sidebar
-
-Click the **clock/history icon** in the chat header to open the history panel on the right.
-
-| Feature            | Detail                                                                                                        |
-| ------------------ | ------------------------------------------------------------------------------------------------------------- |
-| **Session list**   | All past conversations, sorted newest first                                                                   |
-| **Recency labels** | Sessions from today show `Today, HH:MM`; yesterday shows `Yesterday, HH:MM`; older ones show full date + time |
-| **Switch session** | Click any session row to load it                                                                              |
-| **Active session** | Highlighted with a purple border                                                                              |
-| **Delete session** | Click the trash icon on a session row — a confirmation modal prevents accidental deletion                     |
-
-Session titles are generated from the first ~25 characters of your opening message.
+Start a new blank conversation with the New Chat button. Sessions are auto-saved after every message.
 
 ---
 
@@ -207,89 +244,76 @@ Open the Knowledge Base by clicking **Knowledge Base** in the sidebar. This is w
 
 ### 4.1 Uploading Documents
 
-Navigate to the **Knowledge Base** view and locate the dashed drop zone at the top of the page. You can add files using either of the following methods:
+Drag files onto the drop zone or click it to browse. Uploads start the ingestion pipeline automatically.
 
-#### Method 1 — Click to browse:
+**9 supported formats:**
 
-1. Click anywhere inside the dashed drop zone.
-2. A file browser opens.
-3. Select one or more files.
-4. Click **Open** to confirm your selection.
-5. The upload and ingestion pipeline starts automatically.
+| Format | Chunking strategy |
+|--------|-----------------|
+| **PDF** (text) | Semantic sliding-window, page-by-page |
+| **PDF** (scanned / image-only) | OCR via Tesseract, then semantic chunking |
+| **DOCX** | Paragraph-aware splitting |
+| **Markdown** | Header-hierarchy breadcrumbs (Section: H1 > H2 > H3) |
+| **CSV** | 20-row chunks, header repeated on every chunk |
+| **PPTX** | One chunk per slide, including speaker notes |
+| **XLSX** | Sheet-labelled row chunks |
+| **HTML** | Clean article extraction, then semantic chunking |
+| **TXT** | Sliding-window with overlap |
 
-#### Method 2 — Drag and drop:
-
-1. Drag one or more files from your file manager.
-2. Drop them anywhere onto the drop zone (it highlights in purple when a valid drag is detected).
-3. The pipeline starts automatically.
-
-**Supported formats:**
-
-| Format  | Notes                          |
-| ------- | ------------------------------ |
-| **PDF** | Text is extracted page-by-page |
-| **TXT** | Plain text files               |
-| **MD**  | Markdown files                 |
-| **CSV** | Comma-separated data           |
-
-Maximum upload size per batch is controlled by the `MAX_UPLOAD_SIZE_MB` setting (default 200 MB).
+Maximum upload size per batch is set by MAX_UPLOAD_SIZE_MB (default 200 MB).
 
 ---
 
-### 4.2 The Ingestion Pipeline
+### 4.2 Ingest a Web Page by URL
 
-After uploading, a durable four-step workflow runs to embed your documents into the vector store. Progress is shown as an animated timeline:
+You can add any public web page to your knowledge base without downloading the file manually:
 
-| Step                              | What happens                                                                                 |
-| --------------------------------- | -------------------------------------------------------------------------------------------- |
-| **Scanning Library**              | Finds newly uploaded files that are not yet indexed                                          |
-| **Gathering Document**            | Extracts text (PDF pages, plain text, markdown, CSV rows) and splits into overlapping chunks |
-| **Calibrating Neural Embeddings** | Sends chunks to Ollama in batches to generate vector embeddings                              |
-| **Committing Knowledge Store**    | Saves the FAISS index and metadata to disk                                                   |
+1. Open the Knowledge Base view.
+2. Click Add from URL.
+3. Paste the URL and click Fetch.
+4. The app fetches the page, extracts the article text, saves it as a .txt file, and runs the ingestion pipeline automatically.
 
-**Crash-proof by design:** Because the pipeline runs as a DBOS durable workflow, each completed step is checkpointed to the database. If the app crashes mid-ingestion, the workflow resumes automatically from the last completed step when the app restarts — no data is lost and no re-work is done.
-
-Once all four steps complete, a success notice appears and the document list refreshes automatically.
+This is useful for adding documentation pages, blog posts, or any publicly accessible content.
 
 ---
 
-### 4.3 Browsing Your Knowledge Base
+### 4.3 The Ingestion Pipeline
 
-Below the upload area, all indexed documents are displayed in a folder tree.
+After uploading, a four-step durable workflow runs to embed your documents:
 
-| Feature                       | How to use                                                                           |
-| ----------------------------- | ------------------------------------------------------------------------------------ |
-| **Collapse / expand folders** | Click the folder header row                                                          |
-| **Sort files**                | Use the sort dropdown: Name A–Z, Name Z–A, Date (newest first), Size (largest first) |
-| **File metadata**             | Each file shows its type badge, size, and last-modified date                         |
+| Step | What happens |
+|------|-------------|
+| **Scanning Library** | Finds new files not yet indexed |
+| **Gathering Document** | Extracts text and splits into overlapping chunks |
+| **Calibrating Neural Embeddings** | Sends chunks to Ollama to generate vector embeddings |
+| **Committing Knowledge Store** | Saves the FAISS index and metadata to disk |
 
----
-
-### 4.4 Deleting Documents
-
-- Click on **Knowledge Base** in the sidebar to open the document manager.
-- Click the **trash icon** on any file row.
-- A confirmation modal asks you to confirm before the file is removed.
-- After deletion:
-  - The file is soft-deleted from the vector index (marked as deleted, not physically removed from disk).
-  - The document list refreshes immediately.
-  - The AI will no longer find this document in future searches.
-
-> **To permanently remove the file** from disk, delete it from the `docs/` folder directly.
+Progress is shown as an animated timeline. When all four steps complete, the document list refreshes automatically.
 
 ---
 
-## 5. Working with Documents
+### 4.4 Browsing and Deleting Documents
 
-### When to use Chat attachments vs. Knowledge Base
+| Feature | How to use |
+|---------|------------|
+| **Expand or collapse folders** | Click the folder header |
+| **Sort files** | Name A to Z, Name Z to A, Date newest, Size largest |
+| **Delete a document** | Trash icon then confirmation modal |
 
-| Scenario                                                    | Best approach                                              |
-| ----------------------------------------------------------- | ---------------------------------------------------------- |
-| You have a document you want to ask about **once**          | Attach it directly in the chat message                     |
-| You want to ask about the same document **repeatedly**      | Add it to the Knowledge Base                               |
-| You want the AI to **synthesise across multiple documents** | Add all of them to the Knowledge Base                      |
-| You're uploading a **PDF**                                  | Knowledge Base only (chat attachments don't support PDF)   |
-| You want the AI to **see an image**                         | Chat attachment only (Knowledge Base doesn't index images) |
+After deletion the AI immediately stops finding that document. To permanently remove the file from disk, delete it from the docs/ folder directly.
+
+---
+
+## 5. When to Use Chat Attachments vs. Knowledge Base
+
+| Scenario | Best approach |
+|----------|--------------|
+| Ask about a document once | Attach it in chat |
+| Ask about the same document repeatedly | Add it to the Knowledge Base |
+| Synthesise across multiple documents | Add all of them to the Knowledge Base |
+| Uploading a PDF | Knowledge Base only |
+| Asking about an image or chart | Chat attachment (vision) |
+| Adding a web page | Knowledge Base then Add from URL |
 
 ---
 
@@ -297,56 +321,38 @@ Below the upload area, all indexed documents are displayed in a folder tree.
 
 ### Get better answers
 
-- **Be specific.** Instead of "tell me about the report", ask "What were the key recommendations in section 3 of the Q1 report?"
-- **Mention the document.** If you have many files indexed, naming the document in your question helps the AI focus: "According to the architecture diagram PDF, what is the data flow between service A and B?"
-- **Ask follow-up questions.** The AI maintains conversation context within a session, so you can build on previous answers.
-- **Check the Context sidebar.** If an answer seems wrong, the sidebar tells you exactly which chunks the AI used. If the right document isn't listed, the file may not be indexed — re-check the Knowledge Base.
+- **Name the document.** Mentioning the filename in your question helps the AI focus on the right source.
+- **Use the scope filter.** When you have many documents indexed, restrict retrieval to the relevant ones (section 3.8).
+- **Ask follow-up questions.** Context from earlier in a session is preserved — build on previous answers.
+- **Check the Context sidebar.** If an answer seems wrong, see exactly which chunks the AI used.
+- **Edit and retry.** If a question was ambiguous, use edit-and-resend to rephrase rather than starting a new session (section 3.9).
 
-### Manage your history
+### Keyboard shortcuts
 
-- Sessions are auto-saved after every message exchange.
-- Old sessions are searchable by scrolling the history panel.
-- Delete sessions you no longer need to keep the list tidy.
-- Each session stores the full message history including attachment thumbnails.
-
-### Use the suggestion cards strategically
-
-- Click a suggestion card to instantly send a question about a common feature without typing anything.
-- The cards are always available at the start of a new conversation.
-
-### Keyboard workflow
-
-| Shortcut        | Action                                                                       |
-| --------------- | ---------------------------------------------------------------------------- |
-| `Enter`         | Send message                                                                 |
-| `Shift + Enter` | New line in message                                                          |
-| `Tab`           | Move focus between interactive elements (full keyboard navigation supported) |
-
-### Dark / Light mode
-
-Toggle at any time using the sun/moon button in the top-right header. The preference takes effect instantly and is applied for the current session.
+| Shortcut | Action |
+|----------|--------|
+| `Enter` | Send message |
+| `Shift + Enter` | New line |
+| `Cmd/Ctrl + Enter` | Submit edited message |
+| `Escape` | Cancel editing |
+| `Tab` | Navigate between interactive elements |
 
 ---
 
 ## 7. FAQ
 
 **Q: Does anything get sent to the internet?**
-No. Every component — the LLM, the embedding model, the vector store, the database — runs locally on your machine. No data leaves your computer.
-
----
-
-**Q: What happens if I close the app mid-ingestion?**
-The ingestion workflow is durable (powered by DBOS). When you restart the app, the workflow will automatically resume from the last completed step. You will not lose progress or have to re-upload.
+No. Every component — the LLM, the embedding model, the vector store, the transcription model, the database — runs locally on your machine. No data leaves your computer.
 
 ---
 
 **Q: Why isn't the AI finding my document?**
 Work through this checklist:
-
 1. Open the Knowledge Base view and confirm the file appears in the document list.
-2. If it's missing, upload it and wait for the ingestion pipeline to complete all four steps.
-3. If it's listed but the AI still misses it, try re-phrasing your question — semantic search matches meaning, not exact keywords.
-4. Check the Context sidebar after your question to see which sources were actually used.
+2. If it is missing, upload it and wait for all four ingestion steps to complete.
+3. If it is listed but the AI still misses it, try re-phrasing your question — semantic search matches meaning, not exact keywords.
+4. Use the scope filter to restrict the search to that specific document.
+5. Check the Context sidebar after your question to see which sources were actually used.
 
 ---
 
@@ -355,39 +361,39 @@ Not directly. PDFs must be indexed through the Knowledge Base. For one-off text 
 
 ---
 
+**Q: My scanned PDF is not being indexed — what is wrong?**
+Scanned PDFs (image-only, no selectable text) are processed via OCR using Tesseract. If OCR is not producing results, make sure Tesseract is installed on your system. Run brew install tesseract on macOS, or apt install tesseract-ocr on Linux. The README has full setup instructions.
+
+---
+
+**Q: Can I ask questions that are not about my documents?**
+Yes. The AI has access to a calculator tool and a real-time clock tool. For general questions it will draw on its training knowledge — it only searches the knowledge base when the question warrants it.
+
+---
+
+**Q: How do I search only one specific document?**
+Use the scope filter (section 3.8). Click the filter icon in the chat input, select the document you want, and the AI will restrict retrieval to that file only. Clear the filter to search everything again.
+
+---
+
 **Q: How many documents can I index?**
-There is no hard limit enforced by the app. Performance of the FAISS search will degrade gracefully as the index grows. For very large collections, consider whether you need all documents indexed simultaneously or can rotate subsets in and out.
-
----
-
-**Q: Can I ask questions that aren't about my documents?**
-Yes. The AI also has access to a calculator tool and a real-time clock tool. For questions unrelated to your documents, it will answer from its general training knowledge — it only searches the knowledge base when the question warrants it.
-
----
-
-**Q: What is the "Save to KB" card that appears after sending a file?**
-When you attach a text file in chat, the app offers to permanently index it into the Knowledge Base (KB) so you can continue querying it in future sessions. Click **Add to KB** to accept, or **✕** to skip. The file will then appear in the Knowledge Base view after the ingestion completes.
-
----
-
-**Q: What do the suggestion cards show?**
-The cards cover the most common app features and workflows. Click any card to send it as a question — the AI will answer from the knowledge base if relevant content is indexed.
+There is no hard limit. FAISS search degrades gracefully as the index grows. For very large collections, use the scope filter to focus queries on the relevant subset.
 
 ---
 
 **Q: Can I change the AI model?**
-Yes. Edit the `LLM_MODEL` and `EMBEDDING_MODEL` values in your `.env` file, then restart the app. Make sure the model is pulled in Ollama first (`ollama pull <model-name>`). The embedding model change requires re-indexing all documents since embeddings are model-specific.
+Yes. Edit the LLM_MODEL and EMBEDDING_MODEL values in your .env file, then restart the app. Make sure the model is available in Ollama first by running ollama pull followed by the model name. Changing the embedding model requires re-indexing all documents since embeddings are model-specific.
 
 ---
 
 **Q: How do I completely reset the knowledge base?**
-Delete the `vector_store.faiss` and `vector_store.json` files in the project root, and remove the files in `docs/`. Restart the app and re-upload your documents.
+Delete vector_store.faiss and vector_store.json from the project root, and remove the files in the docs/ folder. Restart the app and re-upload your documents.
 
 ---
 
-**Q: The history panel is hidden on my screen — where is it?**
-The history toggle button is hidden on narrow viewports (small screens). It is visible at `sm:` breakpoint and above. On a very narrow window, widen the browser or use a larger display.
+**Q: What is the Save to KB card that appears after sending a file?**
+When you attach a text file in chat, the app offers to permanently index it into the Knowledge Base so you can query it in future sessions. Click Add to KB to accept, or dismiss to skip.
 
 ---
 
-_This guide covers the app as of May 2026, including the suggestion cards feature._
+*This guide covers CogniVault as of May 2026 — including voice input, vision, thinking panel, edit-and-resend, citation preview, 9-format ingestion, and URL ingestion.*

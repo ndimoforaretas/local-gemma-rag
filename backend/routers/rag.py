@@ -23,10 +23,10 @@ router = APIRouter(tags=["RAG"])
 settings = get_settings()
 
 _FALLBACK_SUGGESTIONS: list[SuggestionItem] = [
-    SuggestionItem(label="Summarise my documents", prompt="Give me a summary of the documents in my knowledge base."),
-    SuggestionItem(label="What topics are covered?", prompt="What are the main topics covered across my knowledge base?"),
-    SuggestionItem(label="Find key insights", prompt="What are the most important insights or findings in my documents?"),
-    SuggestionItem(label="How can you help me?", prompt="What kinds of questions can you answer about my documents?"),
+    SuggestionItem(label="What can you do?", prompt="What can CogniVault do? Walk me through the main features — chat, voice input, image analysis, document search, and anything else I should know about."),
+    SuggestionItem(label="What files can I upload?", prompt="What types of documents and files can I add to my knowledge base? How do I upload them?"),
+    SuggestionItem(label="Can you analyse images?", prompt="Can you read and analyse images or charts I share in the chat? How does that work?"),
+    SuggestionItem(label="How do I use voice input?", prompt="How do I ask questions using my voice? Walk me through how the microphone feature works."),
 ]
 
 
