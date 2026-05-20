@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Send, Paperclip, Loader2, X, AlertTriangle, Mic, MicOff, Square } from "lucide-react";
+import { Send, Paperclip, Loader2, X, AlertTriangle, Mic, Square } from "lucide-react";
 import { Tooltip } from "./Tooltip";
 import { api } from "../lib/api";
 import type { Attachment } from "../types/api";
