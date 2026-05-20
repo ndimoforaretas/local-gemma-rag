@@ -63,12 +63,15 @@ docker compose up -d db --remove-orphans 2>/dev/null || docker-compose up -d db 
 echo -e "  ${GREEN}✓${NC} Database is ready"
 
 # ── Activate venv and launch ──────────────────────────────
-if [ ! -d ".venv" ]; then
-    echo -e "${RED}✖  Virtual environment not found.${NC}"
-    echo -e "   Run ${BOLD}./scripts/setup.sh${NC} first, then try again."
-    exit 1
+# Use .venv if setup.sh created one; otherwise fall back to whatever
+# python3 is on PATH (Anaconda, system Python, etc.)
+if [ -d ".venv" ]; then
+    source .venv/bin/activate
+    echo -e "  ${GREEN}✓${NC} Using virtual environment (.venv)"
+else
+    echo -e "  ${YELLOW}⚠${NC}  No .venv found — using system Python ($(which python3))"
+    echo -e "     Tip: run ${BOLD}./scripts/setup.sh${NC} once for a fully isolated environment"
 fi
-source .venv/bin/activate
 
 echo -e "  ${GREEN}▶${NC} Launching backend on http://localhost:8000"
 echo ""
