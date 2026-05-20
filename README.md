@@ -11,228 +11,36 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
 [![Gemma 4](https://img.shields.io/badge/Gemma%204-e4b-4285F4?logo=google&logoColor=white)](https://ollama.com/library/gemma4)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-110%20passing-brightgreen)](#testing)
+[![Tests](https://img.shields.io/badge/tests-202%20passing-brightgreen)](#-testing)
 
 **Upload your documents. Ask anything. Nothing leaves your machine.**
-
-[Quick Start](#-quick-start) · [Features](#-features) · [Architecture](#-architecture) · [How Gemma 4 Powers This](#-how-gemma-4-powers-this) · [API Docs](#-api-documentation)
 
 </div>
 
 ---
 
-## The Problem
+## Table of Contents
 
-AI assistants are transforming knowledge work — but for teams in regulated industries (finance, healthcare, legal), cloud AI creates an unacceptable risk surface.
-
-- Where does your data go when you paste a document into a chatbot?
-- Which data center processes it? Under which jurisdiction?
-- What happens to prompts, files, and outputs?
-
-Most teams know the answer isn't satisfying. So they pull back to slower, less intelligent workflows — because the legal and compliance risk of cloud AI feels too high.
-
-Local RAG seems like the answer, but most implementations are fragile: crash mid-ingestion and you lose everything. Lightweight models hallucinate tool calls. Search is keyword-only.
-
-**CogniVault was built to close that gap.**
-
----
-
-## My Solution
-
-CogniVault is a **100% local, production-grade AI Data Vault** that brings the full power of Gemma 4 to your own hardware — without a single byte leaving your machine.
-
-- **Fault-tolerant ingestion** via DBOS durable workflows — crash and resume from the exact batch
-- **Agentic reasoning** via Strands Agents — multi-step tool chaining, not just chat completion
-- **Hybrid retrieval** — FAISS semantic search fused with BM25 keyword search via Reciprocal Rank Fusion
-- **Full Gemma 4 capability surface** — completion, vision, tools, and thinking mode, all local
-
-For regulated teams, the future of private AI is here. It runs on your laptop.
+1. [Why CogniVault](#-why-cognivault)
+2. [Quick Start](#-quick-start)
+3. [How to Use](#-how-to-use)
+4. [Features](#-features)
+5. [Configuration](#️-configuration)
+6. [Architecture](#️-architecture)
+7. [Tech Stack](#-tech-stack)
+8. [Project Structure](#-project-structure)
+9. [Testing](#-testing)
+10. [Troubleshooting](#-troubleshooting)
 
 ---
 
-## ✨ Features
+## 🔒 Why CogniVault
 
-### 🧠 Gemma 4 Thinking Mode
-The only local RAG demo that exposes the model's internal reasoning chain. Before answering, Gemma 4 streams its step-by-step thought process into a collapsible **🧠 Reasoning** panel — an auditability feature for regulated industries. You can inspect *how* the AI reached its answer, not just what it said.
+AI assistants are transforming knowledge work — but for teams in regulated industries (finance, healthcare, legal), cloud AI creates an unacceptable risk surface: unknown data centres, uncertain jurisdictions, and audit trails that stop at the API boundary.
 
-### 📚 Document Intelligence Tools
-Three agentic tools that let Gemma 4 reason *about* the vault itself:
-- **`list_documents()`** — discover what's indexed, with file types and chunk counts
-- **`analyze_document(filename)`** — structured analysis: key topics, entities, facts, summary
-- **`compare_documents(doc_a, doc_b, question)`** — side-by-side comparison answering a specific question
+**CogniVault is a 100% local AI Data Vault.** Your documents stay on your hardware. Inference runs via Ollama on `localhost`. No telemetry, no embeddings sent to third parties, no exceptions. A live Privacy Vault Audit Panel confirms zero external connections at runtime.
 
-### 🔍 Hybrid Retrieval (BM25 + FAISS + RRF)
-Dense semantic search alone misses exact matches. Sparse keyword search alone misses meaning. CogniVault combines both via **Reciprocal Rank Fusion** (Cormack 2009) — getting the best of both without score normalisation complexity.
-
-### 🖼️ Multimodal Chat
-Attach images directly in chat for Gemma 4 vision analysis. Image thumbnails persist in your session history. Works alongside text attachments and KB search in the same conversation.
-
-### 📄 Multi-Format Ingestion
-Upload and index **PDFs** (page-level), **DOCX** (paragraphs + tables), **TXT/MD/CSV**, and **web pages via URL**. A SHA-256 content hash ensures re-uploaded files are automatically re-indexed with stale vectors soft-deleted.
-
-### 🌐 URL Ingestion
-Paste any public URL — CogniVault fetches the page, extracts clean text via [trafilatura](https://trafilatura.readthedocs.io/), saves it to your vault, and triggers ingestion automatically. Full SSRF protection blocks private IP ranges including the AWS metadata endpoint.
-
-### 🔄 Crash-Resilient Ingestion (DBOS)
-Every ingestion step is a `@DBOS.step()` checkpointed in PostgreSQL. Crash mid-way through a 500-page document? Restart the server and ingestion resumes from the exact batch it left off.
-
-### 🔒 Privacy Vault Audit Panel
-A live dashboard showing exactly what's stored: document count, chunk count, FAISS index size, last ingestion timestamp, and a **"Zero external API calls"** confirmation. The entire inference chain runs on `localhost:11434` — provably local.
-
-### 💬 Multi-Session Chat History
-Independent research threads with auto-generated titles, a history sidebar, and full persistence across restarts. Chat → KB bridge lets you attach files in chat, discuss them, then save to your knowledge base with one click.
-
-### 📎 Interactive Citations
-A live Context sidebar surfaces exactly which documents the AI drew from, with source paths and document types. Click to jump to the source.
-
----
-
-## 🏗️ Architecture
-
-```
-User (browser)
-    │
-    │  HTTP / SSE streaming
-    ▼
-FastAPI app  (backend/main.py)
-    │
-    ├── POST /rag              → Two-phase RAG stream:
-    │                              Phase 1: Direct Ollama call (thinking=True)
-    │                                       → emits {"type":"thinking",...}
-    │                              Phase 2: Strands Agent (tools + text)
-    │                                       → emits {"type":"text"|"metadata",...}
-    │
-    ├── POST /upload           → validates & saves to docs/
-    ├── POST /ingest           → DBOS durable workflow (hash-aware)
-    ├── POST /ingest/url       → httpx fetch → trafilatura → docs/ → ingest
-    ├── GET  /ingest/status    → polls DBOS step progress from Postgres
-    ├── GET  /kb               → knowledge base file listing
-    ├── GET  /api/vault/stats  → live privacy audit stats (100% local)
-    ├── DELETE /api/docs/:f    → soft-delete chunks + remove physical file
-    ├── POST /api/save-to-kb   → decode base64 attachment → docs/ → ingest
-    └── GET/POST/DELETE /api/history → chat session persistence
-
-Agent Tools (Strands)
-    ├── search_knowledge_base(query)            → FAISS+BM25 hybrid, top-7, RRF fusion
-    ├── list_documents()                        → vault inventory with chunk counts
-    ├── analyze_document(filename)              → Gemma inner call for structured summary
-    ├── compare_documents(doc_a, doc_b, question) → Gemma inner call for comparison
-    ├── calculator(expression)                  → safe AST evaluator, no eval()
-    └── current_time()                          → timestamp tool
-
-Storage (fully local)
-    ├── vector_store.faiss   — FAISS IndexFlatIP (inner product, L2-normalised = cosine)
-    ├── vector_store.json    — chunk metadata [{source, content, page, chunk_id,
-    │                          type, file_hash, deleted?}]
-    ├── chat_history.json    — sessions persisted as flat JSON array
-    ├── docs/                — raw uploaded files (PDF, DOCX, TXT, MD, CSV, web .txt)
-    └── Postgres (Docker)    — DBOS workflow state only (step outputs, crash recovery)
-```
-
-### Ingestion Pipeline (DBOS Durable Workflow)
-
-```
-1. list_document_files  →  SHA-256 hash check per file
-                            New file?     → queue for ingest
-                            Changed file? → soft-delete old chunks → queue for ingest
-                            Same hash?    → skip (fully idempotent)
-
-2. process_single_document  →  PyPDF (page-level) | python-docx (para+table) |
-                                raw text/md/csv | URL fetch+trafilatura
-
-3. Chunking  →  RecursiveCharacterTextSplitter (1000 chars, 100 overlap)
-                Minimum chunk length: 100 chars
-
-4. embed_batch  →  batches of 5 → embeddinggemma via Ollama
-                   Every batch checkpointed — crash safe
-
-5. save_vector_store  →  append to FAISS index + JSON metadata on disk
-                         file_hash stored per chunk for future change detection
-```
-
----
-
-## 🤖 How Gemma 4 Powers This
-
-Gemma 4:e4b advertised capabilities: `completion · vision · tools · thinking`
-
-| Capability | How CogniVault Uses It |
-|---|---|
-| **Completion** | Core chat, RAG synthesis, inner analysis calls |
-| **Vision** | Multimodal image attachments in chat |
-| **Tools** | 6-tool agentic loop: KB search, document analysis, comparison, calculator, clock |
-| **Thinking** | Streamed reasoning chain shown in collapsible 🧠 panel before each answer |
-
-### Why `gemma4:e4b` Was the Right Choice
-
-Standard lightweight local models frequently fail at complex instruction following — they hallucinate tool names, lose retrieved context, or stall at multi-step chains.
-
-Gemma 4 handles real agentic sequences reliably. When a compliance officer asks *"Compare the Q3 and Q4 budget reports and identify the largest variance"*, Gemma 4 autonomously:
-
-1. Calls `list_documents()` to confirm both reports are indexed
-2. Calls `compare_documents("q3.pdf", "q4.pdf", "largest variance")` which triggers an inner Gemma reasoning call across both document corpora
-3. Synthesises a structured comparison answer — with full source citations
-
-No cloud API. No data egress. No LLM vendor knowing what's in your documents.
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology |
-|---|---|
-| **LLM & Embeddings** | [Ollama](https://ollama.com) · `gemma4:e4b` (chat + thinking + vision + tools) · `embeddinggemma` (dense retrieval) |
-| **Backend** | [FastAPI](https://fastapi.tiangolo.com) · Python 3.10+ · Pydantic Settings |
-| **Agent Framework** | [Strands Agents SDK](https://github.com/strands-agents/sdk-python) |
-| **Vector Store** | [FAISS](https://github.com/facebookresearch/faiss) IndexFlatIP + [BM25Okapi](https://github.com/dorianbrown/rank_bm25) · Reciprocal Rank Fusion |
-| **Durable Workflows** | [DBOS](https://dbos.dev) + PostgreSQL |
-| **Document Parsing** | PyPDF · python-docx · trafilatura · httpx |
-| **Frontend** | React 19 · TypeScript · Vite · TanStack React Query · framer-motion · Tailwind CSS |
-
----
-
-## 📁 Project Structure
-
-```
-├── backend/
-│   ├── main.py               # FastAPI app + router mounts + static serving
-│   ├── config.py             # Centralized settings (pydantic-settings, .env)
-│   ├── middleware.py         # Request tracing + global error handlers
-│   ├── routers/
-│   │   ├── rag.py            # POST /rag — two-phase thinking+agent stream
-│   │   ├── knowledge.py      # Upload, ingest, URL ingest, KB browse,
-│   │   │                     #   vault stats, delete, save-to-KB
-│   │   └── history.py        # Multi-session chat history (flat JSON)
-│   ├── services/
-│   │   ├── vector_db.py      # Hybrid FAISS+BM25 search, RRF fusion,
-│   │   │                     #   delete_by_source, reload
-│   │   ├── rag_agent.py      # Two-phase streaming: thinking + Strands agent
-│   │   └── ingest.py         # DBOS durable workflow, SHA-256 hash detection,
-│   │                         #   PDF/DOCX/text/URL extractors
-│   ├── models/schemas.py     # Pydantic request/response models
-│   ├── tools/agent_tools.py  # 6 agent tools: search_kb, list_documents,
-│   │                         #   analyze_document, compare_documents,
-│   │                         #   calculator, current_time
-│   └── tests/                # 110 tests across 7 test files
-├── frontend/src/
-│   ├── components/
-│   │   ├── ChatMessageList.tsx  # Messages + ThinkingPanel (collapsible 🧠)
-│   │   ├── KnowledgeBase.tsx    # Chat UI + stream consumer (thinking/text/metadata)
-│   │   ├── KnowledgeSync.tsx    # Upload drop zone + URL input + VaultAudit
-│   │   ├── VaultAudit.tsx       # Privacy Vault Audit Panel (live stats)
-│   │   ├── ContextSidebar.tsx   # Live citation sidebar
-│   │   ├── HistorySidebar.tsx   # Multi-session history
-│   │   └── SuggestionCards.tsx  # How-to cards on empty chat
-│   ├── lib/api.ts            # Typed API client (all endpoints)
-│   └── types/api.ts          # Shared TypeScript interfaces
-├── docs/GUIDE.md             # Pre-seeded user guide (indexed at setup)
-├── docker-compose.yaml       # PostgreSQL for DBOS
-├── requirements.txt          # Python deps (incl. python-docx, trafilatura, httpx)
-└── scripts/
-    ├── setup.sh              # One-time setup (models, deps, DB, frontend build)
-    ├── start.sh              # Start app (Ollama + Docker + backend)
-    └── stop.sh               # Stop backend + database
-```
+It's also genuinely capable — Gemma 4's full capability surface (completion, vision, tools, and reasoning) running on your laptop.
 
 ---
 
@@ -244,39 +52,37 @@ No cloud API. No data egress. No LLM vendor knowing what's in your documents.
 |---|---|---|
 | **Python 3.10+** | Backend runtime | [python.org](https://www.python.org/downloads/) |
 | **Node.js 18+** | Frontend build | [nodejs.org](https://nodejs.org/) |
-| **Docker Desktop** | PostgreSQL for DBOS | [docker.com](https://www.docker.com/products/docker-desktop/) |
+| **Docker Desktop** | PostgreSQL (workflow state) | [docker.com](https://www.docker.com/products/docker-desktop/) |
 | **Ollama** | Local LLM inference | [ollama.com](https://ollama.com/download) |
 
-> **Make sure Docker Desktop and Ollama are running** before proceeding.
+> Make sure Docker Desktop and Ollama are **running** before you begin.
 
-### Two-Command Setup
+### Two Commands
 
 ```bash
-# 1. Clone and enter the project
+# Clone and enter the project
 git clone https://github.com/ndimoforaretas/local-gemma-rag.git
 cd local-gemma-rag
 
-# 2. One-time setup (pulls models ~10 GB, installs deps, builds frontend)
+# One-time setup — pulls models (~10 GB), installs deps, builds frontend
 ./scripts/setup.sh
 
-# 3. Launch the app
+# Start the app
 ./scripts/start.sh
 ```
 
-Open **[http://localhost:8000](http://localhost:8000)** — your private AI Data Vault is ready.
-
-### Stopping & Restarting
+Open **[http://localhost:8000](http://localhost:8000)** — your vault is ready.
 
 ```bash
-# Stop: Ctrl+C in the terminal, then:
+# Stop the app
 ./scripts/stop.sh
 
-# Restart later (no setup needed):
+# Restart any time (setup is not needed again)
 ./scripts/start.sh
 ```
 
 <details>
-<summary><strong>📋 Manual Setup (step-by-step)</strong></summary>
+<summary><strong>Manual setup (step by step)</strong></summary>
 
 ```bash
 # 1. Clone
@@ -284,21 +90,21 @@ git clone https://github.com/ndimoforaretas/local-gemma-rag.git
 cd local-gemma-rag
 
 # 2. Pull Ollama models
-ollama pull gemma4:e4b          # Chat + thinking + vision + tools (~9.6 GB)
-ollama pull embeddinggemma      # Dense embeddings (~622 MB)
+ollama pull gemma4:e4b        # Chat + thinking + vision + tools (~9.6 GB)
+ollama pull embeddinggemma    # Dense embeddings (~622 MB)
 
 # 3. Start PostgreSQL
 docker compose up -d db
 
 # 4. Python environment
 python3 -m venv .venv
-source .venv/bin/activate       # macOS / Linux
+source .venv/bin/activate     # macOS / Linux
 pip install -r requirements.txt
 
-# 5. DBOS database migration
+# 5. Database migration
 dbos migrate
 
-# 6. Seed the user guide into the knowledge base
+# 6. Seed the built-in user guide
 python scripts/seed_knowledge_base.py
 
 # 7. Build the frontend
@@ -308,9 +114,110 @@ cd frontend && npm install && npm run build && cd ..
 python -m backend.main
 ```
 
-Navigate to **[http://localhost:8000](http://localhost:8000)**
-
 </details>
+
+> **OCR for scanned PDFs (optional):** install `tesseract` for image-only PDF support.
+> `brew install tesseract` (macOS) · `apt install tesseract-ocr` (Debian/Ubuntu)
+
+---
+
+## 🗺️ How to Use
+
+### 1 — Build Your Knowledge Base
+
+Open the **Knowledge Base** tab. You can add documents in several ways:
+
+- **Drag and drop files** onto the upload zone — or click to browse
+- **Paste a URL** to ingest any public web page
+- **Attach files in chat** and save them to the KB with one click
+
+Supported formats: **PDF · DOCX · PPTX · XLSX · MD · CSV · TXT · HTML**
+
+After uploading, click **Ingest** to embed the documents. A progress panel shows each step. Re-upload an edited file and it is automatically re-indexed — stale chunks are replaced, not duplicated.
+
+### 2 — Chat
+
+Switch to the **Chat** tab and ask a question. CogniVault will:
+
+1. **Reason** about the query (🧠 Reasoning panel, collapsible)
+2. **Search** your documents using hybrid semantic + keyword retrieval
+3. **Answer** with inline citations linking back to exact source chunks
+
+**Attaching files to chat:** click the paperclip to attach up to 5 files at once (images, PDFs, DOCX, text). Images go to Gemma's vision model; documents are extracted and included as context.
+
+**Voice input:** click the 🎤 mic button to dictate your question (requires Tesseract — see above).
+
+### 3 — Work with Citations
+
+After each answer a **Sources** panel appears on the right (or tap **"N sources ↗"** on mobile to open the drawer). Each citation card shows:
+
+- The source filename and page number
+- **View chunk** — click to reveal the exact retrieved passage Gemma used
+- **Open** — jump directly to the source file
+
+### 4 — Scope Your Search
+
+Use the **🎯 All documents** filter above the chat input to restrict the search to specific files. Useful when you want to ask questions about one report without noise from the rest of the vault.
+
+### 5 — Edit and Regenerate
+
+Hover over any of your messages to reveal an **✏️ Edit** button — click to modify and resend. Every subsequent message is removed and the conversation resumes cleanly from that point. On AI responses, **🔄 Regenerate** re-runs the same query for a fresh answer.
+
+---
+
+## ✨ Features
+
+### 🧠 Thinking Mode
+Before answering, Gemma 4 streams its step-by-step reasoning into a collapsible **🧠 Reasoning** panel. Collapsed by default; expand to inspect *how* the AI reached its conclusion. An auditability feature for regulated industries — not just a demo gimmick.
+
+### 🔍 Hybrid Retrieval
+Dense FAISS semantic search is combined with BM25 keyword search via **Reciprocal Rank Fusion**. Semantic search finds conceptually relevant chunks; BM25 catches exact terminology and acronyms. Both run entirely in-memory for sub-millisecond latency.
+
+### 📄 Nine Document Formats
+
+| Format | How it's chunked |
+|---|---|
+| **PDF** | Page-by-page; OCR fallback for scanned/image-only pages |
+| **DOCX** | Paragraphs and table rows |
+| **PPTX** | One chunk per slide |
+| **XLSX** | Header row + batched data rows, per sheet |
+| **Markdown** | Split on H1/H2/H3 headers with breadcrumb prefix |
+| **CSV** | Header row repeated in every chunk |
+| **TXT** | Recursive character splitting |
+| **HTML** | Trafilatura clean-text extraction |
+| **URLs** | Fetched, extracted, saved, and ingested automatically |
+
+Structure-aware chunking means the model always has the right context — a CSV chunk always starts with column names; a Markdown chunk always includes its section heading.
+
+### 📎 Citation Previews
+Every source card in the Context sidebar has a **View chunk** toggle that reveals the exact passage Gemma retrieved — no more guessing why a particular document was cited.
+
+### 🖼️ Multimodal Chat
+Attach images for Gemma 4 vision analysis. Attach PDFs or DOCX files to have their text extracted and included as conversation context. Up to 5 attachments per message. Thumbnails persist in session history.
+
+### 🎤 Voice Input
+Click the mic button to record your question. Local Whisper transcription converts the audio to text and appends it to the input — no cloud speech API involved.
+
+### 📝 Edit & Regenerate
+Edit any past message and resend — the conversation history and the model's internal context window are both rewound to the correct point. Regenerate any AI response for a fresh attempt.
+
+### 🎯 Document-Scoped Search
+Pin the search to one or more specific documents using the filter pill above the chat input. The agent will only retrieve chunks from the selected files, giving you focused, noise-free answers when working with large vaults.
+
+### 🔒 Privacy Vault Audit Panel
+A live dashboard in the Knowledge Base tab shows: document count, total chunks, FAISS index size, last ingestion time, Ollama host, and a **"Zero external API calls"** indicator. Everything is provably local.
+
+### 📚 Agentic Document Tools
+The agent can reason *about* your vault — not just search it:
+
+| Tool | What it does |
+|---|---|
+| `list_documents()` | Inventory of indexed files with types and chunk counts |
+| `analyze_document(filename)` | Structured summary: topics, entities, key facts |
+| `compare_documents(a, b, question)` | Side-by-side comparison answering a specific question |
+
+### 💬 Multi-Session History
+Independent conversation threads with auto-generated titles, a collapsible history sidebar, and full persistence across restarts.
 
 ---
 
@@ -322,114 +229,199 @@ cp .env.example .env
 
 | Variable | Default | Description |
 |---|---|---|
-| `LLM_MODEL` | `gemma4:e4b` | Chat model (completion + vision + tools + thinking) |
-| `EMBEDDING_MODEL` | `embeddinggemma` | Dense embedding model |
+| `LLM_MODEL` | `gemma4:e4b` | Chat model |
+| `EMBEDDING_MODEL` | `embeddinggemma` | Embedding model |
 | `OLLAMA_HOST` | `http://localhost:11434` | Ollama server URL |
 | `THINKING_MODE` | `true` | Enable/disable 🧠 Reasoning panel |
-| `DB_URL` | `postgresql://postgres:password@localhost:5432/dbos` | PostgreSQL for DBOS |
-| `MAX_UPLOAD_SIZE_MB` | `200` | Max document upload size |
+| `WHISPER_MODEL` | `base` | Whisper model size (`tiny` · `base` · `small` · `medium`) |
+| `DB_URL` | `postgresql://postgres:password@localhost:5432/dbos` | PostgreSQL connection |
+| `MAX_UPLOAD_SIZE_MB` | `200` | Per-file upload limit |
 | `CHUNK_SIZE` | `1000` | Characters per chunk |
-| `CHUNK_OVERLAP` | `100` | Overlap between chunks |
+| `CHUNK_OVERLAP` | `100` | Overlap between adjacent chunks |
+
+---
+
+## 🏗️ Architecture
+
+### Request Flow
+
+```
+Browser
+  │  HTTP / SSE streaming
+  ▼
+FastAPI (backend/main.py)
+  │
+  ├── POST /rag ──────────► Phase 1: direct Ollama call (thinking=True)
+  │                              emits {"type":"thinking","data":"..."}
+  │                         Phase 2: Strands Agent (tool loop + answer)
+  │                              emits {"type":"text"|"metadata","data":...}
+  │
+  ├── POST /upload ────────► validate → save to docs/
+  ├── POST /ingest ────────► durable workflow (hash-aware, crash-resumable)
+  ├── POST /ingest/url ────► httpx fetch → trafilatura → docs/ → ingest
+  ├── GET  /kb ───────────► knowledge base file listing
+  ├── GET  /api/vault/stats► privacy audit stats
+  ├── GET  /api/docs/list ► indexed document list (for scope filter)
+  ├── DELETE /api/docs/:f ► soft-delete chunks + remove file
+  ├── POST /api/save-to-kb► base64 attachment → docs/ → ingest
+  ├── POST /api/transcribe► Whisper audio → text
+  └── GET|POST|DELETE
+      /api/history ───────► multi-session chat persistence
+```
+
+### Agent Tools
+
+```
+search_knowledge_base(query)              → FAISS + BM25 hybrid, top-7, RRF fusion
+list_documents()                          → vault inventory
+analyze_document(filename)                → inner Gemma call for structured summary
+compare_documents(doc_a, doc_b, question) → inner Gemma call for comparison
+calculator(expression)                    → safe AST evaluator (no eval())
+current_time()                            → timestamp
+```
+
+### Ingestion Pipeline
+
+Each ingestion run is a crash-resumable workflow. Every step is checkpointed — if the server restarts mid-way, it picks up from the last completed batch.
+
+```
+1. Scan docs/  →  SHA-256 hash per file
+                  New file      → queue for embedding
+                  Changed file  → soft-delete old chunks → re-embed
+                  Unchanged     → skip (fully idempotent)
+
+2. Extract text
+   PDF    → pypdf page-by-page; pytesseract OCR fallback for image pages
+   DOCX   → python-docx (paragraphs + table rows)
+   PPTX   → python-pptx (one chunk per slide)
+   XLSX   → openpyxl (header + row batches, per sheet)
+   MD     → MarkdownHeaderTextSplitter (H1/H2/H3 → breadcrumb chunks)
+   CSV    → header row + 20-row batches
+   TXT    → raw UTF-8 read
+   HTML   → trafilatura clean text
+   URL    → httpx GET → trafilatura
+
+3. Chunk  →  RecursiveCharacterTextSplitter (1 000 chars, 100 overlap)
+             Structured formats (MD, CSV, PPTX, XLSX) use min_length=20
+
+4. Embed  →  embeddinggemma via Ollama, batches of 5
+
+5. Save   →  append to FAISS IndexFlatIP + JSON metadata on disk
+```
+
+### Storage
+
+| Layer | Files | Purpose |
+|---|---|---|
+| **Disk** | `vector_store.faiss`, `vector_store.json` | Embeddings and chunk metadata |
+| **RAM** | `VectorDB` singleton | Sub-ms hybrid search (FAISS + BM25 in-memory) |
+| **Postgres** | DBOS system tables | Workflow checkpoints for crash recovery |
+
+All storage is local. The Vault Audit Panel confirms no external connections at runtime.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **LLM & Embeddings** | [Ollama](https://ollama.com) · `gemma4:e4b` · `embeddinggemma` |
+| **Agent Framework** | [Strands Agents SDK](https://github.com/strands-agents/sdk-python) |
+| **Backend** | [FastAPI](https://fastapi.tiangolo.com) · Python 3.10+ · Pydantic |
+| **Vector Search** | [FAISS](https://github.com/facebookresearch/faiss) IndexFlatIP + [BM25Okapi](https://github.com/dorianbrown/rank_bm25) · RRF |
+| **Document Parsing** | pypdf · python-docx · python-pptx · openpyxl · trafilatura · httpx |
+| **OCR** | pytesseract · pymupdf · Pillow |
+| **Audio** | faster-whisper (local Whisper inference) |
+| **Workflow Engine** | [DBOS](https://dbos.dev) + PostgreSQL |
+| **Frontend** | React 19 · TypeScript · Vite · TanStack Query · Framer Motion · Tailwind CSS v4 |
+
+---
+
+## 📁 Project Structure
+
+```
+├── backend/
+│   ├── main.py                  # FastAPI app + router mounts
+│   ├── config.py                # Centralised settings (.env → pydantic-settings)
+│   ├── routers/
+│   │   ├── rag.py               # POST /rag — two-phase stream
+│   │   ├── knowledge.py         # Upload, ingest, URL, KB browse, vault stats
+│   │   ├── history.py           # Multi-session chat persistence
+│   │   └── audio.py             # Whisper transcription endpoints
+│   ├── services/
+│   │   ├── rag_agent.py         # Two-phase thinking + Strands agent stream
+│   │   ├── vector_db.py         # Hybrid FAISS+BM25 search, RRF, delete
+│   │   └── ingest.py            # Durable ingestion workflow + all extractors
+│   ├── tools/agent_tools.py     # 6 agent tools
+│   ├── models/schemas.py        # Pydantic request/response models
+│   └── tests/                   # 202 tests across 12 test files
+├── frontend/src/
+│   ├── components/
+│   │   ├── KnowledgeBase.tsx    # Chat UI + streaming consumer
+│   │   ├── ChatMessageList.tsx  # Messages + ThinkingPanel + edit/regen
+│   │   ├── ChatInput.tsx        # Input bar + attachments + mic
+│   │   ├── ContextSidebar.tsx   # Citation sidebar (push on desktop, drawer on mobile)
+│   │   ├── DocScopeFilter.tsx   # Document-scoped search filter pill
+│   │   ├── KnowledgeSync.tsx    # Upload drop zone + URL input
+│   │   ├── VaultAudit.tsx       # Privacy Vault Audit Panel
+│   │   └── HistorySidebar.tsx   # Multi-session history
+│   ├── lib/api.ts               # Typed API client
+│   └── types/api.ts             # Shared TypeScript interfaces
+├── docs/GUIDE.md                # Pre-seeded user guide
+├── docker-compose.yaml          # PostgreSQL
+├── requirements.txt
+└── scripts/
+    ├── setup.sh                 # One-time setup
+    ├── start.sh                 # Start app
+    └── stop.sh                  # Stop app
+```
 
 ---
 
 ## 🧪 Testing
 
 ```bash
-# Run all tests (no infrastructure required — Ollama and Postgres are mocked)
+# Run all tests (Ollama and Postgres are fully mocked — no infrastructure needed)
 python -m pytest backend/tests/ -v
 ```
 
-**110 tests** across 7 test files covering:
+**202 tests** across 12 test files:
 
-| Test File | Coverage |
+| Test File | What it covers |
 |---|---|
-| `test_thinking.py` | Two-phase thinking stream, disabled mode, error handling |
+| `test_api.py` | All HTTP endpoints (upload, ingest, RAG, history, vault) |
+| `test_tools.py` | Calculator, clock, KB search tool |
+| `test_thinking.py` | Two-phase stream, thinking tokens, session isolation |
+| `test_chat_attachments.py` | Multi-file attach, PDF/DOCX extraction, size limits |
+| `test_doc_scope_filter.py` | Document-scoped search, ContextVar isolation |
 | `test_doc_tools.py` | list_documents, analyze_document, compare_documents |
-| `test_reingest.py` | SHA-256 change detection, delete_by_source, idempotency |
-| `test_docx_url.py` | DOCX extractor, SSRF guard, URL endpoint validation |
-| `test_vault_stats.py` | Vault stats endpoint, empty vault, chunk counting |
+| `test_edit_regenerate.py` | History rewind, trim_history_to_turns validation |
+| `test_structure_chunking.py` | Markdown header splits, CSV row batches, doc types |
+| `test_ocr_fallback.py` | OCR trigger threshold, graceful degradation |
+| `test_new_formats.py` | PPTX, XLSX, HTML extractors, extension routing |
+| `test_reingest.py` | SHA-256 change detection, idempotency |
 | `test_vector_db.py` | BM25, FAISS, RRF fusion, hybrid search |
-| `test_api.py` | All HTTP endpoints |
-| `test_tools.py` | Calculator, clock, KB search |
 
 ---
 
 ## 🔧 Troubleshooting
 
-| Problem | Cause | Fix |
+| Symptom | Likely cause | Fix |
 |---|---|---|
-| `"An internal error occurred"` | Ollama is not running | Open Ollama app, verify with `ollama list` |
-| `"Address already in use"` (port 8000) | Previous server still running | `lsof -ti :8000 \| xargs kill -9` |
-| `"Cannot connect to Docker daemon"` | Docker Desktop not running | Open Docker Desktop |
-| DBOS connection error | PostgreSQL not running | `docker compose up -d db` |
-| Suggestion cards return no results | Knowledge base not seeded | Run `python scripts/seed_knowledge_base.py` |
-| Thinking panel doesn't appear | Model doesn't support thinking | Confirm `gemma4:e4b` is pulled; set `THINKING_MODE=true` |
-
----
-
-## 🧠 Why DBOS? (Durable Workflow Philosophy)
-
-Processing large document libraries involves extracting text, chunking, and generating embeddings across potentially hundreds of pages. Any step can fail — memory limits, LLM timeouts, system crashes.
-
-Instead of losing progress and re-ingesting from scratch, CogniVault uses **DBOS durable workflows**:
-
-```python
-@DBOS.workflow()
-def ingest_workflow():
-    files = list_document_files()   # SHA-256 change detection, soft-delete stale chunks
-    for filename in files:
-        docs = process_single_document(filename)   # PDF/DOCX/text/URL extractors
-    # RecursiveCharacterTextSplitter (1000 chars, 100 overlap)
-    embeddings = embed_batch(chunks)               # batches of 5, retried on failure
-    save_vector_store(embeddings, metadata)        # atomic disk persist
-```
-
-Every `@DBOS.step()` return value is checkpointed in Postgres. **Crash → restart → resume from the exact batch.** No data loss. No re-embedding already-processed documents.
-
----
-
-## 💾 Storage Architecture
-
-| Layer | Files | Purpose |
-|---|---|---|
-| **Disk** | `vector_store.faiss`, `vector_store.json` | Persistent embeddings and chunk metadata |
-| **RAM** | `VectorDB` class | Sub-millisecond in-memory semantic + keyword search |
-| **Postgres** | DBOS system tables | Durable workflow state and crash recovery |
-
-All storage is local. The Privacy Vault Audit Panel confirms zero external connections at runtime.
-
----
-
-## 🐳 Docker Deployment (Optional)
-
-```bash
-# Full stack in containers
-docker compose up --build
-```
-
-Builds the app image, starts PostgreSQL, and serves on port 8000.
-
----
-
-## 📖 API Documentation
-
-Interactive API docs available when the server is running:
-
-- **Swagger UI**: [http://localhost:8000/api/docs](http://localhost:8000/api/docs)
-- **ReDoc**: [http://localhost:8000/api/redoc](http://localhost:8000/api/redoc)
-
----
-
-## 📜 License
-
-MIT — see [LICENSE](LICENSE) for details.
+| `"An internal error occurred"` | Ollama not running | Open Ollama, confirm with `ollama list` |
+| Port 8000 already in use | Previous server still running | `lsof -ti :8000 \| xargs kill -9` |
+| Cannot connect to Docker | Docker Desktop not running | Open Docker Desktop |
+| DB connection error | PostgreSQL not started | `docker compose up -d db` |
+| Suggestion cards empty | KB not seeded | `python scripts/seed_knowledge_base.py` |
+| 🧠 Reasoning panel missing | Thinking mode off or wrong model | Confirm `gemma4:e4b` is pulled; check `THINKING_MODE=true` |
+| 🎤 Mic button not visible | Tesseract not installed | `brew install tesseract` (macOS) or `apt install tesseract-ocr` |
+| OCR not working on scanned PDFs | pytesseract/pymupdf missing | `pip install pymupdf pytesseract Pillow` |
 
 ---
 
 <div align="center">
 
-Built with [Gemma 4](https://ollama.com/library/gemma4) · [Ollama](https://ollama.com) · [DBOS](https://dbos.dev) · [Strands Agents](https://github.com/strands-agents/sdk-python)
+Built with [Gemma 4](https://ollama.com/library/gemma4) · [Ollama](https://ollama.com) · [Strands Agents](https://github.com/strands-agents/sdk-python) · [FastAPI](https://fastapi.tiangolo.com)
 
 *Your data. Your hardware. Your AI.*
 
