@@ -195,21 +195,16 @@ export function KnowledgeSync() {
     const selectedFiles = Array.from(files);
     if (selectedFiles.length === 0) return;
 
+    const _ALLOWED_EXTS = [".pdf", ".txt", ".md", ".csv", ".docx", ".pptx", ".xlsx", ".html", ".htm"];
     const validFiles = selectedFiles.filter((file) => {
       const name = file.name.toLowerCase();
-      return (
-        name.endsWith(".pdf") ||
-        name.endsWith(".txt") ||
-        name.endsWith(".md") ||
-        name.endsWith(".csv") ||
-        name.endsWith(".docx")
-      );
+      return _ALLOWED_EXTS.some((ext) => name.endsWith(ext));
     });
 
     if (validFiles.length === 0) {
       setSyncStatus("ERROR");
       setSyncNotice(null);
-      setSyncError("Only PDF, TXT, MD, CSV, and DOCX files are supported.");
+      setSyncError("Supported formats: PDF, DOCX, PPTX, XLSX, MD, CSV, TXT, HTML.");
       return;
     }
 
@@ -446,7 +441,7 @@ export function KnowledgeSync() {
             ref={fileInputRef}
             onChange={handleUpload}
             multiple
-            accept=".pdf,.txt,.md,.csv,.docx"
+            accept=".pdf,.txt,.md,.csv,.docx,.pptx,.xlsx,.html,.htm"
             className="hidden"
             aria-hidden="true"
           />

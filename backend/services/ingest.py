@@ -225,6 +225,152 @@ def get_csv_chunks(path: str) -> List[Tuple[str, int]]:
     return chunks if chunks else get_text_pages(path)
 
 
+def get_pptx_pages(path: str) -> List[Tuple[str, int]]:
+    """Extract text from a PPTX file, one chunk per slide.
+
+    Each slide's title and body placeholder text are concatenated into a
+    single string.  Empty slides are skipped.  Requires ``python-pptx``;
+    returns an empty list (and logs a warning) if the package is absent.
+    """
+    try:
+        from pptx import Presentation  # python-pptx
+    except ImportError:
+        logger.warning("python-pptx not installed — PPTX ingestion unavailable. "
+                       "Install with: pip install python-pptx")
+        return []
+
+    try:
+        prs = Presentation(path)
+        pages: List[Tuple[str, int]] = []
+        for slide_num, slide in enumerate(prs.slides, 1):
+            parts: List[str] = []
+            for shape in slide.shapes:
+                if shape.has_text_frame:
+                    text = shape.text_frame.text.strip()
+                    if text:
+                        parts.append(text)
+            slide_text = "\n".join(parts).strip()
+            if slide_text:
+                pages.append((slide_text, slide_num))
+        return pages
+    except Exception:
+        logger.exception("Error reading PPTX %s", path)
+        return []
+
+
+def get_xlsx_chunks(path: str) -> List[Tuple[str, int]]:
+    """Extract text from an XLSX workbook, one row-group chunk per sheet batch.
+
+    Each chunk starts with ``[Sheet: <name>]`` followed by the header row so
+    the model always knows column names.  Multiple sheets are processed in
+    order; chunk numbering is global across the workbook.  Requires
+    ``openpyxl``; returns an empty list (and logs a warning) if absent.
+    """
+    try:
+        import openpyxl
+    except ImportError:
+        logger.warning("openpyxl not installed — XLSX ingestion unavailable. "
+                       "Install with: pip install openpyxl")
+        return []
+
+    try:
+        wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+        chunks: List[Tuple[str, int]] = []
+        chunk_num = 1
+
+        for sheet_name in wb.sheetnames:
+            ws = wb[sheet_name]
+            rows = list(ws.iter_rows(values_only=True))
+            if not rows:
+                continue
+
+            header = [str(c) if c is not None else "" for c in rows[0]]
+            data_rows = rows[1:]
+            # Prefix with sheet name so multi-sheet workbooks stay distinguishable.
+            header_line = f"[Sheet: {sheet_name}] " + ", ".join(header)
+
+            if not data_rows:
+                # Header-only sheet — still index it so the column names are searchable.
+                if header_line.strip():
+                    chunks.append((header_line, chunk_num))
+                    chunk_num += 1
+                continue
+
+            for start in range(0, len(data_rows), _CSV_ROWS_PER_CHUNK):
+                batch = data_rows[start : start + _CSV_ROWS_PER_CHUNK]
+                lines = [header_line] + [
+                    ", ".join(str(c) if c is not None else "" for c in row)
+                    for row in batch
+                ]
+                chunk_text = "\n".join(lines).strip()
+                if chunk_text:
+                    chunks.append((chunk_text, chunk_num))
+                    chunk_num += 1
+
+        wb.close()
+        return chunks
+    except Exception:
+        logger.exception("Error reading XLSX %s", path)
+        return []
+
+
+def get_html_pages(path: str) -> List[Tuple[str, int]]:
+    """Extract clean readable text from an HTML file.
+
+    Tries trafilatura first (already a project dependency for URL ingestion).
+    Falls back to Python's stdlib ``html.parser`` on failure.  Returns the
+    whole document as a single page; ``RecursiveCharacterTextSplitter`` in
+    the workflow handles further chunking.
+    """
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            html = f.read()
+        if not html.strip():
+            return []
+
+        # Primary path: trafilatura gives clean article-style text.
+        try:
+            import trafilatura
+            text = trafilatura.extract(html, include_tables=True, include_links=False)
+            if text and text.strip():
+                return [(text.strip(), 1)]
+        except Exception:
+            pass
+
+        # Fallback: stdlib html.parser strips tags but keeps all text nodes.
+        from html.parser import HTMLParser
+
+        class _TextExtractor(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self._parts: List[str] = []
+                self._skip = False
+
+            def handle_starttag(self, tag, attrs):
+                if tag in ("script", "style", "head"):
+                    self._skip = True
+
+            def handle_endtag(self, tag):
+                if tag in ("script", "style", "head"):
+                    self._skip = False
+
+            def handle_data(self, data):
+                if not self._skip and data.strip():
+                    self._parts.append(data.strip())
+
+            @property
+            def clean_text(self) -> str:
+                return re.sub(r"\s+", " ", " ".join(self._parts)).strip()
+
+        extractor = _TextExtractor()
+        extractor.feed(html)
+        text = extractor.clean_text
+        return [(text, 1)] if text else []
+    except Exception:
+        logger.exception("Error reading HTML %s", path)
+        return []
+
+
 def get_docx_pages(path: str) -> List[Tuple[str, int]]:
     """Extract text from a DOCX file (paragraphs + table cells) as a single page."""
     try:
@@ -258,7 +404,7 @@ def get_docx_pages(path: str) -> List[Tuple[str, int]]:
 
 # ── Durable workflow steps ───────────────────────────────────────────────────
 
-_ALLOWED_EXTENSIONS = (".pdf", ".txt", ".md", ".csv", ".docx")
+_ALLOWED_EXTENSIONS = (".pdf", ".txt", ".md", ".csv", ".docx", ".pptx", ".xlsx", ".html", ".htm")
 
 
 @DBOS.step()
@@ -357,6 +503,18 @@ def process_single_document(filename: str) -> List[Dict]:
         pages = get_csv_chunks(path)
         doc_type = "csv"
         min_chunk_length = 20   # header + a handful of rows may be brief
+    elif ext == ".pptx":
+        pages = get_pptx_pages(path)
+        doc_type = "pptx"
+        min_chunk_length = 20   # single-line slides are meaningful
+    elif ext == ".xlsx":
+        pages = get_xlsx_chunks(path)
+        doc_type = "xlsx"
+        min_chunk_length = 20   # header-only sheets are still indexable
+    elif ext in (".html", ".htm"):
+        pages = get_html_pages(path)
+        doc_type = "html"
+        min_chunk_length = 100
     else:
         logger.warning("Unsupported file type: %s", ext)
         return []

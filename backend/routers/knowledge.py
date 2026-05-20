@@ -36,16 +36,29 @@ router = APIRouter(tags=["Knowledge Base"])
 settings = get_settings()
 
 # Upload constraints
-_ALLOWED_EXTENSIONS = {".pdf", ".txt", ".md", ".csv", ".docx"}
+_ALLOWED_EXTENSIONS = {
+    ".pdf", ".txt", ".md", ".csv",
+    ".docx",                        # Word
+    ".pptx",                        # PowerPoint
+    ".xlsx",                        # Excel
+    ".html", ".htm",                # Web pages
+}
 _ALLOWED_MIME_TYPES = {
     "application/pdf",
     "application/octet-stream",
     "text/plain",
     "text/markdown",
     "text/csv",
+    "text/html",
     # DOCX
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/msword",
+    # PPTX
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/vnd.ms-powerpoint",
+    # XLSX
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-excel",
 }
 
 # SSRF guard — private / reserved IPv4 and IPv6 ranges

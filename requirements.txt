@@ -16,8 +16,10 @@ rank-bm25
 pypdf
 langchain-text-splitters
 python-docx     # DOCX extraction
+python-pptx     # PPTX extraction
+openpyxl        # XLSX extraction
 httpx           # URL fetching
-trafilatura     # Clean web text extraction
+trafilatura     # Clean web text extraction (also used for HTML files)
 pymupdf         # PDF page rendering (used by OCR fallback)
 pytesseract     # Tesseract OCR wrapper (requires: brew/apt install tesseract)
 Pillow          # Image manipulation (pytesseract dependency)

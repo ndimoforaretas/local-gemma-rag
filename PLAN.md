@@ -129,7 +129,7 @@ re-uploading a file produces no re-embedding; the stale vectors remain.
 
 | ID | Feature | Effort | Notes |
 |----|---|---|---|
-| **T2-E** | DOCX / PPTX / XLSX / HTML ingestion | 1 day | `python-docx`, `python-pptx`, `openpyxl` or `unstructured` |
+| **T2-E** | ~~DOCX / PPTX / XLSX / HTML ingestion~~ ✅ | 1 day | `python-docx`, `python-pptx`, `openpyxl` or `unstructured` |
 | **T2-F** | URL ingestion (paste a link) | 4 hrs | `httpx` + readability / `trafilatura` |
 | **T2-G** | ~~Structure-aware chunking (MD headers, CSV rows)~~ ✅ | 4 hrs | `ingest.py`, `MarkdownHeaderTextSplitter` |
 | **T2-H** | ~~OCR fallback for scanned PDFs~~ ✅ | 4 hrs | `pytesseract` + `Pillow` |
