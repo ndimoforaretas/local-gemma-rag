@@ -32,8 +32,11 @@ from strands.models.ollama import OllamaModel
 from backend.config import get_settings, logger
 from backend.tools.agent_tools import (
     _last_doc_ctx,
+    analyze_document,
     calculator,
+    compare_documents,
     current_time,
+    list_documents,
     search_knowledge_base,
 )
 
@@ -48,7 +51,14 @@ ollama_model = OllamaModel(
 # History is trimmed when it grows too large (see _trim_history).
 agent = Agent(
     model=ollama_model,
-    tools=[search_knowledge_base, calculator, current_time],
+    tools=[
+        search_knowledge_base,
+        list_documents,
+        analyze_document,
+        compare_documents,
+        calculator,
+        current_time,
+    ],
     system_prompt=settings.agent_system_prompt,
 )
 

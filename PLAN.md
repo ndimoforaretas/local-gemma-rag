@@ -178,7 +178,7 @@ Currently used: completion ✅ · vision ✅ · tools ✅ · **thinking ❌ · a
 
 ---
 
-### Step 1 — Thinking Mode: "🧠 Reasoning" panel  `[NEXT]`
+### Step 1 — Thinking Mode: "🧠 Reasoning" panel  ✅
 
 **Why it wins:** No other local RAG demo exposes the model's internal reasoning chain. For
 regulated industries this is an auditability feature — users can inspect *how* the AI reached
@@ -208,7 +208,7 @@ its answer. Directly showcases a capability unique to Gemma 4.
 
 ---
 
-### Step 2 — Document Intelligence Tools (3 new agent tools)
+### Step 2 — Document Intelligence Tools (3 new agent tools)  `[NEXT]`
 
 **Why it wins:** Autonomous multi-step agentic chaining is the centrepiece of the Gemma 4
 pitch. Three tools that let the agent reason *about* the vault itself:
