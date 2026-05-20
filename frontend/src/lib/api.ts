@@ -173,6 +173,25 @@ export const api = {
     return handleJsonResponse(resp);
   },
 
+  // Audio transcription (local Whisper)
+  transcriptionStatus: async (): Promise<{ available: boolean; model: string | null }> => {
+    const resp = await fetch(`${API_BASE}/api/transcribe/status`);
+    return handleJsonResponse(resp);
+  },
+
+  transcribeAudio: async (
+    audioBlob: Blob,
+    filename = "recording.webm",
+  ): Promise<{ text: string; language: string; duration_seconds: number }> => {
+    const form = new FormData();
+    form.append("file", audioBlob, filename);
+    const resp = await fetch(`${API_BASE}/api/transcribe`, {
+      method: "POST",
+      body: form,
+    });
+    return handleJsonResponse(resp);
+  },
+
   // System health
   health: async (): Promise<HealthResponse> => {
     const resp = await fetch(`${API_BASE}/health`);

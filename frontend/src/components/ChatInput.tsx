@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Send, Paperclip, Loader2, X, AlertTriangle } from "lucide-react";
+import { Send, Paperclip, Loader2, X, AlertTriangle, Mic, MicOff, Square } from "lucide-react";
 import { Tooltip } from "./Tooltip";
+import { api } from "../lib/api";
 import type { Attachment } from "../types/api";
 
 // ── Attachment limits ─────────────────────────────────────────────────────
@@ -116,6 +117,65 @@ export function ChatInput({
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [warning, setWarning] = useState<string | null>(null);
   const warningTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // ── Audio recording state ────────────────────────────────────────────
+  const [transcriptionAvailable, setTranscriptionAvailable] = useState<boolean | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  // Check on mount whether the backend Whisper model is available.
+  useEffect(() => {
+    api.transcriptionStatus()
+      .then((s) => setTranscriptionAvailable(s.available))
+      .catch(() => setTranscriptionAvailable(false));
+  }, []);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        // Stop all tracks so the browser mic indicator disappears.
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        setIsRecording(false);
+        setIsTranscribing(true);
+        try {
+          const { text } = await api.transcribeAudio(blob);
+          if (text) {
+            // Append transcription to whatever the user has already typed.
+            onInputChange(input ? input + " " + text : text);
+          } else {
+            showWarning("No speech detected — try again.");
+          }
+        } catch {
+          showWarning("Transcription failed. Is Whisper running?");
+        } finally {
+          setIsTranscribing(false);
+        }
+      };
+
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setIsRecording(true);
+    } catch {
+      showWarning("Microphone access denied. Check your browser permissions.");
+    }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    mediaRecorderRef.current = null;
+  };
+
   const canSend =
     (input.trim().length > 0 || attachments.length > 0) && !isLoading;
 
@@ -289,6 +349,40 @@ export function ChatInput({
           multiple
           className="hidden"
         />
+
+        {/* Microphone button — only shown when Whisper is available */}
+        {transcriptionAvailable && (
+          <Tooltip
+            content={
+              isTranscribing
+                ? "Transcribing…"
+                : isRecording
+                ? "Stop recording"
+                : "Record voice message (Whisper)"
+            }
+            position="top">
+            <button
+              type="button"
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={isLoading || isTranscribing}
+              aria-label={isRecording ? "Stop recording" : "Record voice message"}
+              className={`w-9 h-9 mb-1 flex items-center justify-center rounded-full transition-all ${
+                isTranscribing
+                  ? "opacity-40 cursor-not-allowed text-[#727785] dark:text-[#988d9f]"
+                  : isRecording
+                  ? "bg-red-500/90 text-white animate-pulse hover:bg-red-600"
+                  : "text-[#727785] dark:text-[#988d9f] hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+              }`}>
+              {isTranscribing ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : isRecording ? (
+                <Square size={16} className="fill-current" />
+              ) : (
+                <Mic size={18} />
+              )}
+            </button>
+          </Tooltip>
+        )}
 
         <textarea
           ref={textareaRef}

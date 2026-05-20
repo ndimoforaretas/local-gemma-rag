@@ -19,6 +19,9 @@ python-docx     # DOCX extraction
 httpx           # URL fetching
 trafilatura     # Clean web text extraction
 
+# Audio transcription (local Whisper — optional, enables mic button)
+faster-whisper  # lightweight CTranslate2-based Whisper inference
+
 # Durable workflows
 dbos
 sqlalchemy
