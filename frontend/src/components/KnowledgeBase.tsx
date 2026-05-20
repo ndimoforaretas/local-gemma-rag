@@ -257,6 +257,18 @@ export function KnowledgeBase() {
         { id: aiMsgId, role: "ai", content: "" },
       ]);
 
+      let thinkingText = "";
+
+      const appendThinking = (text: string) => {
+        if (!text) return;
+        thinkingText += text;
+        updateSessionMessages(currentSessionId, (prev) =>
+          prev.map((msg) =>
+            msg.id === aiMsgId ? { ...msg, thinking: thinkingText } : msg,
+          ),
+        );
+      };
+
       const appendText = (text: string) => {
         if (!text) return;
         fullText += text;
@@ -285,7 +297,9 @@ export function KnowledgeBase() {
         try {
           const event = JSON.parse(line);
 
-          if (event.type === "text" && event.data) {
+          if (event.type === "thinking" && event.data) {
+            appendThinking(String(event.data));
+          } else if (event.type === "text" && event.data) {
             appendText(String(event.data));
           } else if (event.type === "metadata" && event.data) {
             handleMetadataEvent(event.data);

@@ -3,6 +3,19 @@ RAG Agent — Strands SDK agent with streaming support.
 
 Configures the Gemma model via Ollama and exposes an async generator
 that yields text chunks and metadata events for the frontend.
+
+Streaming uses a two-phase approach to expose Gemma 4's thinking capability:
+
+Phase 1 — Thinking (optional):
+    Direct ollama.AsyncClient call with options={"thinking": True}.
+    Emits  {"type": "thinking", "data": "<reasoning chunk>"}  events.
+    Strands' OllamaModel silently drops the `thinking` field, so we must
+    bypass it here.
+
+Phase 2 — Agent response:
+    Normal Strands Agent stream with tool support (search_knowledge_base,
+    calculator, current_time).  Emits {"type": "text"} and
+    {"type": "metadata"} events exactly as before.
 """
 
 import asyncio
@@ -10,6 +23,8 @@ import base64
 import json
 import os
 from typing import AsyncGenerator, Optional, List
+
+import ollama as _ollama
 
 from strands import Agent
 from strands.models.ollama import OllamaModel
@@ -84,6 +99,41 @@ def _trim_history() -> None:
         pass  # Agent internals may vary; never crash the request.
 
 
+async def _stream_thinking(text_query: str) -> AsyncGenerator[str, None]:
+    """
+    Phase 1: stream Gemma 4's internal reasoning chain.
+
+    Makes a direct Ollama API call with options={"thinking": True} to capture
+    the `thinking` field, which the Strands OllamaModel silently discards.
+    Yields JSON Lines events of the form:
+
+        {"type": "thinking", "data": "<reasoning chunk>"}
+
+    If thinking is disabled in settings or the model returns no thinking
+    tokens, this generator yields nothing — the caller proceeds to Phase 2
+    unchanged.
+    """
+    if not settings.thinking_mode:
+        return
+
+    client = _ollama.AsyncClient(host=settings.ollama_host)
+    try:
+        stream = await client.chat(
+            model=settings.llm_model,
+            messages=[{"role": "user", "content": text_query}],
+            options={"thinking": True},
+            stream=True,
+        )
+        async for chunk in stream:
+            thinking_chunk = chunk.message.thinking
+            if thinking_chunk:
+                yield f'{json.dumps({"type": "thinking", "data": thinking_chunk})}\n'
+    except Exception:
+        # Thinking is a best-effort feature — never block the main response.
+        logger.warning("Thinking phase skipped (model or connection error).")
+        return
+
+
 def _mime_to_format(mime_type: str) -> str:
     """Convert a MIME type like 'image/png' to a format string like 'png'."""
     mapping = {
@@ -112,8 +162,17 @@ async def run_rag_stream(query: str, attachments: Optional[list] = None) -> Asyn
     Stream agentic RAG responses using JSON Lines format.
 
     Yields one JSON object per line:
-    - {"type": "text", "data": "text chunk"}
-    - {"type": "metadata", "data": {source document metadata}}
+    - {"type": "thinking",  "data": "<reasoning chunk>"}   (Phase 1, optional)
+    - {"type": "text",      "data": "text chunk"}           (Phase 2)
+    - {"type": "metadata",  "data": {source document meta}} (Phase 2)
+
+    Two-phase strategy
+    ------------------
+    Phase 1 — Thinking:  direct ollama.AsyncClient call with thinking=True,
+        capturing Gemma 4's internal reasoning chain.  Strands' OllamaModel
+        silently drops the `thinking` field, so we bypass it here.
+
+    Phase 2 — Agent:  normal Strands Agent stream for tool-augmented Q&A.
 
     This ensures unambiguous parsing and resilience against response
     content containing special delimiters.
@@ -125,6 +184,10 @@ async def run_rag_stream(query: str, attachments: Optional[list] = None) -> Asyn
 
     # Build the prompt outside the lock — no shared state needed here.
     user_input: any = query
+    # combined_text is always a plain string; used for the thinking call
+    # (ollama direct API does not accept Strands content-block lists).
+    combined_text: str = query or ""
+
     if attachments:
         # Separate text files and images.
         image_blocks = []
@@ -171,6 +234,14 @@ async def run_rag_stream(query: str, attachments: Optional[list] = None) -> Asyn
             # Text-only with file attachments: send as plain string
             user_input = combined_text
 
+    # ── Phase 1: Thinking ─────────────────────────────────────────────
+    # Stream Gemma 4's internal reasoning chain before the agent response.
+    # Only runs when thinking_mode is True and combined_text is non-empty.
+    if combined_text.strip():
+        async for thinking_event in _stream_thinking(combined_text):
+            yield thinking_event
+
+    # ── Phase 2: Agent response ───────────────────────────────────────
     # Acquire the lock before touching the shared agent.  Held for the full
     # stream duration so no other request can interleave its messages.
     async with _agent_lock:
