@@ -166,11 +166,15 @@ export function KnowledgeBase() {
 
   // ── Send message (streaming) ──────────────────────────────────────
 
-  const handleSend = async (attachments: Attachment[] = []) => {
-    if ((!input.trim() && attachments.length === 0) || isLoading) return;
+  const handleSend = async (
+    attachments: Attachment[] = [],
+    directQuery?: string,
+  ) => {
+    const queryText = directQuery !== undefined ? directQuery : input.trim();
+    if ((!queryText && attachments.length === 0) || isLoading) return;
 
-    const userMessage = input.trim() || "[Attached files]";
-    setInput("");
+    const userMessage = queryText || "[Attached files]";
+    if (directQuery === undefined) setInput("");
     setIsLoading(true);
     setPendingKBFiles([]);
     setKbSaveStatus("idle");
@@ -526,6 +530,7 @@ export function KnowledgeBase() {
           onCopy={handleCopyMessage}
           onExport={handleExportMessage}
           messagesEndRef={messagesEndRef}
+          onSuggestionSelect={(prompt) => handleSend([], prompt)}
         />
 
         {/* KB Bridge Action Card */}
@@ -594,9 +599,7 @@ export function KnowledgeBase() {
       </div>
 
       {/* Context Sidebar */}
-      <div className="hidden xl:block">
-        <ContextSidebar contextItems={contextItems} />
-      </div>
+      <ContextSidebar contextItems={contextItems} />
 
       {/* History Sidebar */}
       <div className="hidden lg:block">

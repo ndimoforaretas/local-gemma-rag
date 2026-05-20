@@ -110,6 +110,10 @@ echo "  ✓ Python dependencies installed"
 print_step "Initializing DBOS tables..."
 dbos migrate
 
+# ── Seed default knowledge base ──────────────────────────
+print_step "Seeding default knowledge base..."
+python scripts/seed_knowledge_base.py
+
 # ── Frontend build ────────────────────────────────────────
 print_step "Building frontend..."
 cd frontend

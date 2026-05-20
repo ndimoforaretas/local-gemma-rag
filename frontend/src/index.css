@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -361,6 +362,50 @@ body {
 
 .dark .ai-response tbody tr:nth-child(even) {
   background: #1a1f2a;
+}
+
+/* ── AI response: accessible sharp colors ── */
+
+/* Light mode */
+.ai-response {
+  color: #191c1e;
+}
+
+.ai-response h1,
+.ai-response h2,
+.ai-response h3,
+.ai-response h4 {
+  color: #0f1215;
+}
+
+.ai-response strong {
+  color: #0f1215;
+}
+
+.ai-response ul > li::marker,
+.ai-response ol > li::marker {
+  color: #424754;
+}
+
+/* Dark mode */
+.dark .ai-response {
+  color: #e1e2ec;
+}
+
+.dark .ai-response h1,
+.dark .ai-response h2,
+.dark .ai-response h3,
+.dark .ai-response h4 {
+  color: #f0f1f7;
+}
+
+.dark .ai-response strong {
+  color: #f0f1f7;
+}
+
+.dark .ai-response ul > li::marker,
+.dark .ai-response ol > li::marker {
+  color: #c2c6d6;
 }
 
 @media (prefers-reduced-motion: reduce) {

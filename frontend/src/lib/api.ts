@@ -18,6 +18,7 @@ import type {
   RagRequest,
   SaveToKBFile,
   SaveToKBResponse,
+  SuggestionsResponse,
 } from "../types/api";
 
 const API_BASE = ""; // same-origin in dev and production
@@ -43,7 +44,10 @@ async function handleJsonResponse<T>(resp: Response): Promise<T> {
 export const api = {
   // RAG streaming — returns the raw Response so the caller can read
   // the body as a stream.  NOT parsed as JSON.
-  ragStream: async (query: string, attachments?: Attachment[]): Promise<Response> => {
+  ragStream: async (
+    query: string,
+    attachments?: Attachment[],
+  ): Promise<Response> => {
     const payload: RagRequest = { query };
     if (attachments && attachments.length > 0) {
       payload.attachments = attachments;
@@ -145,6 +149,12 @@ export const api = {
   health: async (): Promise<HealthResponse> => {
     const resp = await fetch(`${API_BASE}/health`);
     return handleJsonResponse<HealthResponse>(resp);
+  },
+
+  // Chat suggestion cards
+  getSuggestions: async (): Promise<SuggestionsResponse> => {
+    const resp = await fetch(`${API_BASE}/rag/suggestions`);
+    return handleJsonResponse<SuggestionsResponse>(resp);
   },
 };
 

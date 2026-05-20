@@ -2,6 +2,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Bot, User, Copy, Check, Download, FileText } from "lucide-react";
 import { marked } from "marked";
 import { Tooltip } from "./Tooltip";
+import { SuggestionCards } from "./SuggestionCards";
 import type { Message, MessageAttachment } from "../types/api";
 
 marked.setOptions({
@@ -86,6 +87,7 @@ interface ChatMessageListProps {
   onCopy: (content: string, id: string) => void;
   onExport: (content: string, id: string) => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  onSuggestionSelect: (prompt: string) => void;
 }
 
 function formatMessageTime(id: string): string {
@@ -106,6 +108,7 @@ export function ChatMessageList({
   onCopy,
   onExport,
   messagesEndRef,
+  onSuggestionSelect,
 }: ChatMessageListProps) {
   const prefersReducedMotion = useReducedMotion();
 
@@ -118,17 +121,24 @@ export function ChatMessageList({
         aria-label="Conversation messages"
         className="h-full overflow-y-auto p-6">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center opacity-60">
-            <div className="w-16 h-16 rounded-2xl bg-[#d0e1fb] dark:bg-[#32353c] border border-[#c2c6d6] dark:border-[#424754] flex items-center justify-center mb-6">
-              <Bot size={32} className="text-[#0058be] dark:text-[#adc6ff]" />
+          <div className="h-full flex flex-col items-center justify-center">
+            <div className="flex flex-col items-center">
+              <div className="w-16 h-16 rounded-2xl bg-[#d0e1fb] dark:bg-[#32353c] border border-[#c2c6d6] dark:border-[#424754] flex items-center justify-center mb-6 opacity-60">
+                <Bot size={32} className="text-[#0058be] dark:text-[#adc6ff]" />
+              </div>
+              <h3 className="text-2xl font-semibold mb-3 text-[#191c1e] dark:text-[#e1e2ec]">
+                Welcome to Gemma CogniVault
+              </h3>
+              <p className="text-base text-[#424754] dark:text-[#8c909f] text-center max-w-sm leading-relaxed">
+                Upload documents to your{" "}
+                <span className="font-medium text-[#191c1e] dark:text-[#e1e2ec]">
+                  Knowledge Base
+                </span>{" "}
+                and ask questions about them — or tap a card below to explore
+                what the app can do.
+              </p>
             </div>
-            <h3 className="text-2xl font-semibold mb-2 text-[#191c1e] dark:text-[#e1e2ec]">
-              How can I assist you today?
-            </h3>
-            <p className="text-base text-[#424754] dark:text-[#8c909f] text-center max-w-sm">
-              Ask me anything about your uploaded documents. I will search the
-              knowledge base and synthesize an answer.
-            </p>
+            <SuggestionCards onSelect={onSuggestionSelect} />
           </div>
         ) : (
           <div className="flex flex-col gap-6" role="list">

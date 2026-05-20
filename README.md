@@ -4,11 +4,7 @@
 
 ![Gemma Cognivault Logo with the tagline "Durable Local RAG Pipeline - Private AI . No Cloud . Your Data" ](frontend/public/gemma-cognivault-banner.jpg)
 
-A full-stack **Local RAG** (Retrieval-Augmented Generation) application that lets you build a private Intelligence Chatbot querying your own documents — PDFs, Markdown, plain text, and CSV files. Attach images directly in chat for multimodal analysis. All data stays on your machine — no cloud APIs required.
-
-_This is a submission for the [Gemma 4 Challenge: Build with Gemma 4](https://dev.to/challenges/google-gemma-2026-05-06)_
-
----
+## A full-stack **Local RAG** (Retrieval-Augmented Generation) application that lets you build a private Intelligence Chatbot querying your own documents — PDFs, Markdown, plain text, and CSV files. Attach images directly in chat for multimodal analysis. All data stays on your machine — no cloud APIs required.
 
 ## Problem Statement
 
@@ -93,7 +89,9 @@ Gemma 4 proved that you don't need a 100B+ parameter cloud model to achieve true
 - **Chat → KB Bridge** — Attach text files in chat, discuss them with the AI, then add them to your Knowledge Base with one click — no view switching required.
 - **Multi-Session Chat** — Juggle independent research threads with a history sidebar and auto-generated titles.
 - **Smart Knowledge Base** — View, manage, and soft-delete documents from the vector database without re-indexing.
-- **Interactive Citations** — Click AI citations to open the exact source document.
+- **Interactive Citations** — A live Context sidebar slides in whenever the AI searches the knowledge base, showing exactly which documents it drew from with a direct link to the source file.
+- **Suggestion Cards** — Six instant how-to questions appear on every new conversation, giving users a guided entry point without typing a single character.
+- **Pre-loaded Guide** — A full user guide (`docs/GUIDE.md`) is seeded into the knowledge base at setup so the AI can answer questions about the app itself from day one.
 - **Per-Message Actions** — Copy responses to clipboard or export as formatted Markdown.
 - **Agentic Tools** — The AI agent has access to a safe calculator, clock, and knowledge base search tool.
 
@@ -233,7 +231,15 @@ pip install -r requirements.txt
 dbos migrate
 ```
 
-### 6. Build the frontend
+### 6. Seed the default knowledge base
+
+```bash
+python scripts/seed_knowledge_base.py
+```
+
+This indexes `docs/GUIDE.md` into the vector store so the AI can answer questions about the app from the first launch. Safe to skip — the app works without it, but suggestion cards won't have context to draw from.
+
+### 7. Build the frontend
 
 ```bash
 cd frontend
@@ -242,13 +248,13 @@ npm run build
 cd ..
 ```
 
-### 7. Launch the application
+### 8. Launch the application
 
 ```bash
 python -m backend.main
 ```
 
-### 8. Open the app
+### 9. Open the app
 
 Navigate to **[http://localhost:8000](http://localhost:8000)**
 

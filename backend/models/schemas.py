@@ -57,6 +57,17 @@ class ErrorResponse(BaseModel):
     detail: Optional[str] = None
 
 
+class SuggestionItem(BaseModel):
+    """A single clickable starter question for the chat empty state."""
+    label: str
+    prompt: str
+
+
+class SuggestionsResponse(BaseModel):
+    """Returned by GET /rag/suggestions."""
+    suggestions: list[SuggestionItem]
+
+
 # ── Knowledge Base ───────────────────────────────────────────────────────────
 
 class KBFile(BaseModel):
