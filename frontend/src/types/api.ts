@@ -68,6 +68,10 @@ export interface ContextItem {
   title: string;
   type: string;
   path: string;
+  /** Retrieved chunk text — available for inline preview. */
+  text?: string;
+  /** Page number within the source document (if applicable). */
+  page?: number;
 }
 
 export interface ChatSession {

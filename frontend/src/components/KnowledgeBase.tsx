@@ -296,7 +296,16 @@ export function KnowledgeBase() {
 
         setContextItems((prev) => {
           if (prev.some((item) => item.title === title)) return prev;
-          return [...prev, { title, type: meta.type, path }];
+          return [
+            ...prev,
+            {
+              title,
+              type: meta.type,
+              path,
+              text: meta.content ?? meta.text ?? undefined,
+              page: meta.page ?? undefined,
+            },
+          ];
         });
       };
 
