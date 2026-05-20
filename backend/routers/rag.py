@@ -78,6 +78,7 @@ async def rag_endpoint(request: RagRequest):
                 request.attachments,
                 request.session_id,
                 request.document_filter,
+                request.trim_history_to_turns,
             ),
             media_type="text/event-stream",
         )

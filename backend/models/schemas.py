@@ -25,6 +25,9 @@ class RagRequest(BaseModel):
     session_id: Optional[str] = None
     # When set, restricts search_knowledge_base to only these source filenames.
     document_filter: Optional[list[str]] = None
+    # When set, rewinds the agent's conversation history to this many turn-pairs
+    # before processing the new query.  Used by edit-and-resend / regenerate.
+    trim_history_to_turns: Optional[int] = Field(None, ge=0)
 
 
 # ── Responses ────────────────────────────────────────────────────────────────

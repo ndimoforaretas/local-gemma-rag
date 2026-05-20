@@ -168,9 +168,48 @@ export function KnowledgeBase() {
 
   // ── Send message (streaming) ──────────────────────────────────────
 
+  // ── Edit / Regenerate ─────────────────────────────────────────────
+
+  /**
+   * Edit a user message at `messageIndex` and resend with new content.
+   * Trims the UI and rewinds the agent history to the turn-pairs that
+   * existed *before* this message.
+   */
+  const handleEdit = (messageIndex: number, newContent: string) => {
+    if (!activeSessionId) return;
+    // Trim the UI: keep only messages before the edited one
+    updateSessionMessages(activeSessionId, (prev) =>
+      prev.slice(0, messageIndex),
+    );
+    setContextItems([]);
+    // turns before this user message = floor(messageIndex / 2)
+    handleSend([], newContent, Math.floor(messageIndex / 2));
+  };
+
+  /**
+   * Regenerate the AI response at `messageIndex`.
+   * Removes the AI message (and everything after it) from the UI,
+   * then resends the user message that preceded it.
+   */
+  const handleRegenerate = (messageIndex: number) => {
+    if (!activeSessionId) return;
+    const currentMessages = activeSession?.messages ?? [];
+    const userMsg = currentMessages[messageIndex - 1];
+    if (!userMsg || userMsg.role !== "user") return;
+
+    // Keep messages up to (but not including) the AI message being regenerated
+    updateSessionMessages(activeSessionId, (prev) =>
+      prev.slice(0, messageIndex),
+    );
+    setContextItems([]);
+    // turns before the preceding user message = floor((messageIndex - 1) / 2)
+    handleSend([], userMsg.content, Math.floor((messageIndex - 1) / 2));
+  };
+
   const handleSend = async (
     attachments: Attachment[] = [],
     directQuery?: string,
+    trimHistoryToTurns?: number,
   ) => {
     const queryText = directQuery !== undefined ? directQuery : input.trim();
     if ((!queryText && attachments.length === 0) || isLoading) return;
@@ -243,6 +282,7 @@ export function KnowledgeBase() {
         attachments,
         currentSessionId,
         documentFilter.length > 0 ? documentFilter : undefined,
+        trimHistoryToTurns,
       );
 
       if (!res.body) throw new Error("No response body");
@@ -561,6 +601,8 @@ export function KnowledgeBase() {
           onExport={handleExportMessage}
           messagesEndRef={messagesEndRef}
           onSuggestionSelect={(prompt) => handleSend([], prompt)}
+          onEdit={handleEdit}
+          onRegenerate={handleRegenerate}
         />
 
         {/* KB Bridge Action Card */}

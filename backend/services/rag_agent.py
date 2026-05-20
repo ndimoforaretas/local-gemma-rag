@@ -255,6 +255,7 @@ async def run_rag_stream(
     attachments: Optional[list] = None,
     session_id: Optional[str] = None,
     document_filter: Optional[list[str]] = None,
+    trim_history_to_turns: Optional[int] = None,
 ) -> AsyncGenerator[str, None]:
     """
     Stream agentic RAG responses using JSON Lines format.
@@ -336,6 +337,13 @@ async def run_rag_stream(
     lock = await _get_session_lock(sid)
 
     async with lock:
+        # Rewind history when the user edits a message or regenerates a response.
+        if trim_history_to_turns is not None:
+            stored = _session_histories.get(sid)
+            if stored is not None:
+                keep = trim_history_to_turns * 2   # each turn = 1 user + 1 assistant
+                del stored[keep:]
+
         # Load this session's conversation history.
         history = list(_session_histories.get(sid, []))
 

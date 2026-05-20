@@ -140,7 +140,7 @@ re-uploading a file produces no re-embedding; the stale vectors remain.
 |----|---|---|---|
 | **T3-I** | Lightweight eval harness (retrieval@k + LLM-judge) | 1 day | New `backend/eval/` module + pytest fixtures |
 | **T3-J** | ~~Citation preview popovers (chunk text on hover)~~ ✅ | 3 hrs | Frontend only |
-| **T3-K** | Regenerate / edit-and-resend in chat | 4 hrs | Frontend + reset agent history endpoint |
+| **T3-K** | ~~Regenerate / edit-and-resend in chat~~ ✅ | 4 hrs | Frontend + reset agent history endpoint |
 | **T3-L** | New agent tools: `summarize_document`, `list_documents`, `compare_documents` | 1 day | `agent_tools.py` |
 
 ### Tier 4 — Larger initiatives

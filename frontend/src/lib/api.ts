@@ -50,6 +50,7 @@ export const api = {
     attachments?: Attachment[],
     sessionId?: string,
     documentFilter?: string[],
+    trimHistoryToTurns?: number,
   ): Promise<Response> => {
     const payload: RagRequest = { query };
     if (attachments && attachments.length > 0) {
@@ -60,6 +61,9 @@ export const api = {
     }
     if (documentFilter && documentFilter.length > 0) {
       payload.document_filter = documentFilter;
+    }
+    if (trimHistoryToTurns !== undefined) {
+      payload.trim_history_to_turns = trimHistoryToTurns;
     }
     const resp = await fetch(`${API_BASE}/rag`, {
       method: "POST",

@@ -19,6 +19,11 @@ export interface RagRequest {
   session_id?: string;
   /** Restrict KB search to these source filenames. Empty/absent = all docs. */
   document_filter?: string[];
+  /**
+   * Rewind the agent's conversation history to this many turn-pairs before
+   * processing the query. Used by edit-and-resend / regenerate (T3-K).
+   */
+  trim_history_to_turns?: number;
 }
 
 export interface IndexedDocument {

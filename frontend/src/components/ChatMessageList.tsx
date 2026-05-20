@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Bot, User, Copy, Check, Download, FileText, ChevronDown } from "lucide-react";
+import { Bot, User, Copy, Check, Download, FileText, ChevronDown, Pencil, RefreshCw, X as XIcon, CornerDownLeft } from "lucide-react";
 import { marked } from "marked";
 import { Tooltip } from "./Tooltip";
 import { SuggestionCards } from "./SuggestionCards";
@@ -89,6 +89,10 @@ interface ChatMessageListProps {
   onExport: (content: string, id: string) => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   onSuggestionSelect: (prompt: string) => void;
+  /** Called when the user submits an edited version of a user message. */
+  onEdit?: (messageIndex: number, newContent: string) => void;
+  /** Called when the user clicks Regenerate on an AI message. */
+  onRegenerate?: (messageIndex: number) => void;
 }
 
 function formatMessageTime(id: string): string {
@@ -165,8 +169,42 @@ export function ChatMessageList({
   onExport,
   messagesEndRef,
   onSuggestionSelect,
+  onEdit,
+  onRegenerate,
 }: ChatMessageListProps) {
   const prefersReducedMotion = useReducedMotion();
+
+  // ── Edit state ────────────────────────────────────────────────────────────
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState("");
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-focus and auto-resize the textarea when edit mode opens.
+  useEffect(() => {
+    if (editingIndex !== null && editTextareaRef.current) {
+      const el = editTextareaRef.current;
+      el.focus();
+      el.selectionStart = el.selectionEnd = el.value.length;
+    }
+  }, [editingIndex]);
+
+  const startEdit = (index: number, currentContent: string) => {
+    setEditingIndex(index);
+    setEditDraft(currentContent);
+  };
+
+  const cancelEdit = () => {
+    setEditingIndex(null);
+    setEditDraft("");
+  };
+
+  const submitEdit = (index: number) => {
+    const trimmed = editDraft.trim();
+    if (!trimmed) return;
+    setEditingIndex(null);
+    setEditDraft("");
+    onEdit?.(index, trimmed);
+  };
 
   return (
     <div className="flex-1 rounded-2xl bg-[#f2f4f6] dark:bg-[#191b23] border border-[#c2c6d6] dark:border-[#424754] transition-colors duration-300 overflow-hidden relative">
@@ -199,7 +237,7 @@ export function ChatMessageList({
         ) : (
           <div className="flex flex-col gap-6" role="list">
             <AnimatePresence initial={false}>
-              {messages.map((msg) => (
+              {messages.map((msg, msgIndex) => (
                 <motion.div
                   key={msg.id}
                   role="listitem"
@@ -318,6 +356,44 @@ export function ChatMessageList({
                             ),
                           }}
                         />
+                      ) : editingIndex === msgIndex ? (
+                        /* ── Inline edit textarea ───────────────────────── */
+                        <div className="flex flex-col gap-2 w-full min-w-[220px]">
+                          <textarea
+                            ref={editTextareaRef}
+                            value={editDraft}
+                            onChange={(e) => setEditDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                                e.preventDefault();
+                                submitEdit(msgIndex);
+                              }
+                              if (e.key === "Escape") cancelEdit();
+                            }}
+                            rows={3}
+                            className="w-full rounded-xl bg-white/15 text-white placeholder-white/50 text-sm leading-relaxed p-2 resize-none border border-white/30 focus:outline-none focus:border-white/60"
+                            aria-label="Edit your message"
+                          />
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={cancelEdit}
+                              className="flex items-center gap-1 text-xs font-medium text-white/70 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-white/10"
+                              aria-label="Cancel edit"
+                            >
+                              <XIcon size={12} /> Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => submitEdit(msgIndex)}
+                              disabled={!editDraft.trim()}
+                              className="flex items-center gap-1 text-xs font-semibold text-white bg-white/20 hover:bg-white/30 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1 rounded-lg transition-colors"
+                              aria-label="Send edited message"
+                            >
+                              <CornerDownLeft size={12} /> Send
+                            </button>
+                          </div>
+                        </div>
                       ) : (
                         <div>
                           {msg.attachments && msg.attachments.length > 0 && (
@@ -386,6 +462,30 @@ export function ChatMessageList({
                             aria-label="Export response as markdown"
                             className="flex items-center gap-1.5 text-xs font-medium text-[#727785] dark:text-[#8c909f] hover:text-[#0058be] dark:hover:text-[#adc6ff] transition-colors">
                             <Download size={14} /> Export
+                          </button>
+                        </Tooltip>
+                        {onRegenerate && !isLoading && (
+                          <Tooltip content="Regenerate this response" position="top">
+                            <button
+                              onClick={() => onRegenerate(msgIndex)}
+                              aria-label="Regenerate response"
+                              className="flex items-center gap-1.5 text-xs font-medium text-[#727785] dark:text-[#8c909f] hover:text-[#a855f7] dark:hover:text-[#ddb7ff] transition-colors">
+                              <RefreshCw size={14} /> Regenerate
+                            </button>
+                          </Tooltip>
+                        )}
+                      </div>
+                    )}
+
+                    {/* User message edit button */}
+                    {msg.role === "user" && onEdit && !isLoading && editingIndex !== msgIndex && (
+                      <div className="flex justify-end mt-1">
+                        <Tooltip content="Edit and resend" position="top">
+                          <button
+                            onClick={() => startEdit(msgIndex, msg.content)}
+                            aria-label="Edit message"
+                            className="flex items-center gap-1 text-xs font-medium text-[#c4a3f0] hover:text-white transition-colors opacity-60 hover:opacity-100">
+                            <Pencil size={12} /> Edit
                           </button>
                         </Tooltip>
                       </div>
