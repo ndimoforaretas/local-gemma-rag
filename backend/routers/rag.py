@@ -67,13 +67,13 @@ async def rag_endpoint(request: RagRequest):
             raise HTTPException(
                 status_code=422,
                 detail=(
-                    "Only 1 file attachment per message is allowed. "
-                    "Use the Knowledge Base to index multiple documents."
+                    f"Maximum {settings.max_attachments_per_message} attachments per message. "
+                    "Use the Knowledge Base to index larger document sets."
                 ),
             )
 
         return StreamingResponse(
-            run_rag_stream(query, request.attachments),
+            run_rag_stream(query, request.attachments, request.session_id),
             media_type="text/event-stream",
         )
     except HTTPException:

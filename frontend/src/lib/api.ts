@@ -47,10 +47,14 @@ export const api = {
   ragStream: async (
     query: string,
     attachments?: Attachment[],
+    sessionId?: string,
   ): Promise<Response> => {
     const payload: RagRequest = { query };
     if (attachments && attachments.length > 0) {
       payload.attachments = attachments;
+    }
+    if (sessionId) {
+      payload.session_id = sessionId;
     }
     const resp = await fetch(`${API_BASE}/rag`, {
       method: "POST",
@@ -166,6 +170,25 @@ export const api = {
     storage: { vector_index: string; metadata: string; documents: string };
   }> => {
     const resp = await fetch(`${API_BASE}/api/vault/stats`);
+    return handleJsonResponse(resp);
+  },
+
+  // Audio transcription (local Whisper)
+  transcriptionStatus: async (): Promise<{ available: boolean; model: string | null }> => {
+    const resp = await fetch(`${API_BASE}/api/transcribe/status`);
+    return handleJsonResponse(resp);
+  },
+
+  transcribeAudio: async (
+    audioBlob: Blob,
+    filename = "recording.webm",
+  ): Promise<{ text: string; language: string; duration_seconds: number }> => {
+    const form = new FormData();
+    form.append("file", audioBlob, filename);
+    const resp = await fetch(`${API_BASE}/api/transcribe`, {
+      method: "POST",
+      body: form,
+    });
     return handleJsonResponse(resp);
   },
 

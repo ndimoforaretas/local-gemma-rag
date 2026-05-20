@@ -52,7 +52,8 @@ class Settings(BaseSettings):
     # --- Server ---
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:8000"]
     max_upload_size_mb: int = 200
-    max_attachments_per_message: int = 1
+    # Allow up to 5 mixed attachments (images + documents) per chat message.
+    max_attachments_per_message: int = 5
 
     # --- Logging ---
     log_level: str = "INFO"
