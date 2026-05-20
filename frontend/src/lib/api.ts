@@ -102,6 +102,16 @@ export const api = {
     return handleJsonResponse<IngestResponse>(resp);
   },
 
+  // Fetch a URL, extract text, save to docs/, and trigger ingestion
+  ingestUrl: async (url: string): Promise<{ status: string; filename: string; workflow_id: string; chars_extracted: number }> => {
+    const resp = await fetch(`${API_BASE}/ingest/url`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    return handleJsonResponse(resp);
+  },
+
   // Poll ingestion workflow status
   ingestStatus: async (workflowId: string): Promise<WorkflowStatusResponse> => {
     const resp = await fetch(

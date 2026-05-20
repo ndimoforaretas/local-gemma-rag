@@ -233,7 +233,7 @@ pitch. Three tools that let the agent reason *about* the vault itself:
 
 ---
 
-### Step 3 — Re-ingest on File Change (T1-D)  `[NEXT]`
+### Step 3 — Re-ingest on File Change (T1-D)  ✅
 
 **Why it matters:** Without this, editing an uploaded document leaves stale vectors forever.
 A real Data Vault must stay current.
@@ -252,7 +252,7 @@ A real Data Vault must stay current.
 
 ---
 
-### Step 4 — DOCX + URL Ingestion (T2-E / T2-F)
+### Step 4 — DOCX + URL Ingestion (T2-E / T2-F)  `[NEXT]`
 
 **Why it matters:** Enterprise documents live in Word files; demos always need a URL
 ingestion moment. Adds immediate enterprise credibility.

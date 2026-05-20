@@ -76,9 +76,40 @@ def get_text_pages(path: str) -> List[Tuple[str, int]]:
     return []
 
 
+def get_docx_pages(path: str) -> List[Tuple[str, int]]:
+    """Extract text from a DOCX file (paragraphs + table cells) as a single page."""
+    try:
+        from docx import Document  # python-docx
+        doc = Document(path)
+        parts: List[str] = []
+
+        # Paragraphs
+        for para in doc.paragraphs:
+            text = para.text.strip()
+            if text:
+                parts.append(text)
+
+        # Table cells (each row as a pipe-delimited line)
+        for table in doc.tables:
+            for row in table.rows:
+                row_text = " | ".join(
+                    cell.text.strip() for cell in row.cells if cell.text.strip()
+                )
+                if row_text:
+                    parts.append(row_text)
+
+        full_text = "\n".join(parts)
+        if full_text.strip():
+            return [(full_text.strip(), 1)]
+        return []
+    except Exception:
+        logger.exception("Error reading DOCX %s", path)
+        return []
+
+
 # ── Durable workflow steps ───────────────────────────────────────────────────
 
-_ALLOWED_EXTENSIONS = (".pdf", ".txt", ".md", ".csv")
+_ALLOWED_EXTENSIONS = (".pdf", ".txt", ".md", ".csv", ".docx")
 
 
 @DBOS.step()
@@ -160,6 +191,9 @@ def process_single_document(filename: str) -> List[Dict]:
     if ext == ".pdf":
         pages = get_pdf_pages(path)
         doc_type = "pdf"
+    elif ext == ".docx":
+        pages = get_docx_pages(path)
+        doc_type = "docx"
     elif ext in [".txt", ".md", ".csv"]:
         pages = get_text_pages(path)
         doc_type = "text"

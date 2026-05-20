@@ -15,6 +15,9 @@ rank-bm25
 # Document processing
 pypdf
 langchain-text-splitters
+python-docx     # DOCX extraction
+httpx           # URL fetching
+trafilatura     # Clean web text extraction
 
 # Durable workflows
 dbos
