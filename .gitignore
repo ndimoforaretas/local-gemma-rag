@@ -30,3 +30,7 @@ chat_history.json
 # Node
 frontend/node_modules/
 frontend/dist/
+
+# Internal planning docs (not for end users)
+PLAN.md
+memory/
