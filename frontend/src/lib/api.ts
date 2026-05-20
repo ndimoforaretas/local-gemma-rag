@@ -102,6 +102,16 @@ export const api = {
     return handleJsonResponse<IngestResponse>(resp);
   },
 
+  // Fetch a URL, extract text, save to docs/, and trigger ingestion
+  ingestUrl: async (url: string): Promise<{ status: string; filename: string; workflow_id: string; chars_extracted: number }> => {
+    const resp = await fetch(`${API_BASE}/ingest/url`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    return handleJsonResponse(resp);
+  },
+
   // Poll ingestion workflow status
   ingestStatus: async (workflowId: string): Promise<WorkflowStatusResponse> => {
     const resp = await fetch(
@@ -143,6 +153,20 @@ export const api = {
       body: JSON.stringify({ files }),
     });
     return handleJsonResponse<SaveToKBResponse>(resp);
+  },
+
+  // Privacy vault audit stats
+  getVaultStats: async (): Promise<{
+    total_documents: number;
+    total_chunks: number;
+    index_size_kb: number;
+    last_ingested_at: string | null;
+    ollama_host: string;
+    external_calls: number;
+    storage: { vector_index: string; metadata: string; documents: string };
+  }> => {
+    const resp = await fetch(`${API_BASE}/api/vault/stats`);
+    return handleJsonResponse(resp);
   },
 
   // System health

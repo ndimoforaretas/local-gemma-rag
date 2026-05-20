@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     ollama_host: str = "http://localhost:11434"
 
     # --- RAG Agent ---
+    # Set to False to disable Gemma 4 thinking mode (faster, no reasoning panel).
+    thinking_mode: bool = True
+
     agent_system_prompt: str = (
         "You are Gemma CogniVault AI, a precise technical assistant that answers questions "
         "using the user's indexed documents.\n"

@@ -150,6 +150,34 @@ class VectorDB:
             for key in sorted(scores, key=lambda k: scores[k], reverse=True)
         ]
 
+    # ── Deletion ──────────────────────────────────────────────────────────────
+
+    def delete_by_source(self, filename: str) -> int:
+        """Soft-delete all chunks belonging to *filename*.
+
+        Marks matching, non-deleted chunks with ``deleted=True`` in the
+        in-memory metadata and persists the change to disk.  The FAISS index
+        is left unchanged (IndexFlatIP does not support removal); stale vectors
+        are silently ignored during search because the metadata lookup filters
+        them out.
+
+        Returns the number of chunks marked as deleted.
+        """
+        count = 0
+        for chunk in self.metadata:
+            if chunk.get("source") == filename and not chunk.get("deleted"):
+                chunk["deleted"] = True
+                count += 1
+
+        if count > 0:
+            settings = get_settings()
+            with open(settings.metadata_file, "w") as f:
+                json.dump(self.metadata, f)
+            self._build_bm25()
+            logger.info("Soft-deleted %d chunk(s) from '%s'", count, filename)
+
+        return count
+
     # ── Public API ────────────────────────────────────────────────────────────
 
     def search(self, query: str, top_k: int = 5) -> List[Dict]:

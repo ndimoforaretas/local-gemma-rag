@@ -51,6 +51,8 @@ export interface Message {
   role: "user" | "ai";
   content: string;
   attachments?: MessageAttachment[];
+  /** Gemma 4 internal reasoning chain, streamed before the answer. */
+  thinking?: string;
 }
 
 export interface ContextItem {
