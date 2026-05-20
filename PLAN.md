@@ -275,7 +275,7 @@ ingestion moment. Adds immediate enterprise credibility.
 
 ---
 
-### Step 5 — Privacy Vault Audit Panel  `[NEXT]`
+### Step 5 — Privacy Vault Audit Panel  ✅
 
 **Why it wins:** Ties together the entire "Local First Data Vault" narrative in one view.
 Shows the jury (and real users) exactly what's stored and proves nothing leaves the machine.
