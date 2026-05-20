@@ -4,8 +4,11 @@ import { Tooltip } from "./Tooltip";
 import type { Attachment } from "../types/api";
 
 // ── Attachment limits ─────────────────────────────────────────────────────
+const MAX_ATTACHMENTS = 5;
 const MAX_IMAGE_SIZE_MB = 10;
+const MAX_DOC_SIZE_MB = 20;  // PDFs and DOCX can be larger
 const MAX_TEXT_SIZE_MB = 5;
+
 const TEXT_MIME_TYPES = new Set([
   "application/json",
   "application/xml",
@@ -15,22 +18,17 @@ const TEXT_MIME_TYPES = new Set([
   "application/typescript",
   "application/csv",
 ]);
+
 const TEXT_FILE_EXTENSIONS = new Set([
-  ".txt",
-  ".md",
-  ".markdown",
-  ".csv",
-  ".json",
-  ".xml",
-  ".yaml",
-  ".yml",
-  ".log",
-  ".py",
-  ".js",
-  ".ts",
-  ".tsx",
-  ".jsx",
-  ".sql",
+  ".txt", ".md", ".markdown", ".csv", ".json", ".xml",
+  ".yaml", ".yml", ".log", ".py", ".js", ".ts", ".tsx", ".jsx", ".sql",
+]);
+
+const PDF_MIME = "application/pdf";
+const DOCX_MIME_TYPES = new Set([
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
+  "application/docx",
 ]);
 
 function getFileExtension(filename: string): string {
@@ -44,6 +42,8 @@ function inferMimeType(file: File): string {
 
   const ext = getFileExtension(file.name);
   const byExt: Record<string, string> = {
+    ".pdf": "application/pdf",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ".md": "text/markdown",
     ".markdown": "text/markdown",
     ".csv": "text/csv",
@@ -63,10 +63,37 @@ function inferMimeType(file: File): string {
   return byExt[ext] ?? "application/octet-stream";
 }
 
-function isTextLikeFile(file: File, mimeType: string): boolean {
-  if (mimeType.startsWith("text/") || TEXT_MIME_TYPES.has(mimeType))
-    return true;
-  return TEXT_FILE_EXTENSIONS.has(getFileExtension(file.name));
+type AttachmentKind = "image" | "pdf" | "docx" | "text" | "unknown";
+
+function classifyFile(file: File, mimeType: string): AttachmentKind {
+  if (mimeType.startsWith("image/")) return "image";
+  if (mimeType === PDF_MIME || getFileExtension(file.name) === ".pdf") return "pdf";
+  if (DOCX_MIME_TYPES.has(mimeType) || getFileExtension(file.name) === ".docx") return "docx";
+  if (mimeType.startsWith("text/") || TEXT_MIME_TYPES.has(mimeType)) return "text";
+  if (TEXT_FILE_EXTENSIONS.has(getFileExtension(file.name))) return "text";
+  return "unknown";
+}
+
+/** Small coloured badge shown in the attachment tray for non-image files. */
+function FileBadge({ kind, name }: { kind: AttachmentKind; name: string }) {
+  const label = kind === "pdf" ? "PDF" : kind === "docx" ? "DOC" : "TXT";
+  const colours =
+    kind === "pdf"
+      ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
+      : kind === "docx"
+      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+      : "bg-[#f2f4f6] dark:bg-[#272a31] text-[#727785] dark:text-[#8c909f]";
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-1 w-full h-full px-1">
+      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${colours}`}>
+        {label}
+      </span>
+      <span className="text-[9px] text-[#727785] dark:text-[#8c909f] truncate w-full text-center leading-tight">
+        {name.length > 10 ? name.slice(0, 9) + "…" : name}
+      </span>
+    </div>
+  );
 }
 
 interface ChatInputProps {
@@ -101,47 +128,49 @@ export function ChatInput({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
 
-    if (attachments.length > 0) {
-      showWarning(
-        "You can only attach 1 file per message. Remove the current attachment to add a different one.",
+    const remaining = MAX_ATTACHMENTS - attachments.length;
+    if (remaining <= 0) {
+      showWarning(`Maximum ${MAX_ATTACHMENTS} attachments per message.`);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    const newAttachments: Attachment[] = [];
+    const files = Array.from(e.target.files).slice(0, remaining);
+
+    for (const file of files) {
+      const mimeType = inferMimeType(file);
+      const kind = classifyFile(file, mimeType);
+
+      if (kind === "unknown") {
+        showWarning(`"${file.name}" is not a supported file type.`);
+        continue;
+      }
+
+      const maxMb =
+        kind === "image" ? MAX_IMAGE_SIZE_MB
+        : kind === "pdf" || kind === "docx" ? MAX_DOC_SIZE_MB
+        : MAX_TEXT_SIZE_MB;
+
+      if (file.size > maxMb * 1024 * 1024) {
+        showWarning(`"${file.name}" exceeds the ${maxMb} MB limit.`);
+        continue;
+      }
+
+      const buffer = await file.arrayBuffer();
+      const base64String = btoa(
+        new Uint8Array(buffer).reduce(
+          (data, byte) => data + String.fromCharCode(byte),
+          "",
+        ),
       );
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
+
+      newAttachments.push({ mime_type: mimeType, data: base64String, name: file.name });
     }
 
-    // Only process the first selected file.
-    const file = e.target.files[0];
-    const mimeType = inferMimeType(file);
-    const isImage = mimeType.startsWith("image/");
-    const isText = isTextLikeFile(file, mimeType);
-
-    if (!isImage && !isText) {
-      showWarning(`"${file.name}" is not a supported file type.`);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
+    if (newAttachments.length > 0) {
+      setAttachments((prev) => [...prev, ...newAttachments]);
     }
-
-    const maxSizeBytes =
-      (isImage ? MAX_IMAGE_SIZE_MB : MAX_TEXT_SIZE_MB) * 1024 * 1024;
-    if (file.size > maxSizeBytes) {
-      showWarning(
-        `"${file.name}" exceeds the ${isImage ? MAX_IMAGE_SIZE_MB : MAX_TEXT_SIZE_MB} MB limit.`,
-      );
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
-
-    const buffer = await file.arrayBuffer();
-    const base64String = btoa(
-      new Uint8Array(buffer).reduce(
-        (data, byte) => data + String.fromCharCode(byte),
-        "",
-      ),
-    );
-
-    setAttachments([
-      { mime_type: mimeType, data: base64String, name: file.name },
-    ]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -170,6 +199,8 @@ export function ChatInput({
     }
   };
 
+  const attachmentsAtLimit = attachments.length >= MAX_ATTACHMENTS;
+
   return (
     <div className="flex flex-col gap-2">
       {/* Warning toast */}
@@ -188,50 +219,62 @@ export function ChatInput({
 
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-2 px-1">
-          {attachments.map((att, idx) => (
-            <div
-              key={idx}
-              className="relative w-14 h-14 bg-white dark:bg-[#272a31] rounded-lg border border-[#c2c6d6] dark:border-[#424754] flex items-center justify-center overflow-hidden group">
-              {att.mime_type.startsWith("image/") ? (
-                <img
-                  src={`data:${att.mime_type};base64,${att.data}`}
-                  alt="attachment"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-xs text-center break-words px-1 font-semibold text-[#727785] dark:text-[#8c909f]">
-                  TXT
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={() => removeAttachment(idx)}
-                className="absolute top-1 right-1 w-5 h-5 bg-black/50 hover:bg-red-500/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <X size={12} />
-              </button>
+          {attachments.map((att, idx) => {
+            const kind = classifyFile(
+              { name: att.name ?? "" } as File,
+              att.mime_type,
+            );
+            return (
+              <div
+                key={idx}
+                className="relative w-14 h-14 bg-white dark:bg-[#272a31] rounded-lg border border-[#c2c6d6] dark:border-[#424754] flex items-center justify-center overflow-hidden group">
+                {kind === "image" ? (
+                  <img
+                    src={`data:${att.mime_type};base64,${att.data}`}
+                    alt={att.name || "attachment"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <FileBadge kind={kind} name={att.name || "file"} />
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeAttachment(idx)}
+                  className="absolute top-1 right-1 w-5 h-5 bg-black/50 hover:bg-red-500/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <X size={12} />
+                </button>
+              </div>
+            );
+          })}
+          {attachments.length > 0 && (
+            <div className="flex items-center text-xs text-[#727785] dark:text-[#8c909f] self-center">
+              {attachments.length}/{MAX_ATTACHMENTS} files
             </div>
-          ))}
+          )}
         </div>
       )}
+
       <div className="bg-white dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl px-3 py-2 flex items-end gap-2 transition-all focus-within:border-[#0058be] dark:focus-within:border-[#a855f7] focus-within:ring-2 focus-within:ring-[#0058be]/20 dark:focus-within:ring-[#a855f7]/20">
         <Tooltip
           content={
-            attachments.length > 0
-              ? "Remove the attachment to add a different file"
-              : "Attach a file (image or text)"
+            attachmentsAtLimit
+              ? `Maximum ${MAX_ATTACHMENTS} attachments reached`
+              : isLoading
+              ? "Generating response..."
+              : "Attach files (images, PDF, DOCX, text — up to 5)"
           }
           position="top-start">
           <button
             type="button"
             onClick={() => {
-              if (!isLoading && attachments.length === 0) {
+              if (!isLoading && !attachmentsAtLimit) {
                 fileInputRef.current?.click();
               }
             }}
-            aria-label="Attach a file"
-            aria-disabled={isLoading || attachments.length > 0}
+            aria-label="Attach files"
+            aria-disabled={isLoading || attachmentsAtLimit}
             className={`w-9 h-9 mb-1 flex items-center justify-center rounded-full transition-all ${
-              isLoading || attachments.length > 0
+              isLoading || attachmentsAtLimit
                 ? "opacity-40 cursor-not-allowed text-[#727785] dark:text-[#988d9f]"
                 : "text-[#727785] dark:text-[#988d9f] hover:text-[#0058be] dark:hover:text-[#ddb7ff] hover:bg-[#d0e1fb] dark:hover:bg-[#3d2f4b]"
             }`}>
@@ -242,7 +285,8 @@ export function ChatInput({
           type="file"
           ref={fileInputRef}
           onChange={handleFileChange}
-          accept="image/*,text/*,.md,.csv,.json,.xml,.yaml,.yml,.log,.py,.js,.ts,.tsx,.jsx,.sql"
+          accept="image/*,application/pdf,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx,text/*,.md,.csv,.json,.xml,.yaml,.yml,.log,.py,.js,.ts,.tsx,.jsx,.sql"
+          multiple
           className="hidden"
         />
 
@@ -287,7 +331,7 @@ export function ChatInput({
         <span id={helperTextId}>
           {isLoading
             ? "Generating response..."
-            : "Enter to send, Shift+Enter for new line"}
+            : "Enter to send · Shift+Enter for new line · attach up to 5 files"}
         </span>
         <span id={charCountId} aria-live="polite">
           {input.length} chars

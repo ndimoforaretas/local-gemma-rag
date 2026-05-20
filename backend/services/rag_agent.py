@@ -25,6 +25,7 @@ Phase 2 — Agent response:
 
 import asyncio
 import base64
+import io
 import json
 import os
 from typing import AsyncGenerator, Optional
@@ -84,6 +85,17 @@ _TEXT_FILE_EXTENSIONS = {
     ".txt", ".md", ".markdown", ".csv", ".json", ".xml",
     ".yaml", ".yml", ".log", ".py", ".js", ".ts", ".tsx", ".jsx", ".sql",
 }
+
+_PDF_MIME = "application/pdf"
+_DOCX_MIME_TYPES = {
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/msword",
+    "application/docx",
+}
+
+# Maximum characters extracted from a single PDF/DOCX in chat context.
+# Keeps the prompt manageable; the full document can be indexed in the KB.
+_MAX_EXTRACTED_CHARS = 15_000
 
 
 async def _get_session_lock(session_id: str) -> asyncio.Lock:
@@ -171,13 +183,70 @@ def _mime_to_format(mime_type: str) -> str:
 
 
 def _is_text_attachment(att: object) -> bool:
-    """Treat common text-like files as text even when browser MIME is generic."""
+    """Treat common text-like files (including PDF/DOCX) as text attachments."""
     mime_type = (getattr(att, "mime_type", "") or "").lower()
     if mime_type.startswith("text/") or mime_type in _TEXT_MIME_TYPES:
         return True
+    if mime_type == _PDF_MIME or mime_type in _DOCX_MIME_TYPES:
+        return True
     name = getattr(att, "name", None) or ""
     _, ext = os.path.splitext(name.lower())
-    return ext in _TEXT_FILE_EXTENSIONS
+    return ext in _TEXT_FILE_EXTENSIONS or ext in (".pdf", ".docx")
+
+
+def _extract_text_from_attachment(att: object, raw_bytes: bytes) -> str:
+    """
+    Extract readable text from any supported attachment type.
+
+    Handles: plain text, PDF (via pypdf), DOCX (via python-docx).
+    Returns the extracted text, truncated to _MAX_EXTRACTED_CHARS.
+    """
+    mime_type = (getattr(att, "mime_type", "") or "").lower()
+    name = getattr(att, "name", None) or ""
+    _, ext = os.path.splitext(name.lower())
+
+    # ── PDF ──────────────────────────────────────────────────────────────────
+    if mime_type == _PDF_MIME or ext == ".pdf":
+        try:
+            import pypdf
+            reader = pypdf.PdfReader(io.BytesIO(raw_bytes))
+            pages = []
+            for page in reader.pages:
+                page_text = page.extract_text() or ""
+                if page_text.strip():
+                    pages.append(page_text)
+            text = "\n\n".join(pages)
+        except Exception as exc:
+            logger.warning("PDF extraction failed for '%s': %s", name, exc)
+            text = "[PDF content could not be extracted]"
+        return text[:_MAX_EXTRACTED_CHARS]
+
+    # ── DOCX ─────────────────────────────────────────────────────────────────
+    if mime_type in _DOCX_MIME_TYPES or ext == ".docx":
+        try:
+            from docx import Document as DocxDocument
+            doc = DocxDocument(io.BytesIO(raw_bytes))
+            parts = []
+            for para in doc.paragraphs:
+                if para.text.strip():
+                    parts.append(para.text)
+            for table in doc.tables:
+                for row in table.rows:
+                    row_text = " | ".join(cell.text for cell in row.cells)
+                    if row_text.strip():
+                        parts.append(row_text)
+            text = "\n".join(parts)
+        except Exception as exc:
+            logger.warning("DOCX extraction failed for '%s': %s", name, exc)
+            text = "[DOCX content could not be extracted]"
+        return text[:_MAX_EXTRACTED_CHARS]
+
+    # ── Plain text / source code ──────────────────────────────────────────────
+    try:
+        text = raw_bytes.decode("utf-8", errors="replace")
+    except Exception:
+        text = "[File content could not be decoded]"
+    return text[:_MAX_EXTRACTED_CHARS]
 
 
 async def run_rag_stream(
@@ -224,11 +293,12 @@ async def run_rag_stream(
                 })
             elif _is_text_attachment(att):
                 try:
-                    file_text = base64.b64decode(att.data).decode("utf-8", errors="replace")
+                    raw_bytes = base64.b64decode(att.data)
+                    file_text = _extract_text_from_attachment(att, raw_bytes)
                     file_label = att.name or "attached file"
                     text_files.append((file_label, file_text))
                 except Exception:
-                    logger.warning("Failed to decode text attachment '%s'", getattr(att, "name", "?"))
+                    logger.warning("Failed to decode attachment '%s'", getattr(att, "name", "?"))
 
         if text_files:
             parts = [query, ""]
