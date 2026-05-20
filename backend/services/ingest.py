@@ -49,17 +49,79 @@ def _file_sha256(path: str) -> str:
     return h.hexdigest()
 
 
+# Minimum character count from pypdf before we try OCR on a page.
+_OCR_TEXT_THRESHOLD = 50
+
+
+def _ocr_pdf_page(pdf_path: str, page_index: int) -> str:
+    """Render a single PDF page to an image and return OCR text.
+
+    Uses pymupdf for rendering and pytesseract for OCR.  Both are lazily
+    imported so the app degrades gracefully when they are not installed or
+    when the tesseract binary is absent.
+
+    Returns an empty string on any failure.
+    """
+    try:
+        import fitz  # pymupdf
+    except ImportError:
+        logger.debug("pymupdf not installed — OCR fallback unavailable")
+        return ""
+    try:
+        import pytesseract
+        from PIL import Image
+    except ImportError:
+        logger.debug("pytesseract/Pillow not installed — OCR fallback unavailable")
+        return ""
+
+    try:
+        doc = fitz.open(pdf_path)
+        page = doc[page_index]
+        # 2× scale gives 144 dpi — good enough for most scans without being slow.
+        mat = fitz.Matrix(2.0, 2.0)
+        pix = page.get_pixmap(matrix=mat)
+        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        doc.close()
+
+        text = pytesseract.image_to_string(img, lang="eng")
+        return re.sub(r"\s+", " ", text).strip()
+    except pytesseract.TesseractNotFoundError:
+        logger.warning("Tesseract binary not found — OCR fallback unavailable. "
+                       "Install with: brew install tesseract  (macOS) "
+                       "or: apt install tesseract-ocr  (Debian/Ubuntu)")
+        return ""
+    except Exception:
+        logger.exception("OCR failed for page %d of %s", page_index + 1, pdf_path)
+        return ""
+
+
 def get_pdf_pages(path: str) -> List[Tuple[str, int]]:
-    """Extract text from a PDF file, keeping track of page numbers."""
+    """Extract text from a PDF file, keeping track of page numbers.
+
+    For pages where pypdf extracts fewer than ``_OCR_TEXT_THRESHOLD``
+    characters (scanned/image-only pages), an OCR pass is attempted via
+    ``_ocr_pdf_page()``.  OCR is skipped silently when pymupdf, pytesseract,
+    or the tesseract binary are absent.
+    """
     try:
         reader = PdfReader(path)
         pages: List[Tuple[str, int]] = []
         for i, page in enumerate(reader.pages):
-            text = page.extract_text()
+            text = page.extract_text() or ""
+            text = re.sub(r"\s+", " ", text).strip()
+
+            if len(text) < _OCR_TEXT_THRESHOLD:
+                # Page looks like a scan — try OCR.
+                ocr_text = _ocr_pdf_page(path, i)
+                if ocr_text:
+                    logger.info(
+                        "OCR recovered %d chars from page %d of %s",
+                        len(ocr_text), i + 1, path,
+                    )
+                    text = ocr_text
+
             if text:
-                text = re.sub(r"\s+", " ", text).strip()
-                if text:
-                    pages.append((text, i + 1))
+                pages.append((text, i + 1))
         return pages
     except Exception:
         logger.exception("Error reading PDF %s", path)
