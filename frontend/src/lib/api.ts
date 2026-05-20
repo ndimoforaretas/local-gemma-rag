@@ -19,6 +19,7 @@ import type {
   SaveToKBFile,
   SaveToKBResponse,
   SuggestionsResponse,
+  IndexedDocument,
 } from "../types/api";
 
 const API_BASE = ""; // same-origin in dev and production
@@ -48,6 +49,7 @@ export const api = {
     query: string,
     attachments?: Attachment[],
     sessionId?: string,
+    documentFilter?: string[],
   ): Promise<Response> => {
     const payload: RagRequest = { query };
     if (attachments && attachments.length > 0) {
@@ -55,6 +57,9 @@ export const api = {
     }
     if (sessionId) {
       payload.session_id = sessionId;
+    }
+    if (documentFilter && documentFilter.length > 0) {
+      payload.document_filter = documentFilter;
     }
     const resp = await fetch(`${API_BASE}/rag`, {
       method: "POST",
@@ -157,6 +162,12 @@ export const api = {
       body: JSON.stringify({ files }),
     });
     return handleJsonResponse<SaveToKBResponse>(resp);
+  },
+
+  // Flat list of indexed documents (for the scope filter)
+  listIndexedDocs: async (): Promise<{ documents: IndexedDocument[] }> => {
+    const resp = await fetch(`${API_BASE}/api/docs/list`);
+    return handleJsonResponse(resp);
   },
 
   // Privacy vault audit stats

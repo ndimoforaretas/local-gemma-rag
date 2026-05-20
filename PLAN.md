@@ -122,7 +122,7 @@ re-uploading a file produces no re-embedding; the stale vectors remain.
 |----|---|---|---|
 | **T1-A** | ~~Fix concurrency bug (B1)~~ ✅ | ~4 hrs | `rag_agent.py`, `agent_tools.py` |
 | **T1-B** | ~~Hybrid retrieval (BM25 + FAISS, RRF fusion)~~ ✅ | 1-2 days | `vector_db.py`, `requirements.txt` |
-| **T1-C** | Document-scoped chat filter | 1 day | `vector_db.py`, `agent_tools.py`, frontend sidebar |
+| **T1-C** | ~~Document-scoped chat filter~~ ✅ | 1 day | `vector_db.py`, `agent_tools.py`, frontend sidebar |
 | **T1-D** | Re-ingest on file change (B2 + content hash) | 3-4 hrs | `ingest.py`, `vector_db.py` |
 
 ### Tier 2 — Format & ingestion expansion

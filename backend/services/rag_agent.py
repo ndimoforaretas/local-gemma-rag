@@ -38,6 +38,7 @@ from strands.models.ollama import OllamaModel
 from backend.config import get_settings, logger
 from backend.tools.agent_tools import (
     _last_doc_ctx,
+    _source_filter_ctx,
     analyze_document,
     calculator,
     compare_documents,
@@ -253,6 +254,7 @@ async def run_rag_stream(
     query: str,
     attachments: Optional[list] = None,
     session_id: Optional[str] = None,
+    document_filter: Optional[list[str]] = None,
 ) -> AsyncGenerator[str, None]:
     """
     Stream agentic RAG responses using JSON Lines format.
@@ -271,6 +273,8 @@ async def run_rag_stream(
         is used (safe for single-request / test scenarios).
     """
     _last_doc_ctx.set({})
+    # Apply document-scope filter for this request (ContextVar is Task-local).
+    _source_filter_ctx.set(document_filter if document_filter else None)
 
     # ── Build prompt ──────────────────────────────────────────────────────────
     user_input: object = query

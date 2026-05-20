@@ -374,6 +374,21 @@ def get_ingest_status(workflow_id: str):
         raise HTTPException(status_code=500, detail="Error fetching workflow status")
 
 
+# ── Document List ────────────────────────────────────────────────────────────
+
+@router.get("/api/docs/list")
+def list_indexed_docs():
+    """
+    Return a flat, sorted list of every non-deleted indexed document.
+
+    Used by the frontend document-scope filter so users can pick which
+    documents the agent should search.
+
+    Response: ``{"documents": [{"name": str, "type": str, "chunk_count": int}]}``
+    """
+    return {"documents": vector_db.list_documents()}
+
+
 # ── Vault Stats ──────────────────────────────────────────────────────────────
 
 @router.get("/api/vault/stats")

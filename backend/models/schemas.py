@@ -23,6 +23,8 @@ class RagRequest(BaseModel):
     attachments: Optional[list[Attachment]] = None
     # Frontend session identifier for per-session conversation isolation.
     session_id: Optional[str] = None
+    # When set, restricts search_knowledge_base to only these source filenames.
+    document_filter: Optional[list[str]] = None
 
 
 # ── Responses ────────────────────────────────────────────────────────────────

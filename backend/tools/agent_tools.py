@@ -24,6 +24,13 @@ _last_doc_ctx: contextvars.ContextVar[dict] = contextvars.ContextVar(
     "last_doc", default={}
 )
 
+# Per-request document scope filter.
+# When set to a non-empty list, search_knowledge_base restricts results to
+# chunks whose source filename is in the list.  None = search all documents.
+_source_filter_ctx: contextvars.ContextVar[list[str] | None] = contextvars.ContextVar(
+    "source_filter", default=None
+)
+
 # Safe operators for the calculator — no eval().
 _SAFE_OPERATORS = {
     ast.Add: operator.add,
@@ -83,8 +90,14 @@ def search_knowledge_base(query: str) -> str:
     Call this for most questions — the knowledge base likely contains relevant context.
     Do NOT call this when the user has attached a file or image to their current message.
     Provide a clear, specific query for the best results."""
-    results = vector_db.search(query, top_k=7)
+    source_filter = _source_filter_ctx.get()
+    results = vector_db.search(query, top_k=7, source_filter=source_filter or None)
     if not results:
+        if source_filter:
+            return (
+                f"No relevant information found in the selected document(s): "
+                f"{', '.join(source_filter)}. Try broadening the scope or asking differently."
+            )
         return "No relevant information found."
 
     formatted_results: list[str] = []

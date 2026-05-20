@@ -73,7 +73,12 @@ async def rag_endpoint(request: RagRequest):
             )
 
         return StreamingResponse(
-            run_rag_stream(query, request.attachments, request.session_id),
+            run_rag_stream(
+                query,
+                request.attachments,
+                request.session_id,
+                request.document_filter,
+            ),
             media_type="text/event-stream",
         )
     except HTTPException:

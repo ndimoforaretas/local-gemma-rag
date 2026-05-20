@@ -17,6 +17,14 @@ export interface RagRequest {
   query: string;
   attachments?: Attachment[];
   session_id?: string;
+  /** Restrict KB search to these source filenames. Empty/absent = all docs. */
+  document_filter?: string[];
+}
+
+export interface IndexedDocument {
+  name: string;
+  type: string;
+  chunk_count: number;
 }
 
 // ── Generic ─────────────────────────────────────────────────────────

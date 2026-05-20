@@ -12,6 +12,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tooltip } from "./Tooltip";
 import { ChatMessageList } from "./ChatMessageList";
 import { ChatInput } from "./ChatInput";
+import { DocScopeFilter } from "./DocScopeFilter";
 import { ContextSidebar } from "./ContextSidebar";
 import { HistorySidebar } from "./HistorySidebar";
 import { ConfirmationModal } from "./ConfirmationModal";
@@ -57,6 +58,7 @@ export function KnowledgeBase() {
   const [isLoading, setIsLoading] = useState(false);
   const [contextItems, setContextItems] = useState<ContextItem[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [documentFilter, setDocumentFilter] = useState<string[]>([]);
   const [pendingKBFiles, setPendingKBFiles] = useState<SaveToKBFile[]>([]);
   const [kbSaveStatus, setKbSaveStatus] = useState<"idle" | "saving" | "done">(
     "idle",
@@ -236,7 +238,12 @@ export function KnowledgeBase() {
     ]);
 
     try {
-      const res = await api.ragStream(userMessage, attachments, currentSessionId);
+      const res = await api.ragStream(
+        userMessage,
+        attachments,
+        currentSessionId,
+        documentFilter.length > 0 ? documentFilter : undefined,
+      );
 
       if (!res.body) throw new Error("No response body");
 
@@ -603,13 +610,19 @@ export function KnowledgeBase() {
           </div>
         )}
 
-        {/* Input */}
-        <ChatInput
-          input={input}
-          isLoading={isLoading}
-          onInputChange={setInput}
-          onSend={handleSend}
-        />
+        {/* Document scope filter + Input */}
+        <div className="flex flex-col gap-1.5">
+          <DocScopeFilter
+            selected={documentFilter}
+            onChange={setDocumentFilter}
+          />
+          <ChatInput
+            input={input}
+            isLoading={isLoading}
+            onInputChange={setInput}
+            onSend={handleSend}
+          />
+        </div>
       </div>
 
       {/* Context Sidebar */}
