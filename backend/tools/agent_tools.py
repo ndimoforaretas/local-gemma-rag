@@ -6,15 +6,21 @@ LLM can invoke them during a conversation.
 """
 
 import ast
+import contextvars
 import datetime
-import json
 import operator
-from typing import Dict
 
 from strands import tool
 
 from backend.config import logger
 from backend.services.vector_db import vector_db
+
+# Per-asyncio-Task citation context.
+# Each FastAPI request runs in its own Task, so `.set()` here is never
+# visible to a concurrent request — no shared mutable state on the function.
+_last_doc_ctx: contextvars.ContextVar[dict] = contextvars.ContextVar(
+    "last_doc", default={}
+)
 
 # Safe operators for the calculator — no eval().
 _SAFE_OPERATORS = {
@@ -85,11 +91,7 @@ def search_knowledge_base(query: str) -> str:
         formatted_results.append(
             f"Source: {res['source']}{page_info}\nContent: {res['text']}"
         )
-        # Stash the last retrieved document for metadata streaming.
-        search_knowledge_base.last_doc = res  # type: ignore[attr-defined]
+        # Store in the per-request ContextVar — never bleeds to other requests.
+        _last_doc_ctx.set(res)
 
     return "\n---\n".join(formatted_results)
-
-
-# Initialise the attribute so it's always safe to read.
-search_knowledge_base.last_doc: Dict = {}  # type: ignore[attr-defined]

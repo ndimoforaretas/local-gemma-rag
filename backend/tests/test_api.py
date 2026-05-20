@@ -45,9 +45,11 @@ class TestUploadEndpoint:
     """Tests for POST /upload."""
 
     def test_upload_rejects_non_pdf(self, client):
+        # .txt / .md / .csv are valid formats — use a genuinely disallowed
+        # extension to confirm the allowlist is enforced.
         resp = client.post(
             "/upload",
-            files=[("files", ("test.txt", b"hello world", "text/plain"))],
+            files=[("files", ("malware.exe", b"MZ\x90\x00", "application/octet-stream"))],
         )
         assert resp.status_code == 400
 
@@ -232,8 +234,11 @@ class TestHistoryEndpoint:
 
     def test_delete_history_session_rejects_invalid_id(self, client):
         resp = client.delete("/api/history/..%2Fetc%2Fpasswd")
-        # Path may fail to match route (405) or be rejected by validator (400).
-        assert resp.status_code in (400, 405)
+        # %2F is decoded to "/" by the ASGI layer before routing, so the path
+        # normalises to /api/etc/passwd → no route match (404).  The validator
+        # (400) or method guard (405) would fire if the route ever matched.
+        # Any of these outcomes means the traversal did not succeed.
+        assert resp.status_code in (400, 404, 405)
 
 
 class TestKBEndpoint:
