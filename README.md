@@ -4,11 +4,7 @@
 
 ![Gemma Cognivault Logo with the tagline "Durable Local RAG Pipeline - Private AI . No Cloud . Your Data" ](frontend/public/gemma-cognivault-banner.jpg)
 
-A full-stack **Local RAG** (Retrieval-Augmented Generation) application that lets you build a private Intelligence Chatbot querying your own documents — PDFs, Markdown, plain text, and CSV files. Attach images directly in chat for multimodal analysis. All data stays on your machine — no cloud APIs required.
-
-_This is a submission for the [Gemma 4 Challenge: Build with Gemma 4](https://dev.to/challenges/google-gemma-2026-05-06)_
-
----
+## A full-stack **Local RAG** (Retrieval-Augmented Generation) application that lets you build a private Intelligence Chatbot querying your own documents — PDFs, Markdown, plain text, and CSV files. Attach images directly in chat for multimodal analysis. All data stays on your machine — no cloud APIs required.
 
 ## Problem Statement
 
