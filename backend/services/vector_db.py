@@ -68,7 +68,12 @@ class VectorDB:
             self._bm25_corpus = []
             return
         self._bm25_corpus = active
-        tokenized = [m["text"].lower().split() for m in active]
+        # "content" is the canonical key; fall back to legacy "text" for
+        # any chunks indexed before the rename.
+        tokenized = [
+            (m.get("content") or m.get("text", "")).lower().split()
+            for m in active
+        ]
         self._bm25 = BM25Okapi(tokenized)
         logger.info("Built BM25 index over %d active chunks", len(active))
 
@@ -130,11 +135,14 @@ class VectorDB:
         docs: Dict[str, Dict] = {}
         for ranked in ranked_lists:
             for rank, doc in enumerate(ranked):
-                key = (
-                    f"{doc.get('source', '')}|"
-                    f"{doc.get('chunk_id', 0)}|"
-                    f"{doc.get('page', 0)}"
+                # Prefer an explicit chunk_id; fall back to a hash of the
+                # content so chunks indexed without chunk_id (schema v1) are
+                # still deduplicated correctly instead of all collapsing to key 0.
+                content_sig = doc.get(
+                    "chunk_id",
+                    hash(doc.get("content") or doc.get("text", "")),
                 )
+                key = f"{doc.get('source', '')}|{content_sig}|{doc.get('page', 0)}"
                 scores[key] = scores.get(key, 0.0) + 1.0 / (_RRF_K + rank + 1)
                 docs[key] = doc
         return [

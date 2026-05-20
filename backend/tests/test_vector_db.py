@@ -14,7 +14,7 @@ from backend.services.vector_db import VectorDB
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
 def _make_chunk(source: str, chunk_id: int, page: int, text: str) -> dict:
-    return {"source": source, "chunk_id": chunk_id, "page": page, "text": text}
+    return {"source": source, "chunk_id": chunk_id, "page": page, "content": text}
 
 
 CORPUS = [
@@ -96,7 +96,7 @@ class TestBM25Search:
 
 class TestRRFFusion:
     def _chunk(self, source, chunk_id=0, page=1):
-        return _make_chunk(source, chunk_id, page, f"text for {source}")
+        return _make_chunk(source, chunk_id, page, f"content for {source}")
 
     def test_document_present_in_both_lists_scores_higher(self):
         shared = self._chunk("shared.pdf")

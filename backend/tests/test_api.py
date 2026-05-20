@@ -107,9 +107,9 @@ class TestDeleteEndpoint:
 
         # Create a fake metadata file with a document
         meta = [
-            {"source": "test.pdf", "text": "chunk1", "deleted": False},
-            {"source": "test.pdf", "text": "chunk2", "deleted": False},
-            {"source": "other.pdf", "text": "chunk3", "deleted": False},
+            {"source": "test.pdf", "content": "chunk1", "deleted": False},
+            {"source": "test.pdf", "content": "chunk2", "deleted": False},
+            {"source": "other.pdf", "content": "chunk3", "deleted": False},
         ]
         metadata_file = tmp_path / "meta.json"
         with open(metadata_file, "w") as f:
@@ -138,8 +138,8 @@ class TestDeleteEndpoint:
 
         # Create metadata with deleted and non-deleted chunks
         meta = [
-            {"source": "deleted_doc.pdf", "text": "should not appear", "deleted": True},
-            {"source": "active_doc.pdf", "text": "should appear", "deleted": False},
+            {"source": "deleted_doc.pdf", "content": "should not appear", "deleted": True},
+            {"source": "active_doc.pdf", "content": "should appear", "deleted": False},
         ]
         metadata_file = tmp_path / "meta.json"
         with open(metadata_file, "w") as f:

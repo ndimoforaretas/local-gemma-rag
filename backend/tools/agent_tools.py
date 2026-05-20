@@ -89,7 +89,7 @@ def search_knowledge_base(query: str) -> str:
     for res in results:
         page_info = f" (Page {res['page']})" if res.get("page") else ""
         formatted_results.append(
-            f"Source: {res['source']}{page_info}\nContent: {res['text']}"
+            f"Source: {res['source']}{page_info}\nContent: {res['content']}"
         )
         # Store in the per-request ContextVar — never bleeds to other requests.
         _last_doc_ctx.set(res)

@@ -195,7 +195,7 @@ def ingest_workflow() -> int:
             chunks_metadata.append({
                 "source": doc["source"],
                 "type": doc["type"],
-                "text": chunk,
+                "content": chunk,
                 "chunk_id": i,
                 "page": doc["page"],
             })
