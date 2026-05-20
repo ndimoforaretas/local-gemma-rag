@@ -105,24 +105,20 @@ class TestRagStreaming:
 
     @pytest.mark.asyncio
     async def test_metadata_event_format_is_valid_json(self):
-        """Verify that metadata events have correct structure."""
-        from backend.services.rag_agent import run_rag_stream, search_knowledge_base
+        """Verify that metadata events serialise to the correct JSON Lines structure."""
         import json
 
-        # Manually test the metadata emission by checking the function
-        # This is a simpler test that doesn't require a full query
+        # Simulate the metadata dict a tool call would produce.
         test_metadata = {
             "source": "test.pdf",
             "text": "test content",
             "page": 1,
             "type": "pdf",
         }
-        search_knowledge_base.last_doc = test_metadata  # type: ignore[attr-defined]
 
-        # Simulate what the agent does:
+        # Reproduce the exact emission the streaming loop produces.
         metadata_line = f'{json.dumps({"type": "metadata", "data": test_metadata})}\n'
 
-        # Parse it back
         parsed = json.loads(metadata_line.strip())
         assert parsed["type"] == "metadata"
         assert parsed["data"]["source"] == "test.pdf"

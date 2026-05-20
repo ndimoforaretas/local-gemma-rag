@@ -10,6 +10,7 @@ strands-agents
 # Vector database
 faiss-cpu
 numpy
+rank-bm25
 
 # Document processing
 pypdf
