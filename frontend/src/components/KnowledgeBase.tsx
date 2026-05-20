@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   X,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tooltip } from "./Tooltip";
 import { ChatMessageList } from "./ChatMessageList";
@@ -59,6 +60,8 @@ export function KnowledgeBase() {
   const [contextItems, setContextItems] = useState<ContextItem[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [documentFilter, setDocumentFilter] = useState<string[]>([]);
+  // Controls the mobile sources drawer (< lg). On desktop the sidebar is always visible.
+  const [isContextOpen, setIsContextOpen] = useState(false);
   const [pendingKBFiles, setPendingKBFiles] = useState<SaveToKBFile[]>([]);
   const [kbSaveStatus, setKbSaveStatus] = useState<"idle" | "saving" | "done">(
     "idle",
@@ -563,9 +566,21 @@ export function KnowledgeBase() {
           </div>
           <div className="flex items-center gap-2 sm:gap-3 sm:pr-2 flex-wrap">
             {contextCount > 0 && (
-              <span className="text-xs font-medium px-2 py-1 rounded-full bg-[#d0e1fb] dark:bg-[#32353c] text-[#0058be] dark:text-[#adc6ff]">
-                {contextCount} sources
-              </span>
+              <>
+                {/* Mobile: tap to open the sources drawer */}
+                <button
+                  type="button"
+                  onClick={() => setIsContextOpen(true)}
+                  className="lg:hidden text-xs font-medium px-2 py-1 rounded-full bg-[#d0e1fb] dark:bg-[#32353c] text-[#0058be] dark:text-[#adc6ff] hover:bg-[#adc6ff]/30 transition-colors"
+                  aria-label={`View ${contextCount} source${contextCount !== 1 ? "s" : ""}`}
+                >
+                  {contextCount} sources ↗
+                </button>
+                {/* Desktop: decorative badge — sidebar is already visible */}
+                <span className="hidden lg:inline-flex text-xs font-medium px-2 py-1 rounded-full bg-[#d0e1fb] dark:bg-[#32353c] text-[#0058be] dark:text-[#adc6ff]">
+                  {contextCount} sources
+                </span>
+              </>
             )}
             <Tooltip content="Start a fresh conversation" position="bottom">
               <button
@@ -676,8 +691,44 @@ export function KnowledgeBase() {
         </div>
       </div>
 
-      {/* Context Sidebar */}
-      <ContextSidebar contextItems={contextItems} />
+      {/* Context Sidebar — desktop push layout (≥ lg) */}
+      <div className="hidden lg:contents">
+        <ContextSidebar contextItems={contextItems} />
+      </div>
+
+      {/* Context Sidebar — mobile overlay drawer (< lg) */}
+      <AnimatePresence>
+        {isContextOpen && contextCount > 0 && (
+          <motion.div
+            className="absolute inset-0 z-50 lg:hidden flex justify-end"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setIsContextOpen(false)}
+              aria-hidden="true"
+            />
+            {/* Drawer panel */}
+            <motion.div
+              className="relative h-full flex"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 280 }}
+            >
+              <ContextSidebar
+                contextItems={contextItems}
+                onClose={() => setIsContextOpen(false)}
+                isDrawer
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* History Sidebar */}
       <div className="hidden lg:block">

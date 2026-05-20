@@ -1,10 +1,20 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Database, ExternalLink, FileText, ChevronDown } from "lucide-react";
+import { Database, ExternalLink, FileText, ChevronDown, X } from "lucide-react";
 import type { ContextItem } from "../types/api";
 
 interface ContextSidebarProps {
   contextItems: ContextItem[];
+  /**
+   * When provided, a close (×) button is rendered in the header.
+   * Used for the mobile drawer mode where the parent controls visibility.
+   */
+  onClose?: () => void;
+  /**
+   * When true the component renders as a plain fixed-width panel with no
+   * Framer Motion width animation (the parent handles the slide-in).
+   */
+  isDrawer?: boolean;
 }
 
 function formatTypeLabel(type: string): string {
@@ -107,7 +117,72 @@ function CitationCard({ item, index }: { item: ContextItem; index: number }) {
   );
 }
 
-export function ContextSidebar({ contextItems }: ContextSidebarProps) {
+// ── Shared inner content ──────────────────────────────────────────────────────
+
+function SidebarContent({
+  contextItems,
+  onClose,
+}: {
+  contextItems: ContextItem[];
+  onClose?: () => void;
+}) {
+  return (
+    <>
+      <div className="p-6 border-b border-[#c2c6d6] dark:border-[#424754] flex items-center gap-2">
+        <Database size={16} className="text-[#0058be] dark:text-[#adc6ff]" />
+        <div className="flex items-center justify-between w-full gap-2">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
+            Context Used
+          </h3>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#e0e3e5] dark:bg-[#272a31] text-[#424754] dark:text-[#c2c6d6]">
+              {contextItems.length}
+            </span>
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close sources panel"
+                className="p-1 rounded-lg text-[#727785] dark:text-[#8c909f] hover:text-[#191c1e] dark:hover:text-[#e1e2ec] hover:bg-[#e0e3e5] dark:hover:bg-[#32353c] transition-colors"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
+        Referenced Sources
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 pb-4 flex flex-col gap-2">
+        {contextItems.map((item, i) => (
+          <CitationCard key={i} item={item} index={i} />
+        ))}
+      </div>
+    </>
+  );
+}
+
+// ── Public component ──────────────────────────────────────────────────────────
+
+export function ContextSidebar({
+  contextItems,
+  onClose,
+  isDrawer = false,
+}: ContextSidebarProps) {
+  // ── Drawer mode (mobile overlay — parent handles slide-in animation) ────────
+  if (isDrawer) {
+    if (!contextItems.length) return null;
+    return (
+      <div className="w-80 max-w-[85vw] h-full border-l border-[#c2c6d6] dark:border-[#424754] bg-[#f2f4f6] dark:bg-[#191b23] flex flex-col overflow-hidden">
+        <SidebarContent contextItems={contextItems} onClose={onClose} />
+      </div>
+    );
+  }
+
+  // ── Desktop mode (push layout — own Framer Motion width animation) ──────────
   return (
     <AnimatePresence>
       {contextItems.length > 0 && (
@@ -117,27 +192,7 @@ export function ContextSidebar({ contextItems }: ContextSidebarProps) {
           exit={{ width: 0, opacity: 0 }}
           className="border-l border-[#c2c6d6] dark:border-[#424754] bg-[#f2f4f6] dark:bg-[#191b23] flex flex-col overflow-hidden transition-colors duration-300"
         >
-          <div className="p-6 border-b border-[#c2c6d6] dark:border-[#424754] flex items-center gap-2">
-            <Database size={16} className="text-[#0058be] dark:text-[#adc6ff]" />
-            <div className="flex items-center justify-between w-full gap-2">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
-                Context Used
-              </h3>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#e0e3e5] dark:bg-[#272a31] text-[#424754] dark:text-[#c2c6d6]">
-                {contextItems.length}
-              </span>
-            </div>
-          </div>
-
-          <div className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
-            Referenced Sources
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-4 pb-4 flex flex-col gap-2">
-            {contextItems.map((item, i) => (
-              <CitationCard key={i} item={item} index={i} />
-            ))}
-          </div>
+          <SidebarContent contextItems={contextItems} onClose={onClose} />
         </motion.div>
       )}
     </AnimatePresence>
