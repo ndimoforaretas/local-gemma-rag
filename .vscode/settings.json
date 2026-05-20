@@ -27,5 +27,6 @@
     "frontend/node_modules": true,
     "frontend/dist": true,
     ".venv": true
-  }
+  },
+  "postman.settings.dotenv-detection-notification-visibility": false
 }
