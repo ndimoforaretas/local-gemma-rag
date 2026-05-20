@@ -98,8 +98,8 @@ class TestRagStreaming:
                     # Should have "type" and "data" fields
                     assert "type" in obj, f"Missing 'type' in {obj}"
                     assert "data" in obj, f"Missing 'data' in {obj}"
-                    # type should be one of: text, metadata, error
-                    assert obj["type"] in ("text", "metadata", "error"), f"Invalid type: {obj['type']}"
+                    # type should be one of the known event types (thinking added in Step 1)
+                    assert obj["type"] in ("text", "metadata", "error", "thinking"), f"Invalid type: {obj['type']}"
                 except json.JSONDecodeError as e:
                     pytest.fail(f"Invalid JSON in line: {line}, error: {e}")
 

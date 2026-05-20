@@ -1,28 +1,33 @@
 """
 RAG Agent — Strands SDK agent with streaming support.
 
-Configures the Gemma model via Ollama and exposes an async generator
-that yields text chunks and metadata events for the frontend.
+Session isolation
+-----------------
+Each chat session gets its own isolated conversation history stored in
+`_session_histories` (keyed by session_id).  A fresh Agent is created per
+request but pre-loaded with the session's history, so multi-turn conversation
+works correctly without sessions bleeding into each other.
 
-Streaming uses a two-phase approach to expose Gemma 4's thinking capability:
-
+Two-phase streaming
+-------------------
 Phase 1 — Thinking (optional):
     Direct ollama.AsyncClient call with options={"thinking": True}.
+    Now correctly includes:
+      - The full system prompt (so the model knows it is CogniVault)
+      - Any attached images (so reasoning matches what the model sees)
     Emits  {"type": "thinking", "data": "<reasoning chunk>"}  events.
-    Strands' OllamaModel silently drops the `thinking` field, so we must
-    bypass it here.
 
 Phase 2 — Agent response:
     Normal Strands Agent stream with tool support (search_knowledge_base,
-    calculator, current_time).  Emits {"type": "text"} and
-    {"type": "metadata"} events exactly as before.
+    list_documents, analyze_document, compare_documents, calculator,
+    current_time).  Emits {"type": "text"} and {"type": "metadata"} events.
 """
 
 import asyncio
 import base64
 import json
 import os
-from typing import AsyncGenerator, Optional, List
+from typing import AsyncGenerator, Optional
 
 import ollama as _ollama
 
@@ -47,29 +52,25 @@ ollama_model = OllamaModel(
     model_id=settings.llm_model,
 )
 
-# Shared agent instance — preserves conversation context within a session.
-# History is trimmed when it grows too large (see _trim_history).
-agent = Agent(
-    model=ollama_model,
-    tools=[
-        search_knowledge_base,
-        list_documents,
-        analyze_document,
-        compare_documents,
-        calculator,
-        current_time,
-    ],
-    system_prompt=settings.agent_system_prompt,
-)
+# ── Session isolation ─────────────────────────────────────────────────────────
 
-# Serialises access to the shared agent so concurrent requests cannot
-# interleave their messages into the agent's conversation history.
-# For this local single-user app the performance cost is negligible —
-# only one streaming response is generated at a time.
-_agent_lock = asyncio.Lock()
+# Per-session conversation histories.
+# Keys: session_id strings from the frontend.
+# Values: Strands/Bedrock-format message lists.
+_session_histories: dict[str, list] = {}
 
-# Maximum conversation turns to retain (each turn = 1 user + 1 assistant msg).
-_MAX_HISTORY_TURNS = 10
+# Per-session asyncio locks: prevent two concurrent requests in the same session
+# from corrupting each other's history.
+_session_locks: dict[str, asyncio.Lock] = {}
+_locks_meta_lock = asyncio.Lock()
+
+# Character budget for stored history.  Rough heuristic: 4 chars ≈ 1 token.
+# 24 000 chars ≈ 6 000 tokens — leaves the majority of the 128K context for
+# the current query, retrieved chunks, and generation.
+_MAX_HISTORY_CHARS = 24_000
+
+# ── Attachment helpers ────────────────────────────────────────────────────────
+
 _TEXT_MIME_TYPES = {
     "application/json",
     "application/xml",
@@ -80,57 +81,70 @@ _TEXT_MIME_TYPES = {
     "application/csv",
 }
 _TEXT_FILE_EXTENSIONS = {
-    ".txt",
-    ".md",
-    ".markdown",
-    ".csv",
-    ".json",
-    ".xml",
-    ".yaml",
-    ".yml",
-    ".log",
-    ".py",
-    ".js",
-    ".ts",
-    ".tsx",
-    ".jsx",
-    ".sql",
+    ".txt", ".md", ".markdown", ".csv", ".json", ".xml",
+    ".yaml", ".yml", ".log", ".py", ".js", ".ts", ".tsx", ".jsx", ".sql",
 }
 
 
-def _trim_history() -> None:
-    """Keep agent memory bounded to prevent context-window overflow."""
-    try:
-        messages = getattr(agent, "messages", None)
-        if messages is not None and len(messages) > _MAX_HISTORY_TURNS * 2:
-            # Keep only the most recent turns.
-            del messages[: len(messages) - _MAX_HISTORY_TURNS * 2]
-    except Exception:
-        pass  # Agent internals may vary; never crash the request.
+async def _get_session_lock(session_id: str) -> asyncio.Lock:
+    """Return (creating if needed) the per-session asyncio Lock."""
+    async with _locks_meta_lock:
+        if session_id not in _session_locks:
+            _session_locks[session_id] = asyncio.Lock()
+        return _session_locks[session_id]
 
 
-async def _stream_thinking(text_query: str) -> AsyncGenerator[str, None]:
+def _trim_history(history: list) -> list:
+    """
+    Drop the oldest user/assistant turn-pairs until the total character count
+    of the history fits within _MAX_HISTORY_CHARS.
+    """
+    def _char_count(h: list) -> int:
+        total = 0
+        for msg in h:
+            content = msg.get("content", "")
+            if isinstance(content, str):
+                total += len(content)
+            elif isinstance(content, list):
+                for block in content:
+                    if isinstance(block, dict):
+                        total += len(str(block.get("text", "")))
+        return total
+
+    # Drop pairs (user + assistant) from the front until we fit.
+    while _char_count(history) > _MAX_HISTORY_CHARS and len(history) >= 2:
+        history = history[2:]
+    return history
+
+
+async def _stream_thinking(
+    text_query: str,
+    image_bytes_list: Optional[list[bytes]] = None,
+) -> AsyncGenerator[str, None]:
     """
     Phase 1: stream Gemma 4's internal reasoning chain.
 
-    Makes a direct Ollama API call with options={"thinking": True} to capture
-    the `thinking` field, which the Strands OllamaModel silently discards.
-    Yields JSON Lines events of the form:
+    Sends the full system prompt plus the user's text and any attached images
+    so the reasoning panel reflects exactly what the model will actually see.
 
-        {"type": "thinking", "data": "<reasoning chunk>"}
-
-    If thinking is disabled in settings or the model returns no thinking
-    tokens, this generator yields nothing — the caller proceeds to Phase 2
-    unchanged.
+    Emits {"type": "thinking", "data": "<chunk>"} JSON Lines events.
+    Yields nothing if thinking_mode is disabled or the model returns no tokens.
     """
     if not settings.thinking_mode:
         return
 
     client = _ollama.AsyncClient(host=settings.ollama_host)
     try:
+        user_msg: dict = {"role": "user", "content": text_query}
+        if image_bytes_list:
+            user_msg["images"] = image_bytes_list
+
         stream = await client.chat(
             model=settings.llm_model,
-            messages=[{"role": "user", "content": text_query}],
+            messages=[
+                {"role": "system", "content": settings.agent_system_prompt},
+                user_msg,
+            ],
             options={"thinking": True},
             stream=True,
         )
@@ -139,13 +153,13 @@ async def _stream_thinking(text_query: str) -> AsyncGenerator[str, None]:
             if thinking_chunk:
                 yield f'{json.dumps({"type": "thinking", "data": thinking_chunk})}\n'
     except Exception:
-        # Thinking is a best-effort feature — never block the main response.
+        # Thinking is best-effort — never block the main Phase 2 response.
         logger.warning("Thinking phase skipped (model or connection error).")
         return
 
 
 def _mime_to_format(mime_type: str) -> str:
-    """Convert a MIME type like 'image/png' to a format string like 'png'."""
+    """Convert 'image/png' → 'png' for Strands image content blocks."""
     mapping = {
         "image/jpeg": "jpeg",
         "image/jpg": "jpeg",
@@ -156,18 +170,21 @@ def _mime_to_format(mime_type: str) -> str:
     return mapping.get(mime_type, mime_type.split("/")[-1])
 
 
-def _is_text_attachment(att: any) -> bool:
+def _is_text_attachment(att: object) -> bool:
     """Treat common text-like files as text even when browser MIME is generic."""
     mime_type = (getattr(att, "mime_type", "") or "").lower()
     if mime_type.startswith("text/") or mime_type in _TEXT_MIME_TYPES:
         return True
-
     name = getattr(att, "name", None) or ""
     _, ext = os.path.splitext(name.lower())
     return ext in _TEXT_FILE_EXTENSIONS
 
 
-async def run_rag_stream(query: str, attachments: Optional[list] = None) -> AsyncGenerator[str, None]:
+async def run_rag_stream(
+    query: str,
+    attachments: Optional[list] = None,
+    session_id: Optional[str] = None,
+) -> AsyncGenerator[str, None]:
     """
     Stream agentic RAG responses using JSON Lines format.
 
@@ -175,40 +192,34 @@ async def run_rag_stream(query: str, attachments: Optional[list] = None) -> Asyn
     - {"type": "thinking",  "data": "<reasoning chunk>"}   (Phase 1, optional)
     - {"type": "text",      "data": "text chunk"}           (Phase 2)
     - {"type": "metadata",  "data": {source document meta}} (Phase 2)
+    - {"type": "error",     "data": "message"}              (on failure)
 
-    Two-phase strategy
-    ------------------
-    Phase 1 — Thinking:  direct ollama.AsyncClient call with thinking=True,
-        capturing Gemma 4's internal reasoning chain.  Strands' OllamaModel
-        silently drops the `thinking` field, so we bypass it here.
-
-    Phase 2 — Agent:  normal Strands Agent stream for tool-augmented Q&A.
-
-    This ensures unambiguous parsing and resilience against response
-    content containing special delimiters.
+    Parameters
+    ----------
+    session_id
+        Frontend-assigned session identifier used to isolate conversation
+        history between chat sessions.  When None, a shared anonymous bucket
+        is used (safe for single-request / test scenarios).
     """
-    # Reset per-request citation context (ContextVar is Task-local, so this
-    # only affects the current request — never bleeds to concurrent ones).
     _last_doc_ctx.set({})
-    _trim_history()
 
-    # Build the prompt outside the lock — no shared state needed here.
-    user_input: any = query
-    # combined_text is always a plain string; used for the thinking call
-    # (ollama direct API does not accept Strands content-block lists).
+    # ── Build prompt ──────────────────────────────────────────────────────────
+    user_input: object = query
     combined_text: str = query or ""
+    raw_image_bytes: list[bytes] = []       # collected for Phase 1 thinking call
 
     if attachments:
-        # Separate text files and images.
         image_blocks = []
-        text_files: list[tuple[str, str]] = []  # (label, content)
+        text_files: list[tuple[str, str]] = []
+
         for att in attachments:
             if att.mime_type.startswith("image/"):
-                image_bytes = base64.b64decode(att.data)
+                img_bytes = base64.b64decode(att.data)
+                raw_image_bytes.append(img_bytes)
                 image_blocks.append({
                     "image": {
                         "format": _mime_to_format(att.mime_type),
-                        "source": {"bytes": image_bytes},
+                        "source": {"bytes": img_bytes},
                     }
                 })
             elif _is_text_attachment(att):
@@ -217,15 +228,11 @@ async def run_rag_stream(query: str, attachments: Optional[list] = None) -> Asyn
                     file_label = att.name or "attached file"
                     text_files.append((file_label, file_text))
                 except Exception:
-                    logger.warning("Failed to decode text attachment")
+                    logger.warning("Failed to decode text attachment '%s'", getattr(att, "name", "?"))
 
-        # Build a self-contained prompt with all file content inline.
         if text_files:
-            parts = []
-            parts.append(query)
-            parts.append("")
-            parts.append(f"[{len(text_files)} attached file(s) follow — "
-                         "analyze and respond to each one]")
+            parts = [query, ""]
+            parts.append(f"[{len(text_files)} attached file(s) — read carefully and answer]")
             parts.append("")
             for i, (label, content) in enumerate(text_files, 1):
                 parts.append(f"=== FILE {i}/{len(text_files)}: {label} ===")
@@ -237,29 +244,58 @@ async def run_rag_stream(query: str, attachments: Optional[list] = None) -> Asyn
             combined_text = query or ""
 
         if image_blocks:
-            # Gemma4 best practice #4: modalities before text for optimal performance
-            content_blocks = image_blocks + [{"text": combined_text}]
-            user_input = content_blocks
+            # Images first (Gemma 4 best practice: modalities before text)
+            user_input = image_blocks + [{"text": combined_text}]
         elif text_files:
-            # Text-only with file attachments: send as plain string
             user_input = combined_text
 
-    # ── Phase 1: Thinking ─────────────────────────────────────────────
-    # Stream Gemma 4's internal reasoning chain before the agent response.
-    # Only runs when thinking_mode is True and combined_text is non-empty.
-    if combined_text.strip():
-        async for thinking_event in _stream_thinking(combined_text):
+    # ── Phase 1: Thinking ─────────────────────────────────────────────────────
+    # Only run if we have something non-trivial to reason about.
+    if combined_text.strip() or raw_image_bytes:
+        async for thinking_event in _stream_thinking(
+            combined_text, raw_image_bytes or None
+        ):
             yield thinking_event
 
-    # ── Phase 2: Agent response ───────────────────────────────────────
-    # Acquire the lock before touching the shared agent.  Held for the full
-    # stream duration so no other request can interleave its messages.
-    async with _agent_lock:
+    # ── Phase 2: Agent response ───────────────────────────────────────────────
+    sid = session_id or "__anonymous__"
+    lock = await _get_session_lock(sid)
+
+    async with lock:
+        # Load this session's conversation history.
+        history = list(_session_histories.get(sid, []))
+
+        # Create a fresh Agent for this request (no shared mutable state).
+        agent = Agent(
+            model=ollama_model,
+            tools=[
+                search_knowledge_base,
+                list_documents,
+                analyze_document,
+                compare_documents,
+                calculator,
+                current_time,
+            ],
+            system_prompt=settings.agent_system_prompt,
+        )
+
+        # Restore session history into the new agent.
+        if history:
+            try:
+                agent_msgs = getattr(agent, "messages", None)
+                if agent_msgs is not None:
+                    agent_msgs.clear()
+                    agent_msgs.extend(history)
+                else:
+                    agent.messages = list(history)
+            except Exception:
+                pass  # Never crash on history restore; just start fresh.
+
         try:
             async for event in agent.stream_async(user_input):
                 ev = event.get("event", {})
 
-                # Tool-call detection: emit metadata when knowledge base is queried.
+                # Emit source metadata when a knowledge-base search completes.
                 c_start = ev.get("contentBlockStart", {}).get("start", {})
                 tool_name = c_start.get("toolUse", {}).get("name")
                 if tool_name == "search_knowledge_base":
@@ -267,7 +303,7 @@ async def run_rag_stream(query: str, attachments: Optional[list] = None) -> Asyn
                     if last_doc:
                         yield f'{json.dumps({"type": "metadata", "data": last_doc})}\n'
 
-                # Text chunk from the model response.
+                # Text delta from the model response.
                 delta_text = (
                     ev.get("contentBlockDelta", {}).get("delta", {}).get("text")
                 )
@@ -276,4 +312,13 @@ async def run_rag_stream(query: str, attachments: Optional[list] = None) -> Asyn
 
         except Exception:
             logger.exception("Error in RAG stream for query: %s", query[:200])
-            yield f'{json.dumps({"type": "error", "data": "An internal error occurred while processing your query."})}\n'
+            yield (
+                f'{json.dumps({"type": "error", "data": "An internal error occurred while processing your query."})}\n'
+            )
+        finally:
+            # Persist trimmed history for next request in this session.
+            try:
+                updated = list(getattr(agent, "messages", []))
+                _session_histories[sid] = _trim_history(updated)
+            except Exception:
+                pass  # Never crash on history save.

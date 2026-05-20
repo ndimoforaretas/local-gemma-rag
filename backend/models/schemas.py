@@ -21,6 +21,8 @@ class RagRequest(BaseModel):
     """Body for the /rag streaming chat endpoint."""
     query: str = Field(..., min_length=1, max_length=5000)
     attachments: Optional[list[Attachment]] = None
+    # Frontend session identifier for per-session conversation isolation.
+    session_id: Optional[str] = None
 
 
 # ── Responses ────────────────────────────────────────────────────────────────

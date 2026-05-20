@@ -47,10 +47,14 @@ export const api = {
   ragStream: async (
     query: string,
     attachments?: Attachment[],
+    sessionId?: string,
   ): Promise<Response> => {
     const payload: RagRequest = { query };
     if (attachments && attachments.length > 0) {
       payload.attachments = attachments;
+    }
+    if (sessionId) {
+      payload.session_id = sessionId;
     }
     const resp = await fetch(`${API_BASE}/rag`, {
       method: "POST",

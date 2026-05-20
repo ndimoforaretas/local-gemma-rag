@@ -236,7 +236,7 @@ export function KnowledgeBase() {
     ]);
 
     try {
-      const res = await api.ragStream(userMessage, attachments);
+      const res = await api.ragStream(userMessage, attachments, currentSessionId);
 
       if (!res.body) throw new Error("No response body");
 

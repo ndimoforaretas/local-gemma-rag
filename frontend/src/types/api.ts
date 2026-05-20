@@ -16,6 +16,7 @@ export interface Attachment {
 export interface RagRequest {
   query: string;
   attachments?: Attachment[];
+  session_id?: string;
 }
 
 // ── Generic ─────────────────────────────────────────────────────────
