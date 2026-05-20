@@ -6,6 +6,7 @@ decorated as a ``@DBOS.step()`` so that the workflow can resume from
 the last completed step after a crash.
 """
 
+import hashlib
 import json
 import os
 import re
@@ -19,6 +20,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pypdf import PdfReader
 
 from backend.config import get_settings, logger
+from backend.services.vector_db import vector_db
 
 settings = get_settings()
 
@@ -36,6 +38,15 @@ if __name__ == "__main__":
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
+
+def _file_sha256(path: str) -> str:
+    """Return the SHA-256 hex digest of a file's contents."""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for block in iter(lambda: f.read(65_536), b""):
+            h.update(block)
+    return h.hexdigest()
+
 
 def get_pdf_pages(path: str) -> List[Tuple[str, int]]:
     """Extract text from a PDF file, keeping track of page numbers."""
@@ -67,33 +78,81 @@ def get_text_pages(path: str) -> List[Tuple[str, int]]:
 
 # ── Durable workflow steps ───────────────────────────────────────────────────
 
+_ALLOWED_EXTENSIONS = (".pdf", ".txt", ".md", ".csv")
+
+
 @DBOS.step()
 def list_document_files() -> List[str]:
-    """List new PDF files in the docs directory that are not yet indexed."""
-    indexed_files: set[str] = set()
+    """Return filenames that need (re-)ingestion: new files or content-changed files.
+
+    Change detection uses a SHA-256 content hash stored per chunk.  A file is
+    re-ingested when:
+    - It has never been indexed (new file), or
+    - Its current hash differs from the stored hash (edited file).
+
+    When a changed file is detected its old chunks are soft-deleted
+    (``deleted=True``) so stale vectors are excluded from future searches while
+    the FAISS index structure remains intact.
+    """
+    # Build filename → stored_hash from existing metadata.
+    # A filename present in metadata but without a hash (legacy chunks) is
+    # treated as "unknown hash" → will be re-ingested to add the hash.
+    stored_hashes: Dict[str, str | None] = {}
     if os.path.exists(settings.metadata_file):
         try:
             with open(settings.metadata_file, "r") as f:
                 meta = json.load(f)
-                for item in meta:
-                    if "source" in item:
-                        indexed_files.add(item["source"])
+            for item in meta:
+                fname = item.get("source")
+                if fname and fname not in stored_hashes:
+                    stored_hashes[fname] = item.get("file_hash")  # may be None
         except Exception:
             logger.exception("Failed to read existing metadata")
 
-    files: List[str] = []
-    if os.path.exists(settings.docs_dir):
-        for filename in os.listdir(settings.docs_dir):
-            if any(filename.lower().endswith(ext) for ext in [".pdf", ".txt", ".md", ".csv"]) and filename not in indexed_files:
-                files.append(filename)
+    files_to_ingest: List[str] = []
+    if not os.path.exists(settings.docs_dir):
+        return files_to_ingest
 
-    logger.info("Found %d new documents to ingest", len(files))
-    return sorted(files)
+    for filename in os.listdir(settings.docs_dir):
+        if not any(filename.lower().endswith(ext) for ext in _ALLOWED_EXTENSIONS):
+            continue
+
+        path = os.path.join(settings.docs_dir, filename)
+        current_hash = _file_sha256(path)
+
+        if filename not in stored_hashes:
+            # Brand-new file — never seen before.
+            files_to_ingest.append(filename)
+        elif stored_hashes[filename] != current_hash:
+            # File was edited (or previously indexed without a hash).
+            # Soft-delete stale chunks so they are excluded from search.
+            deleted = vector_db.delete_by_source(filename)
+            logger.info(
+                "File '%s' changed (old hash=%s, new hash=%s); "
+                "soft-deleted %d old chunk(s)",
+                filename,
+                stored_hashes[filename],
+                current_hash,
+                deleted,
+            )
+            files_to_ingest.append(filename)
+        # else: hash unchanged → skip
+
+    logger.info(
+        "Found %d file(s) to ingest (%d already up-to-date)",
+        len(files_to_ingest),
+        len(stored_hashes) - len(files_to_ingest),
+    )
+    return sorted(files_to_ingest)
 
 
 @DBOS.step()
 def process_single_document(filename: str) -> List[Dict]:
-    """Process a single document and extract content."""
+    """Process a single document and extract content.
+
+    Each returned page dict includes a ``file_hash`` field (SHA-256 of the
+    raw file bytes) so chunks stored later can be compared on re-ingest.
+    """
     path = os.path.join(settings.docs_dir, filename)
     logger.info("Processing document: %s", filename)
 
@@ -108,6 +167,8 @@ def process_single_document(filename: str) -> List[Dict]:
         logger.warning("Unsupported file type: %s", ext)
         return []
 
+    file_hash = _file_sha256(path)
+
     docs: List[Dict] = []
     for text, page_num in pages:
         docs.append({
@@ -115,6 +176,7 @@ def process_single_document(filename: str) -> List[Dict]:
             "content": text,
             "type": doc_type,
             "page": page_num,
+            "file_hash": file_hash,
         })
     return docs
 
@@ -198,6 +260,7 @@ def ingest_workflow() -> int:
                 "content": chunk,
                 "chunk_id": i,
                 "page": doc["page"],
+                "file_hash": doc.get("file_hash"),   # SHA-256 for change detection
             })
             texts_to_embed.append(chunk)
 

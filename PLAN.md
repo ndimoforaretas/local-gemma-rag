@@ -208,7 +208,7 @@ its answer. Directly showcases a capability unique to Gemma 4.
 
 ---
 
-### Step 2 — Document Intelligence Tools (3 new agent tools)  `[NEXT]`
+### Step 2 — Document Intelligence Tools (3 new agent tools)  ✅
 
 **Why it wins:** Autonomous multi-step agentic chaining is the centrepiece of the Gemma 4
 pitch. Three tools that let the agent reason *about* the vault itself:
@@ -233,7 +233,7 @@ pitch. Three tools that let the agent reason *about* the vault itself:
 
 ---
 
-### Step 3 — Re-ingest on File Change (T1-D)
+### Step 3 — Re-ingest on File Change (T1-D)  `[NEXT]`
 
 **Why it matters:** Without this, editing an uploaded document leaves stale vectors forever.
 A real Data Vault must stay current.
