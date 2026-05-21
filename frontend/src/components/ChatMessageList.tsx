@@ -12,7 +12,7 @@ marked.setOptions({
 });
 
 function isLikelyNumericCell(value: string): boolean {
-  const normalized = value.replace(/\u00a0/g, " ").trim();
+  const normalized = value.replace(/ /g, " ").trim();
   if (!normalized) {
     return false;
   }

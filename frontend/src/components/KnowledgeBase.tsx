@@ -61,9 +61,10 @@ export function KnowledgeBase() {
   // Controls the mobile sources drawer (< lg). On desktop the sidebar is always visible.
   const [isContextOpen, setIsContextOpen] = useState(false);
   const [pendingKBFiles, setPendingKBFiles] = useState<SaveToKBFile[]>([]);
-  const [kbSaveStatus, setKbSaveStatus] = useState<"idle" | "saving" | "done">(
-    "idle",
-  );
+  const [kbSaveStatus, setKbSaveStatus] = useState<
+    "idle" | "saving" | "indexing" | "done" | "error"
+  >("idle");
+  const [kbWorkflowId, setKbWorkflowId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isNewChatRef = useRef(false);
 
@@ -112,6 +113,39 @@ export function KnowledgeBase() {
   const deleteHistoryMutation = useMutation({
     mutationFn: (sessionId: string) => api.deleteHistorySession(sessionId),
   });
+
+  // Poll the ingestion workflow started by "Add to KB" so we can show live
+  // progress and refresh the Knowledge Base tab when indexing finishes.
+  const { data: kbWorkflowStatus } = useQuery({
+    queryKey: ["kbWorkflow", kbWorkflowId],
+    queryFn: () => api.ingestStatus(kbWorkflowId!),
+    enabled: !!kbWorkflowId,
+    refetchInterval: (query) => {
+      const s = query.state.data?.status;
+      if (s === "SUCCESS" || s === "ERROR" || s === "not_found") return false;
+      return 1500;
+    },
+  });
+
+  useEffect(() => {
+    if (!kbWorkflowStatus) return;
+    const s = kbWorkflowStatus.status;
+    if (s === "SUCCESS") {
+      setKbSaveStatus("done");
+      setKbWorkflowId(null);
+      // Refresh the KB file list and vault stats so the new file appears
+      // in the Knowledge Base tab without the user needing to reload.
+      queryClient.invalidateQueries({ queryKey: ["kbFolders"] });
+      queryClient.invalidateQueries({ queryKey: ["vaultStats"] });
+      setTimeout(() => {
+        setPendingKBFiles([]);
+        setKbSaveStatus("idle");
+      }, 4000);
+    } else if (s === "ERROR" || s === "not_found") {
+      setKbSaveStatus("error");
+      setKbWorkflowId(null);
+    }
+  }, [kbWorkflowStatus, queryClient]);
 
   // ── Derived state ─────────────────────────────────────────────────
 
@@ -617,7 +651,7 @@ export function KnowledgeBase() {
                 </button>
                 {/* Desktop: decorative badge — sidebar is already visible */}
                 <span className="hidden lg:inline-flex text-xs font-medium px-2 py-1 rounded-full bg-[#d0e1fb] dark:bg-[#32353c] text-[#0058be] dark:text-[#adc6ff]">
-                  {contextCount} sources
+                  {contextCount} source{contextCount !== 1 ? "s" : ""}
                 </span>
               </>
             )}
@@ -669,8 +703,12 @@ export function KnowledgeBase() {
               />
               <span className="text-sm text-[#191c1e] dark:text-[#e1e2ec] font-medium truncate">
                 {kbSaveStatus === "done"
-                  ? `✅ "${pendingKBFiles[0].name}" added & ingestion started`
-                  : `Add "${pendingKBFiles[0].name}" to Knowledge Base?`}
+                  ? `✅ "${pendingKBFiles[0]?.name}" indexed and ready`
+                  : kbSaveStatus === "indexing"
+                    ? `⚙️ Indexing "${pendingKBFiles[0]?.name}"…`
+                    : kbSaveStatus === "error"
+                      ? `❌ Failed to save "${pendingKBFiles[0]?.name}" — try again`
+                      : `Add "${pendingKBFiles[0]?.name}" to Knowledge Base?`}
               </span>
             </div>
             {kbSaveStatus === "idle" && (
@@ -679,15 +717,23 @@ export function KnowledgeBase() {
                   onClick={async () => {
                     setKbSaveStatus("saving");
                     try {
-                      await api.saveToKB(pendingKBFiles);
-                      setKbSaveStatus("done");
-                      setTimeout(() => {
-                        setPendingKBFiles([]);
-                        setKbSaveStatus("idle");
-                      }, 4000);
+                      const result = await api.saveToKB(pendingKBFiles);
+                      if (result.workflow_id) {
+                        setKbWorkflowId(result.workflow_id);
+                        setKbSaveStatus("indexing");
+                      } else {
+                        // No workflow id — fall back to instant success
+                        setKbSaveStatus("done");
+                        queryClient.invalidateQueries({ queryKey: ["kbFolders"] });
+                        queryClient.invalidateQueries({ queryKey: ["vaultStats"] });
+                        setTimeout(() => {
+                          setPendingKBFiles([]);
+                          setKbSaveStatus("idle");
+                        }, 4000);
+                      }
                     } catch (e) {
                       console.error(e);
-                      setKbSaveStatus("idle");
+                      setKbSaveStatus("error");
                     }
                   }}
                   className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors">
@@ -703,7 +749,7 @@ export function KnowledgeBase() {
                 </button>
               </div>
             )}
-            {kbSaveStatus === "saving" && (
+            {(kbSaveStatus === "saving" || kbSaveStatus === "indexing") && (
               <Loader2
                 size={18}
                 className="animate-spin text-emerald-600 dark:text-emerald-400 shrink-0"
@@ -711,6 +757,13 @@ export function KnowledgeBase() {
             )}
             {kbSaveStatus === "done" && (
               <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+            )}
+            {kbSaveStatus === "error" && (
+              <button
+                onClick={() => { setPendingKBFiles([]); setKbSaveStatus("idle"); }}
+                className="p-1.5 rounded-lg text-[#727785] hover:text-[#191c1e] dark:hover:text-[#e1e2ec] hover:bg-[#e0e3e5] dark:hover:bg-[#32353c] transition-colors shrink-0">
+                <X size={16} />
+              </button>
             )}
           </div>
         )}

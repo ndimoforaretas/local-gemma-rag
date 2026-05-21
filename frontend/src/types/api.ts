@@ -67,6 +67,8 @@ export interface Message {
   attachments?: MessageAttachment[];
   /** Gemma 4 internal reasoning chain, streamed before the answer. */
   thinking?: string;
+  /** Optional follow-up suggestion chips (backend may populate in future). */
+  followupChips?: string[];
 }
 
 export interface ContextItem {
@@ -77,6 +79,8 @@ export interface ContextItem {
   text?: string;
   /** Page number within the source document (if applicable). */
   page?: number;
+  /** Cosine-similarity relevance score returned by the retriever (0–1). */
+  relevance?: number;
 }
 
 export interface ChatSession {
