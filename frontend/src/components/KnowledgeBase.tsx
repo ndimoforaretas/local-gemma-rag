@@ -324,9 +324,13 @@ export function KnowledgeBase() {
         // message.content (Gemma 4 sometimes emits them even with thinking
         // disabled).  We operate on the full accumulated string so a tag
         // spanning multiple chunks is handled correctly.
-        const cleanText = fullText
+        const stripped = fullText
           .replace(/<think>[\s\S]*?<\/think>/gi, "")
           .trimStart();
+        const cleanText =
+          stripped.length > 0
+            ? stripped.charAt(0).toUpperCase() + stripped.slice(1)
+            : stripped;
         updateSessionMessages(currentSessionId, (prev) =>
           prev.map((msg) =>
             msg.id === aiMsgId ? { ...msg, content: cleanText } : msg,
