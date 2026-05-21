@@ -277,6 +277,10 @@ export function KnowledgeBase() {
       },
     ]);
 
+    // Hoist so the catch block can reference them for targeted error updates.
+    const aiMsgId = Date.now().toString() + "-ai";
+    let thinkingText = "";
+
     try {
       const res = await api.ragStream(
         userMessage,
@@ -293,19 +297,18 @@ export function KnowledgeBase() {
       let fullText = "";
       let buffer = "";
       let streamMode: "unknown" | "ndjson" | "plain" = "unknown";
-      const FIRST_CHUNK_TIMEOUT_MS = 30000;
-      const STREAM_IDLE_TIMEOUT_MS = 15000;
+      // Multimodal requests (image + multiple files) can take 60–90 s for
+      // the Strands agent to start emitting tokens after Phase 1 thinking.
+      const FIRST_CHUNK_TIMEOUT_MS = 90000;
+      const STREAM_IDLE_TIMEOUT_MS = 30000;
       const MAX_TIMEOUT_RETRIES = 2;
       let hasReceivedChunk = false;
       let timeoutRetries = 0;
 
-      const aiMsgId = Date.now().toString() + "-ai";
       updateSessionMessages(currentSessionId, (prev) => [
         ...prev,
         { id: aiMsgId, role: "ai", content: "" },
       ]);
-
-      let thinkingText = "";
 
       const appendThinking = (text: string) => {
         if (!text) return;
@@ -497,14 +500,17 @@ export function KnowledgeBase() {
       }
     } catch (e) {
       console.error(e);
-      updateSessionMessages(currentSessionId, (prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          role: "ai",
-          content: "Error communicating with the knowledge base.",
-        },
-      ]);
+      // Replace the existing (possibly empty) AI bubble rather than
+      // appending a second one. If thinking was already received the
+      // connection was healthy — give a more specific timeout hint.
+      const errorContent = thinkingText
+        ? "The response took too long to arrive. This can happen with large or complex attachments — please try again."
+        : "Error communicating with the knowledge base.";
+      updateSessionMessages(currentSessionId, (prev) =>
+        prev.map((msg) =>
+          msg.id === aiMsgId ? { ...msg, content: errorContent } : msg,
+        ),
+      );
     } finally {
       setIsLoading(false);
       if (textFilesForKB.length > 0) {

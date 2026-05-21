@@ -5,8 +5,10 @@ Accepts an audio file (WebM, WAV, MP3, OGG, M4A) sent as multipart/form-data
 and returns the transcribed text.  Uses faster-whisper running locally — no
 data leaves the machine.
 
-The Whisper model is lazy-loaded on the first request and kept in memory for
-subsequent calls (typical cold-start: ~2 s for "tiny", ~8 s for "base").
+The Whisper model is lazy-loaded on the first *transcription* request and kept
+in memory for subsequent calls (typical cold-start: ~2 s for "tiny", ~8 s for
+"base").  Loading and inference both run in a thread-pool executor so the
+asyncio event loop is never blocked.
 
 Model size is configurable via the WHISPER_MODEL environment variable:
   tiny   — fastest, lowest accuracy (~75 MB)
@@ -18,7 +20,8 @@ If faster-whisper is not installed or the model fails to load, the endpoint
 returns HTTP 503 with a clear message so the frontend can hide the mic button.
 """
 
-import io
+import asyncio
+import importlib.util
 import logging
 import os
 import tempfile
@@ -33,14 +36,13 @@ router = APIRouter(tags=["Audio"])
 
 _whisper_model = None
 _whisper_available: bool | None = None   # None = not yet checked
+_whisper_lock = asyncio.Lock()           # prevents concurrent cold-start races
 
 
-def _get_whisper_model():
+def _load_whisper_model_sync():
     """
-    Return the cached Whisper model, loading it on first call.
-
-    Raises RuntimeError if faster-whisper is unavailable or the model
-    cannot be loaded (surfaced as HTTP 503 to the caller).
+    Blocking model load — must be called inside run_in_executor.
+    Returns the loaded WhisperModel or raises RuntimeError.
     """
     global _whisper_model, _whisper_available
 
@@ -69,6 +71,22 @@ def _get_whisper_model():
         raise RuntimeError(f"Whisper model could not be loaded: {exc}") from exc
 
 
+async def _get_whisper_model_async():
+    """
+    Return the cached Whisper model, loading it in a thread executor on first
+    call so the event loop is never blocked.
+    """
+    global _whisper_model
+    if _whisper_model is not None:
+        return _whisper_model
+    async with _whisper_lock:
+        # Re-check after acquiring lock — another coroutine may have loaded it.
+        if _whisper_model is not None:
+            return _whisper_model
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, _load_whisper_model_sync)
+
+
 # ── Response model ────────────────────────────────────────────────────────────
 
 class TranscriptionResponse(BaseModel):
@@ -77,7 +95,7 @@ class TranscriptionResponse(BaseModel):
     duration_seconds: float
 
 
-# ── Endpoint ──────────────────────────────────────────────────────────────────
+# ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.get("/api/transcribe/status")
 async def transcription_status():
@@ -85,14 +103,24 @@ async def transcription_status():
     Report whether the Whisper transcription feature is available.
 
     The frontend calls this on load to decide whether to show the mic button.
+    This endpoint NEVER triggers a model load — it only checks whether
+    faster-whisper is installed and whether a previous load succeeded/failed.
     Returns {"available": true/false, "model": "base"}.
     """
-    try:
-        _get_whisper_model()
+    # If a previous attempt already determined availability, return fast.
+    if _whisper_available is False:
+        return {"available": False, "model": None}
+    if _whisper_model is not None:
         model_size = os.environ.get("WHISPER_MODEL", "base")
         return {"available": True, "model": model_size}
-    except RuntimeError:
+
+    # No load attempted yet — just check if the package is importable.
+    spec = importlib.util.find_spec("faster_whisper")
+    if spec is None:
         return {"available": False, "model": None}
+
+    model_size = os.environ.get("WHISPER_MODEL", "base")
+    return {"available": True, "model": model_size}
 
 
 @router.post("/api/transcribe", response_model=TranscriptionResponse)
@@ -105,15 +133,18 @@ async def transcribe_audio(
     Accepts multipart/form-data with a single `file` field.
     Returns the transcription text and detected language.
 
+    Both model loading (first call) and inference run in a thread executor
+    so the asyncio event loop is never blocked.
+
     Raises
     ------
     503  If faster-whisper is not installed or the model failed to load.
     422  If the uploaded file is empty.
     500  If transcription fails for any other reason.
     """
-    # ── Load model ────────────────────────────────────────────────────────────
+    # ── Load model (non-blocking) ─────────────────────────────────────────────
     try:
-        model = _get_whisper_model()
+        model = await _get_whisper_model_async()
     except RuntimeError as exc:
         raise HTTPException(
             status_code=503,
@@ -132,14 +163,13 @@ async def transcribe_audio(
         file.content_type or "unknown",
     )
 
-    # ── Transcribe ────────────────────────────────────────────────────────────
-    try:
-        # Write to a temp file because faster-whisper needs a file path
-        suffix = _audio_suffix(file.content_type or "", file.filename or "")
+    # ── Transcribe (non-blocking) ─────────────────────────────────────────────
+    suffix = _audio_suffix(file.content_type or "", file.filename or "")
+
+    def _run_transcription() -> tuple[str, object]:
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
             tmp.write(audio_bytes)
             tmp_path = tmp.name
-
         try:
             segments, info = model.transcribe(
                 tmp_path,
@@ -148,9 +178,13 @@ async def transcribe_audio(
                 vad_filter=True, # skip silences
             )
             text = " ".join(seg.text.strip() for seg in segments).strip()
+            return text, info
         finally:
             os.unlink(tmp_path)
 
+    try:
+        loop = asyncio.get_running_loop()
+        text, info = await loop.run_in_executor(None, _run_transcription)
     except Exception as exc:
         logger.exception("Whisper transcription failed")
         raise HTTPException(
