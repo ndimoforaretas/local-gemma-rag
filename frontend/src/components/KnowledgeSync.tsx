@@ -40,6 +40,7 @@ export function KnowledgeSync() {
     "Files sorted by Name A-Z.",
   );
   const [isDragActive, setIsDragActive] = useState(false);
+  const [largeFileWarning, setLargeFileWarning] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragDepthRef = useRef(0);
   const dropZoneHintId = useId();
@@ -86,6 +87,7 @@ export function KnowledgeSync() {
     if (workflowStatus) {
       setSteps(workflowStatus.steps || []);
       if (workflowStatus.status === "SUCCESS") {
+          setLargeFileWarning(false);
         setSyncStatus("SUCCESS");
         setSyncError(null);
         setSyncNotice("Knowledge base sync completed successfully.");
@@ -208,6 +210,9 @@ export function KnowledgeSync() {
     setSyncStatus("UPLOADING");
     setSyncNotice(null);
     setSyncError(null);
+    // Flag if any file exceeds 50 MB so we can warn during ingestion.
+    const maxBytes = Math.max(...validFiles.map((f) => f.size));
+    setLargeFileWarning(maxBytes > 50 * 1024 * 1024);
 
     const formData = new FormData();
     for (const file of validFiles) {
@@ -472,7 +477,7 @@ export function KnowledgeSync() {
               <p
                 id={dropZoneHintId}
                 className="text-xs sm:text-sm text-[#727785] dark:text-[#8c909f]">
-                PDF · DOCX · MD · TXT · CSV · PPTX · XLSX · HTML — up to 200 MB
+                PDF · DOCX · MD · TXT · CSV · PPTX · XLSX · HTML — up to 500 MB
               </p>
             </div>
           </div>
@@ -521,6 +526,17 @@ export function KnowledgeSync() {
               </div>
             </div>
 
+            {largeFileWarning && syncStatus === "SYNCING" && (
+              <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-300/70 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+                <span className="text-lg leading-none">⏳</span>
+                <span>
+                  <strong>Large file detected.</strong> Indexing may take several
+                  minutes — the app is working in the background and has not frozen.
+                  Grab a coffee!
+                </span>
+              </div>
+            )}
+
             <div className="relative pl-5 sm:pl-6 ml-2 sm:ml-4 border-l-2 border-[#c2c6d6] dark:border-[#424754] flex flex-col gap-6 sm:gap-8">
               {timelineDefs.map(({ id, label }) => {
                 const { stepData, isComp, isActive, allSteps } =
@@ -555,7 +571,7 @@ export function KnowledgeSync() {
                     key={id}
                     className={`relative flex items-start sm:items-center gap-4 sm:gap-6 ${isComp ? "opacity-100" : isActive ? "opacity-100" : "opacity-40"}`}>
                     {/* Timeline dot: surface-container-low bg so it masks the line */}
-                    <div className="absolute -left-[35px] bg-[#f2f4f6] dark:bg-[#191b23] rounded-full p-1 transition-colors duration-300">
+                    <div className="absolute -left-[35px] sm:-left-[39px] bg-[#f2f4f6] dark:bg-[#191b23] rounded-full p-1 transition-colors duration-300">
                       {isComp ? (
                         <CheckCircle2 size={24} className="text-emerald-500" />
                       ) : isActive ? (
