@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Bot, User, Copy, Check, Download, FileText, ChevronDown, Pencil, RefreshCw, X as XIcon, CornerDownLeft } from "lucide-react";
+import { User, Copy, Check, Download, FileText, ChevronDown, Pencil, RefreshCw, X as XIcon, CornerDownLeft } from "lucide-react";
 import { marked } from "marked";
 import { Tooltip } from "./Tooltip";
 import { SuggestionCards } from "./SuggestionCards";
@@ -217,9 +217,11 @@ export function ChatMessageList({
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center">
             <div className="flex flex-col items-center">
-              <div className="w-16 h-16 rounded-2xl bg-[#d0e1fb] dark:bg-[#32353c] border border-[#c2c6d6] dark:border-[#424754] flex items-center justify-center mb-6 opacity-60">
-                <Bot size={32} className="text-[#0058be] dark:text-[#adc6ff]" />
-              </div>
+              <img
+                src="/mark.svg"
+                alt="CogniVault"
+                className="w-20 h-20 mb-6 drop-shadow-[0_4px_20px_rgba(167,139,250,0.4)] opacity-90"
+              />
               <h3 className="text-2xl font-semibold mb-3 text-[#191c1e] dark:text-[#e1e2ec]">
                 Welcome to Gemma CogniVault
               </h3>
@@ -256,19 +258,17 @@ export function ChatMessageList({
                   }
                   className={`flex gap-4 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
                   {/* Avatar */}
-                  <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-1
-                  ${
-                    msg.role === "user"
-                      ? "bg-[#a855f7] text-white"
-                      : "bg-[#d0e1fb] text-[#0058be] border border-[#c2c6d6] dark:bg-[#32353c] dark:text-[#adc6ff] dark:border-[#424754]"
-                  }`}>
-                    {msg.role === "user" ? (
+                  {msg.role === "user" ? (
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-1 bg-[#a855f7] text-white">
                       <User size={16} />
-                    ) : (
-                      <Bot size={16} />
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <img
+                      src="/mark.svg"
+                      alt="CogniVault AI"
+                      className="w-8 h-8 shrink-0 mt-1 drop-shadow-[0_1px_6px_rgba(167,139,250,0.35)]"
+                    />
+                  )}
 
                   {/* Bubble Container */}
                   <div

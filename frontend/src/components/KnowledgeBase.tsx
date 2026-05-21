@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import {
-  Bot,
   History,
   Plus,
   FolderPlus,
@@ -625,9 +624,11 @@ export function KnowledgeBase() {
         {/* Header Bar */}
         <div className="flex flex-col gap-3 sm:gap-2 sm:flex-row sm:items-center sm:justify-between bg-[#eceef0] dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-3 sm:p-4 shrink-0">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-            <div className="w-12 h-12 rounded-xl bg-[#d0e1fb] dark:bg-[#32353c] text-[#0058be] dark:text-[#adc6ff] flex items-center justify-center border border-[#c2c6d6] dark:border-[#424754]">
-              <Bot size={24} />
-            </div>
+            <img
+              src="/mark.svg"
+              alt="CogniVault"
+              className="w-11 h-11 drop-shadow-[0_2px_10px_rgba(167,139,250,0.3)] shrink-0"
+            />
             <div className="min-w-0">
               <h2 className="text-base sm:text-lg font-bold text-[#191c1e] dark:text-[#e1e2ec] tracking-tight truncate">
                 Gemma CogniVault AI
