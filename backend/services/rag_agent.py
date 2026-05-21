@@ -314,7 +314,13 @@ async def run_rag_stream(
 
         if text_files:
             parts = [query, ""]
-            parts.append(f"[{len(text_files)} attached file(s) — read carefully and answer]")
+            if image_blocks:
+                parts.append(
+                    f"[{len(image_blocks)} image(s) + {len(text_files)} file(s) attached — "
+                    f"analyze ALL inputs: describe each image visually AND read each file]"
+                )
+            else:
+                parts.append(f"[{len(text_files)} attached file(s) — read carefully and answer]")
             parts.append("")
             for i, (label, content) in enumerate(text_files, 1):
                 parts.append(f"=== FILE {i}/{len(text_files)}: {label} ===")

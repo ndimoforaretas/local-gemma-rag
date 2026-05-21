@@ -354,7 +354,9 @@ export function ChatInput({
         {transcriptionAvailable && (
           <Tooltip
             content={
-              isTranscribing
+              isLoading
+                ? "Generating response…"
+                : isTranscribing
                 ? "Transcribing…"
                 : isRecording
                 ? "Stop recording"
@@ -367,7 +369,7 @@ export function ChatInput({
               disabled={isLoading || isTranscribing}
               aria-label={isRecording ? "Stop recording" : "Record voice message"}
               className={`w-9 h-9 mb-1 flex items-center justify-center rounded-full transition-all ${
-                isTranscribing
+                isLoading || isTranscribing
                   ? "opacity-40 cursor-not-allowed text-[#727785] dark:text-[#988d9f]"
                   : isRecording
                   ? "bg-red-500/90 text-white animate-pulse hover:bg-red-600"

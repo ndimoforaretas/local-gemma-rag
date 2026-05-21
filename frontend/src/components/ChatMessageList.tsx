@@ -477,8 +477,9 @@ export function ChatMessageList({
                       </div>
                     )}
 
-                    {/* User message edit button */}
-                    {msg.role === "user" && onEdit && !isLoading && editingIndex !== msgIndex && (
+                    {/* User message edit button — hidden for messages with attachments
+                        because raw file data is not stored and cannot be re-sent. */}
+                    {msg.role === "user" && onEdit && !isLoading && editingIndex !== msgIndex && !msg.attachments?.length && (
                       <div className="flex justify-end mt-1">
                         <Tooltip content="Edit and resend" position="top">
                           <button
