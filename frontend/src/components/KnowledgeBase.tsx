@@ -117,7 +117,9 @@ export function KnowledgeBase() {
 
   useEffect(() => {
     if (sessions.length > 0 && !activeSessionId && !isNewChatRef.current) {
-      setActiveSessionId(sessions[0].id);
+      const first = sessions[0];
+      setActiveSessionId(first.id);
+      setContextItems(first.contextItems ?? []);
     }
   }, [sessions, activeSessionId]);
 
@@ -144,6 +146,20 @@ export function KnowledgeBase() {
         s.id === sessionId
           ? { ...s, messages: updater(s.messages), updatedAt: Date.now() }
           : s,
+      );
+      saveHistoryMutation.mutate(next);
+      return next;
+    });
+  };
+
+  // Persist citation items into the session so they survive session switches.
+  const updateSessionContextItems = (
+    sessionId: string,
+    items: ContextItem[],
+  ) => {
+    queryClient.setQueryData<ChatSession[]>(["history"], (old = []) => {
+      const next = old.map((s) =>
+        s.id === sessionId ? { ...s, contextItems: items } : s,
       );
       saveHistoryMutation.mutate(next);
       return next;
@@ -183,6 +199,7 @@ export function KnowledgeBase() {
       prev.slice(0, messageIndex),
     );
     setContextItems([]);
+    updateSessionContextItems(activeSessionId, []);
     // turns before this user message = floor(messageIndex / 2)
     handleSend([], newContent, Math.floor(messageIndex / 2));
   };
@@ -203,6 +220,7 @@ export function KnowledgeBase() {
       prev.slice(0, messageIndex),
     );
     setContextItems([]);
+    updateSessionContextItems(activeSessionId, []);
     // turns before the preceding user message = floor((messageIndex - 1) / 2)
     handleSend([], userMsg.content, Math.floor((messageIndex - 1) / 2));
   };
@@ -351,7 +369,7 @@ export function KnowledgeBase() {
 
         setContextItems((prev) => {
           if (prev.some((item) => item.title === title)) return prev;
-          return [
+          const next = [
             ...prev,
             {
               title,
@@ -361,6 +379,9 @@ export function KnowledgeBase() {
               page: meta.page ?? undefined,
             },
           ];
+          // Persist so the sidebar & badge survive session switches.
+          updateSessionContextItems(currentSessionId, next);
+          return next;
         });
       };
 
@@ -522,7 +543,8 @@ export function KnowledgeBase() {
   const handleSelectSession = (id: string) => {
     isNewChatRef.current = false;
     setActiveSessionId(id);
-    setContextItems([]);
+    const session = sessions.find((s) => s.id === id);
+    setContextItems(session?.contextItems ?? []);
   };
 
   const handleDeleteSession = (id: string) => {

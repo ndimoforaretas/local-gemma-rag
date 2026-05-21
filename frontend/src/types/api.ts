@@ -84,6 +84,8 @@ export interface ChatSession {
   title: string;
   updatedAt: number;
   messages: Message[];
+  /** Citation sources accumulated during the last response in this session. */
+  contextItems?: ContextItem[];
 }
 
 // ── Knowledge Base ──────────────────────────────────────────────────
