@@ -128,10 +128,9 @@ python -m backend.main
 Open the **Knowledge Base** tab. You can add documents in several ways:
 
 - **Drag and drop files** onto the upload zone — or click to browse
-- **Paste a URL** to ingest any public web page
 - **Attach files in chat** and save them to the KB with one click
 
-Supported formats: **PDF · DOCX · PPTX · XLSX · MD · CSV · TXT · HTML**
+Supported formats: **PDF · DOCX · PPTX · XLSX · Markdown · CSV · TXT · HTML**
 
 After uploading, click **Ingest** to embed the documents. A progress panel shows each step. Re-upload an edited file and it is automatically re-indexed — stale chunks are replaced, not duplicated.
 
@@ -145,7 +144,7 @@ Switch to the **Chat** tab and ask a question. CogniVault will:
 
 **Attaching files to chat:** click the paperclip to attach up to 5 files at once (images, PDFs, DOCX, text). Images go to Gemma's vision model; documents are extracted and included as context.
 
-**Voice input:** click the 🎤 mic button to dictate your question (requires Tesseract — see above).
+**Voice input:** click the 🎤 mic button to dictate your question — transcribed locally by Whisper, no cloud STT required.
 
 ### 3 — Work with Citations
 
@@ -155,11 +154,7 @@ After each answer a **Sources** panel appears on the right (or tap **"N sources 
 - **View chunk** — click to reveal the exact retrieved passage Gemma used
 - **Open** — jump directly to the source file
 
-### 4 — Scope Your Search
-
-Use the **🎯 All documents** filter above the chat input to restrict the search to specific files. Useful when you want to ask questions about one report without noise from the rest of the vault.
-
-### 5 — Edit and Regenerate
+### 4 — Edit and Regenerate
 
 Hover over any of your messages to reveal an **✏️ Edit** button — click to modify and resend. Every subsequent message is removed and the conversation resumes cleanly from that point. On AI responses, **🔄 Regenerate** re-runs the same query for a fresh answer.
 
@@ -173,7 +168,7 @@ Before answering, Gemma 4 streams its step-by-step reasoning into a collapsible 
 ### 🔍 Hybrid Retrieval
 Dense FAISS semantic search is combined with BM25 keyword search via **Reciprocal Rank Fusion**. Semantic search finds conceptually relevant chunks; BM25 catches exact terminology and acronyms. Both run entirely in-memory for sub-millisecond latency.
 
-### 📄 Nine Document Formats
+### 📄 Eight Document Formats
 
 | Format | How it's chunked |
 |---|---|
@@ -185,7 +180,6 @@ Dense FAISS semantic search is combined with BM25 keyword search via **Reciproca
 | **CSV** | Header row repeated in every chunk |
 | **TXT** | Recursive character splitting |
 | **HTML** | Trafilatura clean-text extraction |
-| **URLs** | Fetched, extracted, saved, and ingested automatically |
 
 Structure-aware chunking means the model always has the right context — a CSV chunk always starts with column names; a Markdown chunk always includes its section heading.
 
@@ -200,9 +194,6 @@ Click the mic button to record your question. Local Whisper transcription conver
 
 ### 📝 Edit & Regenerate
 Edit any past message and resend — the conversation history and the model's internal context window are both rewound to the correct point. Regenerate any AI response for a fresh attempt.
-
-### 🎯 Document-Scoped Search
-Pin the search to one or more specific documents using the filter pill above the chat input. The agent will only retrieve chunks from the selected files, giving you focused, noise-free answers when working with large vaults.
 
 ### 🔒 Privacy Vault Audit Panel
 A live dashboard in the Knowledge Base tab shows: document count, total chunks, FAISS index size, last ingestion time, Ollama host, and a **"Zero external API calls"** indicator. Everything is provably local.
@@ -235,7 +226,7 @@ cp .env.example .env
 | `THINKING_MODE` | `true` | Enable/disable 🧠 Reasoning panel |
 | `WHISPER_MODEL` | `base` | Whisper model size (`tiny` · `base` · `small` · `medium`) |
 | `DB_URL` | `postgresql://postgres:password@localhost:5432/dbos` | PostgreSQL connection |
-| `MAX_UPLOAD_SIZE_MB` | `200` | Per-file upload limit |
+| `MAX_UPLOAD_SIZE_MB` | `500` | Per-file upload limit |
 | `CHUNK_SIZE` | `1000` | Characters per chunk |
 | `CHUNK_OVERLAP` | `100` | Overlap between adjacent chunks |
 
@@ -258,10 +249,9 @@ FastAPI (backend/main.py)
   │
   ├── POST /upload ────────► validate → save to docs/
   ├── POST /ingest ────────► durable workflow (hash-aware, crash-resumable)
-  ├── POST /ingest/url ────► httpx fetch → trafilatura → docs/ → ingest
   ├── GET  /kb ───────────► knowledge base file listing
   ├── GET  /api/vault/stats► privacy audit stats
-  ├── GET  /api/docs/list ► indexed document list (for scope filter)
+  ├── GET  /api/docs/list ► indexed document inventory
   ├── DELETE /api/docs/:f ► soft-delete chunks + remove file
   ├── POST /api/save-to-kb► base64 attachment → docs/ → ingest
   ├── POST /api/transcribe► Whisper audio → text
@@ -299,7 +289,6 @@ Each ingestion run is a crash-resumable workflow. Every step is checkpointed —
    CSV    → header row + 20-row batches
    TXT    → raw UTF-8 read
    HTML   → trafilatura clean text
-   URL    → httpx GET → trafilatura
 
 3. Chunk  →  RecursiveCharacterTextSplitter (1 000 chars, 100 overlap)
              Structured formats (MD, CSV, PPTX, XLSX) use min_length=20
@@ -361,8 +350,7 @@ All storage is local. The Vault Audit Panel confirms no external connections at 
 │   │   ├── ChatMessageList.tsx  # Messages + ThinkingPanel + edit/regen
 │   │   ├── ChatInput.tsx        # Input bar + attachments + mic
 │   │   ├── ContextSidebar.tsx   # Citation sidebar (push on desktop, drawer on mobile)
-│   │   ├── DocScopeFilter.tsx   # Document-scoped search filter pill
-│   │   ├── KnowledgeSync.tsx    # Upload drop zone + URL input
+│   │   ├── KnowledgeSync.tsx    # Upload drop zone + ingestion progress
 │   │   ├── VaultAudit.tsx       # Privacy Vault Audit Panel
 │   │   └── HistorySidebar.tsx   # Multi-session history
 │   ├── lib/api.ts               # Typed API client
@@ -393,7 +381,7 @@ python -m pytest backend/tests/ -v
 | `test_tools.py` | Calculator, clock, KB search tool |
 | `test_thinking.py` | Two-phase stream, thinking tokens, session isolation |
 | `test_chat_attachments.py` | Multi-file attach, PDF/DOCX extraction, size limits |
-| `test_doc_scope_filter.py` | Document-scoped search, ContextVar isolation |
+| `test_doc_scope_filter.py` | Per-request ContextVar isolation, search filtering |
 | `test_doc_tools.py` | list_documents, analyze_document, compare_documents |
 | `test_edit_regenerate.py` | History rewind, trim_history_to_turns validation |
 | `test_structure_chunking.py` | Markdown header splits, CSV row batches, doc types |
@@ -414,8 +402,8 @@ python -m pytest backend/tests/ -v
 | DB connection error | PostgreSQL not started | `docker compose up -d db` |
 | Suggestion cards empty | KB not seeded | `python scripts/seed_knowledge_base.py` |
 | 🧠 Reasoning panel missing | Thinking mode off or wrong model | Confirm `gemma4:e4b` is pulled; check `THINKING_MODE=true` |
-| 🎤 Mic button not visible | Tesseract not installed | `brew install tesseract` (macOS) or `apt install tesseract-ocr` |
-| OCR not working on scanned PDFs | pytesseract/pymupdf missing | `pip install pymupdf pytesseract Pillow` |
+| 🎤 Mic button transcription fails | faster-whisper not installed | `pip install faster-whisper` |
+| OCR not working on scanned PDFs | pytesseract/pymupdf missing | `pip install pymupdf pytesseract Pillow` + `brew install tesseract` (macOS) |
 
 ---
 
