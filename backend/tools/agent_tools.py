@@ -17,11 +17,13 @@ from strands import tool
 from backend.config import get_settings, logger
 from backend.services.vector_db import vector_db
 
-# Per-asyncio-Task citation context.
-# Each FastAPI request runs in its own Task, so `.set()` here is never
-# visible to a concurrent request — no shared mutable state on the function.
-_last_doc_ctx: contextvars.ContextVar[dict] = contextvars.ContextVar(
-    "last_doc", default={}
+# Per-request citation accumulator.
+# Stores every unique source document found by search_knowledge_base during
+# a request so the frontend sidebar can display all of them.  Always
+# initialised to a fresh list via _last_doc_ctx.set([]) at request start —
+# never relies on the mutable default across requests.
+_last_doc_ctx: contextvars.ContextVar[list[dict]] = contextvars.ContextVar(
+    "last_doc", default=[]
 )
 
 # Per-request document scope filter.
@@ -101,13 +103,17 @@ def search_knowledge_base(query: str) -> str:
         return "No relevant information found."
 
     formatted_results: list[str] = []
+    # Accumulate unique sources so every citation shows in the sidebar.
+    docs = _last_doc_ctx.get()
+    seen_sources = {d.get("source") for d in docs}
     for res in results:
         page_info = f" (Page {res['page']})" if res.get("page") else ""
         formatted_results.append(
             f"Source: {res['source']}{page_info}\nContent: {res['content']}"
         )
-        # Store in the per-request ContextVar — never bleeds to other requests.
-        _last_doc_ctx.set(res)
+        if res.get("source") not in seen_sources:
+            docs.append(res)
+            seen_sources.add(res.get("source"))
 
     return "\n---\n".join(formatted_results)
 

@@ -280,7 +280,7 @@ async def run_rag_stream(
         history between chat sessions.  When None, a shared anonymous bucket
         is used (safe for single-request / test scenarios).
     """
-    _last_doc_ctx.set({})
+    _last_doc_ctx.set([])
     # Apply document-scope filter for this request (ContextVar is Task-local).
     _source_filter_ctx.set(document_filter if document_filter else None)
 
@@ -387,22 +387,27 @@ async def run_rag_stream(
                 pass  # Never crash on history restore; just start fresh.
 
         try:
+            # Tracks how many citation docs have already been sent to the
+            # frontend.  Tools run *before* text deltas arrive, so by the
+            # time we see the first text chunk all citations are collected.
+            emitted_docs = 0
+
             async for event in agent.stream_async(user_input):
                 ev = event.get("event", {})
-
-                # Emit source metadata when a knowledge-base search completes.
-                c_start = ev.get("contentBlockStart", {}).get("start", {})
-                tool_name = c_start.get("toolUse", {}).get("name")
-                if tool_name == "search_knowledge_base":
-                    last_doc = _last_doc_ctx.get()
-                    if last_doc:
-                        yield f'{json.dumps({"type": "metadata", "data": last_doc})}\n'
 
                 # Text delta from the model response.
                 delta_text = (
                     ev.get("contentBlockDelta", {}).get("delta", {}).get("text")
                 )
                 if delta_text:
+                    # Flush any citations accumulated by search_knowledge_base
+                    # since the last text chunk.  Emitting here (rather than at
+                    # tool-call start) guarantees the tool has already run and
+                    # _last_doc_ctx is fully populated.
+                    all_docs = _last_doc_ctx.get()
+                    while emitted_docs < len(all_docs):
+                        yield f'{json.dumps({"type": "metadata", "data": all_docs[emitted_docs]})}\n'
+                        emitted_docs += 1
                     yield f'{json.dumps({"type": "text", "data": delta_text})}\n'
 
         except Exception:
