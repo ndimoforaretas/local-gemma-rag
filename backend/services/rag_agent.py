@@ -52,6 +52,13 @@ settings = get_settings()
 ollama_model = OllamaModel(
     host=settings.ollama_host,
     model_id=settings.llm_model,
+    # Disable Ollama-level thinking in Phase 2 (Strands agent call).
+    # Phase 1 already streams thinking via a direct ollama.AsyncClient call
+    # with options={"thinking": True}.  Without this flag, Gemma 4's default
+    # modelfile may still emit <think>…</think> tokens inside message.content,
+    # which causes responses to appear truncated (text before the closing tag
+    # is swallowed by the markdown renderer on the frontend).
+    options={"thinking": False},
 )
 
 # ── Session isolation ─────────────────────────────────────────────────────────

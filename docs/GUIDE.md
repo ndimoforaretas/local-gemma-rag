@@ -11,7 +11,7 @@
 2. [The Interface at a Glance](#2-the-interface-at-a-glance)
 3. [Chat View — Complete Feature Reference](#3-chat-view--complete-feature-reference)
 4. [Knowledge Base View — Complete Feature Reference](#4-knowledge-base-view--complete-feature-reference)
-5. [Working with Documents](#5-working-with-documents)
+5. [When to Use Chat Attachments vs. Knowledge Base](#5-when-to-use-chat-attachments-vs-knowledge-base)
 6. [Power-User Tips](#6-power-user-tips)
 7. [FAQ](#7-faq)
 
@@ -25,7 +25,7 @@ Under the hood it combines:
 
 | Component | What it does |
 |-----------|-------------|
-| **Ollama + Gemma 4 E4B** | Runs the language model locally — supports text, images, and audio |
+| **Ollama + Gemma 4 E4B** | Runs the language model locally — supports text, images, and reasoning |
 | **FAISS + BM25** | Hybrid retrieval: vector similarity search fused with keyword matching |
 | **DBOS durable workflows** | Makes ingestion crash-proof and resumable |
 | **PostgreSQL** | Stores workflow state and chat history |
@@ -109,11 +109,13 @@ Attach a file alongside your question for the AI to read on the fly. This is for
 | Category | Formats | Size limit |
 |----------|---------|------------|
 | Images | JPG, PNG, GIF, WebP | 10 MB |
+| PDFs | `.pdf` — text extracted automatically | 10 MB |
+| Word documents | `.docx` — full text extracted | 10 MB |
 | Text / Code | `.txt`, `.md`, `.csv`, `.json`, `.xml`, `.yaml`, `.yml`, `.log`, `.py`, `.js`, `.ts`, `.tsx`, `.jsx`, `.sql` | 5 MB |
 
-After sending a text file, a **green bridge card** appears offering to save it to the Knowledge Base permanently. Click **Add to KB** to index it for future sessions.
+After sending a text or document file, a **green bridge card** appears offering to save it to the Knowledge Base permanently. Click **Add to KB** to index it for future sessions.
 
-> **Tip:** To ask questions about a PDF, add it to the Knowledge Base first — PDFs cannot be attached inline.
+> **Tip:** For a PDF you only need to reference once, attaching it in chat is the fastest path. For documents you query regularly, add them to the Knowledge Base so you never need to re-attach.
 
 ---
 
@@ -165,21 +167,7 @@ Each citation card shows:
 
 ---
 
-### 3.8 Document Scope Filter
-
-By default the AI searches all indexed documents. To restrict retrieval to specific files:
-
-1. Click the scope filter icon in the chat input area.
-2. A dropdown lists every indexed document.
-3. Select one or more documents to pin the search to those files only.
-4. The filter is shown as a badge on the input bar.
-5. Click the badge X to clear the filter and search all documents again.
-
-This is useful when you have many documents indexed and want focused answers from a specific file or project.
-
----
-
-### 3.9 Edit-and-Resend and Regenerate
+### 3.8 Edit-and-Resend and Regenerate
 
 You are not locked in to a conversation as it happened. You can rewind and try again.
 
@@ -198,7 +186,7 @@ You are not locked in to a conversation as it happened. You can rewind and try a
 
 ---
 
-### 3.10 Message Actions
+### 3.9 Message Actions
 
 Hover over any AI message bubble to reveal:
 
@@ -206,11 +194,11 @@ Hover over any AI message bubble to reveal:
 |--------|-------------|
 | **Copy** | Copies the raw markdown text. Icon turns to a tick for 2 seconds. |
 | **Download** | Saves the response as a .md file. |
-| **Regenerate** | Re-generates the answer (see section 3.9). |
+| **Regenerate** | Re-generates the answer (see section 3.8). |
 
 ---
 
-### 3.11 Markdown Rendering
+### 3.10 Markdown Rendering
 
 AI responses render full Markdown:
 
@@ -221,7 +209,7 @@ AI responses render full Markdown:
 
 ---
 
-### 3.12 Chat History
+### 3.11 Chat History
 
 Click the history icon in the chat header to open the history panel.
 
@@ -264,20 +252,7 @@ Maximum upload size per batch is set by MAX_UPLOAD_SIZE_MB (default 200 MB).
 
 ---
 
-### 4.2 Ingest a Web Page by URL
-
-You can add any public web page to your knowledge base without downloading the file manually:
-
-1. Open the Knowledge Base view.
-2. Click Add from URL.
-3. Paste the URL and click Fetch.
-4. The app fetches the page, extracts the article text, saves it as a .txt file, and runs the ingestion pipeline automatically.
-
-This is useful for adding documentation pages, blog posts, or any publicly accessible content.
-
----
-
-### 4.3 The Ingestion Pipeline
+### 4.2 The Ingestion Pipeline
 
 After uploading, a four-step durable workflow runs to embed your documents:
 
@@ -292,7 +267,7 @@ Progress is shown as an animated timeline. When all four steps complete, the doc
 
 ---
 
-### 4.4 Browsing and Deleting Documents
+### 4.3 Browsing and Deleting Documents
 
 | Feature | How to use |
 |---------|------------|
@@ -311,9 +286,8 @@ After deletion the AI immediately stops finding that document. To permanently re
 | Ask about a document once | Attach it in chat |
 | Ask about the same document repeatedly | Add it to the Knowledge Base |
 | Synthesise across multiple documents | Add all of them to the Knowledge Base |
-| Uploading a PDF | Knowledge Base only |
+| Chat about a PDF one-off | Attach it in chat (text extracted automatically) |
 | Asking about an image or chart | Chat attachment (vision) |
-| Adding a web page | Knowledge Base then Add from URL |
 
 ---
 
@@ -322,10 +296,10 @@ After deletion the AI immediately stops finding that document. To permanently re
 ### Get better answers
 
 - **Name the document.** Mentioning the filename in your question helps the AI focus on the right source.
-- **Use the scope filter.** When you have many documents indexed, restrict retrieval to the relevant ones (section 3.8).
 - **Ask follow-up questions.** Context from earlier in a session is preserved — build on previous answers.
 - **Check the Context sidebar.** If an answer seems wrong, see exactly which chunks the AI used.
-- **Edit and retry.** If a question was ambiguous, use edit-and-resend to rephrase rather than starting a new session (section 3.9).
+- **Edit and retry.** If a question was ambiguous, use edit-and-resend to rephrase rather than starting a new session (section 3.8).
+- **Use the Thinking panel.** For complex questions, expand the reasoning panel to understand how the AI is approaching the problem.
 
 ### Keyboard shortcuts
 
@@ -351,13 +325,12 @@ Work through this checklist:
 1. Open the Knowledge Base view and confirm the file appears in the document list.
 2. If it is missing, upload it and wait for all four ingestion steps to complete.
 3. If it is listed but the AI still misses it, try re-phrasing your question — semantic search matches meaning, not exact keywords.
-4. Use the scope filter to restrict the search to that specific document.
-5. Check the Context sidebar after your question to see which sources were actually used.
+4. Check the Context sidebar after your question to see which sources were actually used.
 
 ---
 
 **Q: Can I chat about a PDF without adding it to the Knowledge Base?**
-Not directly. PDFs must be indexed through the Knowledge Base. For one-off text files, use the chat attachment feature instead.
+Yes. Click the paperclip icon in the chat input, select your PDF, and send it with your question. The app extracts the text automatically and the AI reads it inline. This is great for one-off documents. For files you query regularly, add them to the Knowledge Base so you never need to re-attach.
 
 ---
 
@@ -372,12 +345,12 @@ Yes. The AI has access to a calculator tool and a real-time clock tool. For gene
 ---
 
 **Q: How do I search only one specific document?**
-Use the scope filter (section 3.8). Click the filter icon in the chat input, select the document you want, and the AI will restrict retrieval to that file only. Clear the filter to search everything again.
+Mention the document name directly in your question — for example: "According to annual_report_2024.pdf, what was the total revenue?" The AI uses the filename as a strong retrieval signal. For complete isolation, attach the document directly in chat.
 
 ---
 
 **Q: How many documents can I index?**
-There is no hard limit. FAISS search degrades gracefully as the index grows. For very large collections, use the scope filter to focus queries on the relevant subset.
+There is no hard limit. FAISS search degrades gracefully as the index grows. For very large collections, mention the relevant filename in your query to help the AI focus.
 
 ---
 
@@ -392,8 +365,13 @@ Delete vector_store.faiss and vector_store.json from the project root, and remov
 ---
 
 **Q: What is the Save to KB card that appears after sending a file?**
-When you attach a text file in chat, the app offers to permanently index it into the Knowledge Base so you can query it in future sessions. Click Add to KB to accept, or dismiss to skip.
+When you attach a text file or PDF in chat, the app offers to permanently index it into the Knowledge Base so you can query it in future sessions. Click Add to KB to accept, or dismiss to skip.
 
 ---
 
-*This guide covers CogniVault as of May 2026 — including voice input, vision, thinking panel, edit-and-resend, citation preview, 9-format ingestion, and URL ingestion.*
+**Q: Does the AI remember our previous conversations?**
+Within a single session, yes — the full conversation history is preserved so you can ask follow-up questions naturally. Previous sessions are saved to the history panel but their content is not automatically injected into new conversations. Start a new session fresh, or continue an existing one from the history panel.
+
+---
+
+*This guide covers CogniVault as of May 2026 — including voice input, vision, thinking panel, edit-and-resend, citation preview, and 9-format ingestion.*

@@ -122,11 +122,24 @@ _MAX_ANALYSIS_CHARS = 10_000   # ~2 500 tokens — keeps inner calls fast
 
 @tool
 def list_documents() -> str:
-    """List all documents currently indexed in the knowledge base,
-    with their file type and chunk count.
-    Use this to discover what documents are available before searching."""
+    """List documents currently available for querying.
+
+    When a scope filter is active (set by the user), only the filtered
+    documents are listed — do not mention or search documents outside
+    this scope. Use this to discover what is available before searching."""
+    source_filter = _source_filter_ctx.get()
     active = [m for m in vector_db.metadata if not m.get("deleted")]
+
+    # Apply scope filter if one is active.
+    if source_filter:
+        active = [m for m in active if m.get("source", "") in source_filter]
+
     if not active:
+        if source_filter:
+            return (
+                f"No indexed chunks found for the scoped document(s): "
+                f"{', '.join(source_filter)}. The file may not be ingested yet."
+            )
         return (
             "The knowledge base is empty — no documents have been indexed yet. "
             "Upload a file and run ingestion to get started."
@@ -141,7 +154,10 @@ def list_documents() -> str:
             docs[source] = {"type": dtype, "chunk_count": 0}
         docs[source]["chunk_count"] += 1
 
-    lines = [f"📚 Knowledge Base — {len(docs)} document(s) indexed:\n"]
+    scope_note = (
+        f" [scope: {', '.join(source_filter)}]" if source_filter else ""
+    )
+    lines = [f"📚 Knowledge Base{scope_note} — {len(docs)} document(s):\n"]
     for name in sorted(docs):
         info = docs[name]
         lines.append(

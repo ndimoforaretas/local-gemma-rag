@@ -106,11 +106,16 @@ async def get_suggestions():
     the KB is empty or the LLM call fails.
     """
     # Collect unique document titles from the in-memory vector store.
+    # Exclude built-in app docs (GUIDE.md) — they are meta-content, not
+    # user documents, so they should never drive the dynamic suggestions.
+    _EXCLUDED_SOURCES = {"GUIDE.md", "guide.md"}
     titles = list(
         {
             m.get("source", "").split(" > ")[-1]
             for m in vector_db.metadata
-            if not m.get("deleted") and m.get("source")
+            if not m.get("deleted")
+            and m.get("source")
+            and m.get("source", "").split(" > ")[-1] not in _EXCLUDED_SOURCES
         }
     )[:8]
 
@@ -120,9 +125,14 @@ async def get_suggestions():
     titles_text = "\n".join(f"- {t}" for t in titles)
     prompt = (
         f"You have a knowledge base containing these documents:\n{titles_text}\n\n"
-        "Generate exactly 4 short questions a user might ask about these documents. "
-        "Respond ONLY with a valid JSON array and nothing else:\n"
-        '[{"label": "up to 6 words", "prompt": "full question"}]'
+        "Generate exactly 4 practical questions a user might ask to get useful insights "
+        "from these documents. Focus on content, facts, and comparisons — not on app "
+        "features or technical processes.\n\n"
+        "Rules:\n"
+        "- label: a concise 2–5 word title for the card (e.g. \"Main findings\", \"Key dates\", \"Compare sections\")\n"
+        "- prompt: the full question the user will send\n"
+        "- Return ONLY a valid JSON array, no explanation, no markdown:\n"
+        '[{"label": "Main findings", "prompt": "What are the main findings in these documents?"}, ...]'
     )
 
     try:

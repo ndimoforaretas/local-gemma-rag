@@ -6,7 +6,6 @@ import {
   Loader2,
   Database,
   Trash2,
-  Link,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -41,8 +40,6 @@ export function KnowledgeSync() {
     "Files sorted by Name A-Z.",
   );
   const [isDragActive, setIsDragActive] = useState(false);
-  const [urlInput, setUrlInput] = useState("");
-  const [urlLoading, setUrlLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragDepthRef = useRef(0);
   const dropZoneHintId = useId();
@@ -224,33 +221,6 @@ export function KnowledgeSync() {
     if (!e.target.files || e.target.files.length === 0) return;
     uploadFiles(e.target.files);
     if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const handleUrlIngest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const url = urlInput.trim();
-    if (!url || urlLoading) return;
-
-    setUrlLoading(true);
-    setSyncError(null);
-    setSyncNotice(null);
-
-    try {
-      const result = await api.ingestUrl(url);
-      setUrlInput("");
-      setSyncStatus("SYNCING");
-      setWorkflowId(result.workflow_id);
-      setSyncNotice(
-        `URL saved as "${result.filename}" (${result.chars_extracted.toLocaleString()} chars). Ingesting…`,
-      );
-    } catch (err) {
-      setSyncStatus("ERROR");
-      setSyncError(
-        err instanceof Error ? err.message : "Failed to ingest URL.",
-      );
-    } finally {
-      setUrlLoading(false);
-    }
   };
 
   const isFileDrag = (e: React.DragEvent<HTMLDivElement>) =>
@@ -502,43 +472,10 @@ export function KnowledgeSync() {
               <p
                 id={dropZoneHintId}
                 className="text-xs sm:text-sm text-[#727785] dark:text-[#8c909f]">
-                PDF, TXT, MD, CSV, DOCX files only
+                PDF · DOCX · MD · TXT · CSV · PPTX · XLSX · HTML — up to 200 MB
               </p>
             </div>
           </div>
-
-          {/* URL Ingestion */}
-          <form
-            onSubmit={handleUrlIngest}
-            className="flex flex-col sm:flex-row gap-2 sm:gap-3"
-          >
-            <div className="relative flex-1">
-              <Link
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#727785] dark:text-[#8c909f] pointer-events-none"
-              />
-              <input
-                type="url"
-                value={urlInput}
-                onChange={(e) => setUrlInput(e.target.value)}
-                placeholder="Paste a URL to import from the web…"
-                disabled={!canUpload || urlLoading}
-                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-[#c2c6d6] dark:border-[#424754] bg-[#f2f4f6] dark:bg-[#191b23] text-sm text-[#191c1e] dark:text-[#e1e2ec] placeholder-[#727785] dark:placeholder-[#8c909f] focus:outline-none focus:ring-2 focus:ring-[#0058be]/20 dark:focus:ring-[#a855f7]/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={!urlInput.trim() || !canUpload || urlLoading}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#0058be] hover:bg-[#0047a0] text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
-            >
-              {urlLoading ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Link size={16} />
-              )}
-              {urlLoading ? "Importing…" : "Import URL"}
-            </button>
-          </form>
         </div>
 
         {syncNotice && (

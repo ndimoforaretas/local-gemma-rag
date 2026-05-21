@@ -13,7 +13,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tooltip } from "./Tooltip";
 import { ChatMessageList } from "./ChatMessageList";
 import { ChatInput } from "./ChatInput";
-import { DocScopeFilter } from "./DocScopeFilter";
 import { ContextSidebar } from "./ContextSidebar";
 import { HistorySidebar } from "./HistorySidebar";
 import { ConfirmationModal } from "./ConfirmationModal";
@@ -59,7 +58,6 @@ export function KnowledgeBase() {
   const [isLoading, setIsLoading] = useState(false);
   const [contextItems, setContextItems] = useState<ContextItem[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [documentFilter, setDocumentFilter] = useState<string[]>([]);
   // Controls the mobile sources drawer (< lg). On desktop the sidebar is always visible.
   const [isContextOpen, setIsContextOpen] = useState(false);
   const [pendingKBFiles, setPendingKBFiles] = useState<SaveToKBFile[]>([]);
@@ -284,7 +282,7 @@ export function KnowledgeBase() {
         userMessage,
         attachments,
         currentSessionId,
-        documentFilter.length > 0 ? documentFilter : undefined,
+        undefined,
         trimHistoryToTurns,
       );
 
@@ -322,9 +320,16 @@ export function KnowledgeBase() {
       const appendText = (text: string) => {
         if (!text) return;
         fullText += text;
+        // Strip any <think>…</think> blocks the model may have leaked into
+        // message.content (Gemma 4 sometimes emits them even with thinking
+        // disabled).  We operate on the full accumulated string so a tag
+        // spanning multiple chunks is handled correctly.
+        const cleanText = fullText
+          .replace(/<think>[\s\S]*?<\/think>/gi, "")
+          .trimStart();
         updateSessionMessages(currentSessionId, (prev) =>
           prev.map((msg) =>
-            msg.id === aiMsgId ? { ...msg, content: fullText } : msg,
+            msg.id === aiMsgId ? { ...msg, content: cleanText } : msg,
           ),
         );
       };
@@ -676,19 +681,13 @@ export function KnowledgeBase() {
           </div>
         )}
 
-        {/* Document scope filter + Input */}
-        <div className="flex flex-col gap-1.5">
-          <DocScopeFilter
-            selected={documentFilter}
-            onChange={setDocumentFilter}
-          />
-          <ChatInput
-            input={input}
-            isLoading={isLoading}
-            onInputChange={setInput}
-            onSend={handleSend}
-          />
-        </div>
+        {/* Input */}
+        <ChatInput
+          input={input}
+          isLoading={isLoading}
+          onInputChange={setInput}
+          onSend={handleSend}
+        />
       </div>
 
       {/* Context Sidebar — desktop push layout (≥ lg) */}
