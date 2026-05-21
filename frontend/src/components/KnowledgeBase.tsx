@@ -198,8 +198,6 @@ export function KnowledgeBase() {
     updateSessionMessages(activeSessionId, (prev) =>
       prev.slice(0, messageIndex),
     );
-    setContextItems([]);
-    updateSessionContextItems(activeSessionId, []);
     // turns before this user message = floor(messageIndex / 2)
     handleSend([], newContent, Math.floor(messageIndex / 2));
   };
@@ -219,8 +217,6 @@ export function KnowledgeBase() {
     updateSessionMessages(activeSessionId, (prev) =>
       prev.slice(0, messageIndex),
     );
-    setContextItems([]);
-    updateSessionContextItems(activeSessionId, []);
     // turns before the preceding user message = floor((messageIndex - 1) / 2)
     handleSend([], userMsg.content, Math.floor((messageIndex - 1) / 2));
   };
@@ -238,6 +234,9 @@ export function KnowledgeBase() {
     setIsLoading(true);
     setPendingKBFiles([]);
     setKbSaveStatus("idle");
+    // Every new send starts with a clean citation slate — old citations from
+    // the same session must not bleed into the new response's sidebar.
+    setContextItems([]);
 
     // Build lightweight previews for chat history persistence
     const messagePreviews: MessageAttachment[] = [];
@@ -283,6 +282,9 @@ export function KnowledgeBase() {
       setActiveSessionId(currentSessionId);
       isNewChatRef.current = false;
     }
+
+    // Persist the cleared citations now that we have a confirmed session id.
+    updateSessionContextItems(currentSessionId, []);
 
     const newMsgId = Date.now().toString();
     updateSessionMessages(currentSessionId, (prev) => [
