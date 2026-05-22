@@ -49,17 +49,24 @@ from backend.tools.agent_tools import (
 
 settings = get_settings()
 
-ollama_model = OllamaModel(
-    host=settings.ollama_host,
-    model_id=settings.llm_model,
-    # Disable Ollama-level thinking in Phase 2 (Strands agent call).
-    # Phase 1 already streams thinking via a direct ollama.AsyncClient call
-    # with options={"thinking": True}.  Without this flag, Gemma 4's default
-    # modelfile may still emit <think>…</think> tokens inside message.content,
-    # which causes responses to appear truncated (text before the closing tag
-    # is swallowed by the markdown renderer on the frontend).
-    options={"thinking": False},
-)
+def _make_ollama_model() -> OllamaModel:
+    """Create a fresh OllamaModel for a single request.
+
+    Constructing per-request (rather than sharing a module-level singleton)
+    ensures no per-call state on the model object is shared across concurrent
+    sessions.  OllamaModel holds only configuration so construction is cheap.
+    """
+    return OllamaModel(
+        host=settings.ollama_host,
+        model_id=settings.llm_model,
+        # Disable Ollama-level thinking in Phase 2 (Strands agent call).
+        # Phase 1 already streams thinking via a direct ollama.AsyncClient call
+        # with options={"thinking": True}.  Without this flag, Gemma 4's default
+        # modelfile may still emit <think>…</think> tokens inside message.content,
+        # which causes responses to appear truncated (text before the closing tag
+        # is swallowed by the markdown renderer on the frontend).
+        options={"thinking": False},
+    )
 
 # ── Session isolation ─────────────────────────────────────────────────────────
 
@@ -362,7 +369,7 @@ async def run_rag_stream(
 
         # Create a fresh Agent for this request (no shared mutable state).
         agent = Agent(
-            model=ollama_model,
+            model=_make_ollama_model(),
             tools=[
                 search_knowledge_base,
                 list_documents,
@@ -404,7 +411,7 @@ async def run_rag_stream(
                     # since the last text chunk.  Emitting here (rather than at
                     # tool-call start) guarantees the tool has already run and
                     # _last_doc_ctx is fully populated.
-                    all_docs = _last_doc_ctx.get()
+                    all_docs = _last_doc_ctx.get() or []
                     while emitted_docs < len(all_docs):
                         yield f'{json.dumps({"type": "metadata", "data": all_docs[emitted_docs]})}\n'
                         emitted_docs += 1
