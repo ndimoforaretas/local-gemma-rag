@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from backend.config import get_settings, logger
 from backend.middleware import RequestIDMiddleware, register_exception_handlers
 from backend.models.schemas import HealthResponse
-from backend.routers import audio, history, knowledge, rag
+from backend.routers import audio, history, knowledge, progress, rag
 from backend.services.ingest import dbos as ingest_dbos
 from backend.services.vector_db import vector_db
 
@@ -75,6 +75,7 @@ app.include_router(rag.router)
 app.include_router(knowledge.router)
 app.include_router(history.router)
 app.include_router(audio.router)
+app.include_router(progress.router)
 
 
 # ── Health check ─────────────────────────────────────────────────────────────
