@@ -20,6 +20,7 @@ import type {
   SaveToKBResponse,
   SuggestionsResponse,
   IndexedDocument,
+  CategoriesResponse,
 } from "../types/api";
 
 const API_BASE = ""; // same-origin in dev and production
@@ -89,13 +90,22 @@ export const api = {
     return handleJsonResponse<KBResponse>(resp);
   },
 
-  // Upload PDF documents
-  upload: async (formData: FormData): Promise<UploadResponse> => {
+  // Upload documents, optionally assigning them to a category
+  upload: async (formData: FormData, category?: string): Promise<UploadResponse> => {
+    if (category) {
+      formData.append("category", category);
+    }
     const resp = await fetch(`${API_BASE}/upload`, {
       method: "POST",
       body: formData,
     });
     return handleJsonResponse<UploadResponse>(resp);
+  },
+
+  // List all known category names
+  getCategories: async (): Promise<CategoriesResponse> => {
+    const resp = await fetch(`${API_BASE}/api/categories`);
+    return handleJsonResponse<CategoriesResponse>(resp);
   },
 
   // Delete a document from the knowledge base

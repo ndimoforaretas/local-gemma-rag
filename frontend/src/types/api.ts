@@ -30,6 +30,7 @@ export interface IndexedDocument {
   name: string;
   type: string;
   chunk_count: number;
+  category?: string;
 }
 
 // ── Generic ─────────────────────────────────────────────────────────
@@ -69,6 +70,10 @@ export interface Message {
   thinking?: string;
   /** Optional follow-up suggestion chips (backend may populate in future). */
   followupChips?: string[];
+  /** Document scope filter that was active when this message was sent. */
+  scopeFilter?: string[];
+  /** Human-readable label for the scope (e.g. category name or "3 documents"). */
+  scopeLabel?: string;
 }
 
 export interface ContextItem {
@@ -152,6 +157,12 @@ export interface SaveToKBFile {
 export interface SaveToKBResponse extends StatusResponse {
   workflow_id?: string;
   saved_files: string[];
+}
+
+// ── Categories ──────────────────────────────────────────────────────
+
+export interface CategoriesResponse {
+  categories: string[];
 }
 
 // ── System ──────────────────────────────────────────────────────────
