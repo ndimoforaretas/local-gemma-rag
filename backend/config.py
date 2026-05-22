@@ -40,7 +40,9 @@ class Settings(BaseSettings):
         "  • Mixed (images + files): cover ALL inputs — describe images first, then address file content. "
         "Never silently ignore an attachment.\n"
         "Do NOT call search_knowledge_base when attachments are present.\n"
-        "Format code with triple backticks (e.g., ```python)."
+        "Format code with triple backticks (e.g., ```python).\n"
+        "IMPORTANT: Do NOT output <think> or </think> tags in your response. "
+        "Output your answer directly without any XML-style reasoning tags."
     )
 
     # --- Vector Store ---

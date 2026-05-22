@@ -123,13 +123,19 @@ async def get_knowledge_base():
             return KBResponse()
 
         # First-pass: build source → (category, type) map.
+        # categories.json is consulted as a fallback for documents indexed
+        # before the category field was added to chunk metadata.
+        cat_map = _read_categories()
         source_category: dict[str, str] = {}
         source_type: dict[str, str] = {}
         for chunk in active_chunks:
             src = chunk.get("source", "")
             if not src or src in source_category:
                 continue
-            source_category[src] = chunk.get("category") or "General"
+            chunk_cat = chunk.get("category") or "General"
+            if chunk_cat == "General" and src in cat_map:
+                chunk_cat = cat_map[src]
+            source_category[src] = chunk_cat
             source_type[src] = chunk.get("type", "file")
 
         # Second-pass: group files by category, enrich with filesystem stats.
@@ -388,9 +394,18 @@ def list_indexed_docs():
     Used by the frontend document-scope filter so users can pick which
     documents the agent should search.
 
-    Response: ``{"documents": [{"name": str, "type": str, "chunk_count": int}]}``
+    Response: ``{"documents": [{"name": str, "type": str, "chunk_count": int, "category": str}]}``
+
+    The ``category`` field is resolved from ``categories.json`` when the
+    chunk metadata lacks an explicit category (i.e. for documents indexed
+    before the category feature was added).
     """
-    return {"documents": vector_db.list_documents()}
+    docs = vector_db.list_documents()
+    cat_map = _read_categories()
+    for doc in docs:
+        if doc.get("category", "General") == "General" and doc["name"] in cat_map:
+            doc["category"] = cat_map[doc["name"]]
+    return {"documents": docs}
 
 
 # ── Categories ───────────────────────────────────────────────────────────────

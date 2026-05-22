@@ -12,6 +12,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tooltip } from "./Tooltip";
 import { ChatMessageList } from "./ChatMessageList";
 import { ChatInput } from "./ChatInput";
+import { DocScopeFilter } from "./DocScopeFilter";
 import { ContextSidebar } from "./ContextSidebar";
 import { HistorySidebar } from "./HistorySidebar";
 import { ConfirmationModal } from "./ConfirmationModal";
@@ -23,6 +24,7 @@ import type {
   Attachment,
   MessageAttachment,
   SaveToKBFile,
+  IndexedDocument,
 } from "../types/api";
 
 function generateThumbnail(
@@ -46,6 +48,27 @@ function generateThumbnail(
   });
 }
 
+function computeScopeLabel(filter: string[], docs: IndexedDocument[]): string {
+  if (filter.length === 0) return "";
+  const grouped: Record<string, string[]> = {};
+  for (const doc of docs) {
+    const cat = doc.category ?? "General";
+    (grouped[cat] ??= []).push(doc.name);
+  }
+  const categories = Object.keys(grouped);
+  const fullCats = categories.filter(
+    (c) => grouped[c].every((n) => filter.includes(n)) && grouped[c].some((n) => filter.includes(n)),
+  );
+  const hasPartial = categories.some(
+    (c) => grouped[c].some((n) => filter.includes(n)) && !grouped[c].every((n) => filter.includes(n)),
+  );
+  if (fullCats.length === 1 && !hasPartial && grouped[fullCats[0]].length === filter.length) {
+    return fullCats[0];
+  }
+  if (filter.length === 1) return filter[0];
+  return `${filter.length} documents`;
+}
+
 export function KnowledgeBase() {
   const queryClient = useQueryClient();
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -59,6 +82,7 @@ export function KnowledgeBase() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   // Controls the mobile sources drawer (< lg). On desktop the sidebar is always visible.
   const [isContextOpen, setIsContextOpen] = useState(false);
+  const [documentFilter, setDocumentFilter] = useState<string[]>([]);
   const [pendingKBFiles, setPendingKBFiles] = useState<SaveToKBFile[]>([]);
   const [kbSaveStatus, setKbSaveStatus] = useState<
     "idle" | "saving" | "indexing" | "done" | "error"
@@ -107,6 +131,13 @@ export function KnowledgeBase() {
 
   const saveHistoryMutation = useMutation({
     mutationFn: (newSessions: ChatSession[]) => api.saveHistory(newSessions),
+  });
+
+  // Shared cache with DocScopeFilter — no extra network request.
+  const { data: indexedDocsData } = useQuery({
+    queryKey: ["indexedDocs"],
+    queryFn: () => api.listIndexedDocs(),
+    staleTime: 30_000,
   });
 
   const deleteHistoryMutation = useMutation({
@@ -319,6 +350,13 @@ export function KnowledgeBase() {
     // Persist the cleared citations now that we have a confirmed session id.
     updateSessionContextItems(currentSessionId, []);
 
+    // Capture and clear the scope filter so it's stamped on this message only.
+    const activeScopeFilter = documentFilter.length > 0 ? [...documentFilter] : undefined;
+    const activeScopeLabel = activeScopeFilter
+      ? computeScopeLabel(activeScopeFilter, indexedDocsData?.documents ?? [])
+      : undefined;
+    setDocumentFilter([]);
+
     const newMsgId = Date.now().toString();
     updateSessionMessages(currentSessionId, (prev) => [
       ...prev,
@@ -327,6 +365,8 @@ export function KnowledgeBase() {
         role: "user",
         content: userMessage,
         attachments: messagePreviews.length > 0 ? messagePreviews : undefined,
+        scopeFilter: activeScopeFilter,
+        scopeLabel: activeScopeLabel,
       },
     ]);
 
@@ -339,7 +379,7 @@ export function KnowledgeBase() {
         userMessage,
         attachments,
         currentSessionId,
-        undefined,
+        documentFilter.length > 0 ? documentFilter : undefined,
         trimHistoryToTurns,
       );
 
@@ -381,6 +421,10 @@ export function KnowledgeBase() {
         // disabled).  We operate on the full accumulated string so a tag
         // spanning multiple chunks is handled correctly.
         const stripped = fullText
+          // Pass 1: recover word fragments where the model split a word across
+          // <think> boundaries, e.g. "<think>Float</think>ing" → "Floating"
+          .replace(/<think>(\S+)<\/think>(\S)/gi, (_, inner, next) => inner + next)
+          // Pass 2: strip any remaining <think>…</think> blocks wholesale
           .replace(/<think>[\s\S]*?<\/think>/gi, "")
           .trimStart();
         const cleanText =
@@ -568,6 +612,15 @@ export function KnowledgeBase() {
         ),
       );
     } finally {
+      // Guard: if the stream ended but produced no text and no error message,
+      // surface a fallback rather than leaving an empty bubble.
+      updateSessionMessages(currentSessionId, (prev) =>
+        prev.map((msg) =>
+          msg.id === aiMsgId && !msg.content
+            ? { ...msg, content: "No response received. The server may have encountered an error — please try again." }
+            : msg,
+        ),
+      );
       setIsLoading(false);
       if (textFilesForKB.length > 0) {
         setPendingKBFiles(textFilesForKB);
@@ -769,13 +822,19 @@ export function KnowledgeBase() {
           </div>
         )}
 
-        {/* Input */}
-        <ChatInput
-          input={input}
-          isLoading={isLoading}
-          onInputChange={setInput}
-          onSend={handleSend}
-        />
+        {/* Scope filter + Input */}
+        <div className="flex flex-col gap-2 shrink-0">
+          <DocScopeFilter
+            selected={documentFilter}
+            onChange={setDocumentFilter}
+          />
+          <ChatInput
+            input={input}
+            isLoading={isLoading}
+            onInputChange={setInput}
+            onSend={handleSend}
+          />
+        </div>
       </div>
 
       {/* Context Sidebar — desktop push layout (≥ lg) */}
