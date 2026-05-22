@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     # --- Vector Store ---
     index_file: str = "vector_store.faiss"
     metadata_file: str = "vector_store.json"
+    categories_file: str = "categories.json"
     docs_dir: str = "docs"
     chunk_size: int = 1000
     chunk_overlap: int = 100

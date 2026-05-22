@@ -12,7 +12,7 @@ from typing import Optional
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from backend.config import get_settings, logger
@@ -110,81 +110,57 @@ _MAX_FILE_SIZE_BYTES = settings.max_upload_size_mb * 1024 * 1024
 @router.get("/kb", response_model=KBResponse)
 async def get_knowledge_base():
     """
-    Return the knowledge base structure derived from indexed document metadata.
-    Groups files into logical folders for the frontend drill-down UI.
+    Return the knowledge base grouped by category.
+
+    Each unique category in chunk metadata becomes a KBFolder.  Files without
+    a category field (legacy chunks) fall back to "General".  Folders are
+    returned in alphabetical order so the UI is stable across reloads.
     """
     try:
-        if not os.path.exists(settings.metadata_file):
+        # Use the in-memory vector_db to avoid a redundant disk read.
+        active_chunks = [m for m in vector_db.metadata if not m.get("deleted")]
+        if not active_chunks:
             return KBResponse()
 
-        with open(settings.metadata_file, "r") as f:
-            metadata = json.load(f)
+        # First-pass: build source → (category, type) map.
+        source_category: dict[str, str] = {}
+        source_type: dict[str, str] = {}
+        for chunk in active_chunks:
+            src = chunk.get("source", "")
+            if not src or src in source_category:
+                continue
+            source_category[src] = chunk.get("category") or "General"
+            source_type[src] = chunk.get("type", "file")
 
-        unique_sources = list(
-            set(m["source"] for m in metadata if not m.get("deleted"))
-        )
+        # Second-pass: group files by category, enrich with filesystem stats.
+        category_files: dict[str, list[KBFile]] = {}
+        category_updated: dict[str, str] = {}
 
-        folders: dict = {}
-        for src in unique_sources:
-            root = "General Documents"
-            description = "Miscellaneous documents and indexed resources."
-            icon = "file-text"
-
-            if " > " in src:
-                parts = src.split(" > ")
-                root = parts[0]
-                icon = "package"
-                description = f"Repository for {root.replace('_', ' ')} related intelligence."
-            subfolder_name = src.split(" > ")[1] if " > " in src else src
-
-            file_meta = KBFile(
-                name=src.split(" > ")[-1] if " > " in src else src,
-                type="pdf" if src.lower().endswith(".pdf") else "file",
-            )
-
+        for src, cat in source_category.items():
+            file_meta = KBFile(name=src, type=source_type.get(src, "file"))
             try:
-                for f_name in os.listdir(settings.docs_dir):
-                    if src.endswith(f_name):
-                        path = os.path.join(settings.docs_dir, f_name)
-                        stats = os.stat(path)
-                        file_meta.size = f"{stats.st_size / 1024:.1f} KB"
-                        file_meta.modified = datetime.fromtimestamp(
-                            stats.st_mtime
-                        ).strftime("%b %d, %Y")
-                        break
+                file_path = os.path.join(settings.docs_dir, src)
+                if os.path.exists(file_path):
+                    stats = os.stat(file_path)
+                    file_meta.size = f"{stats.st_size / 1024:.1f} KB"
+                    file_meta.modified = datetime.fromtimestamp(
+                        stats.st_mtime
+                    ).strftime("%b %d, %Y")
+                    category_updated[cat] = file_meta.modified
             except OSError:
-                logger.warning("Could not stat files in %s", settings.docs_dir)
+                pass
 
-            if root not in folders:
-                folders[root] = {
-                    "name": root,
-                    "description": description,
-                    "icon": icon,
-                    "updated": "Just now",
-                    "subfolders": {},
-                }
-
-            if subfolder_name not in folders[root]["subfolders"]:
-                folders[root]["subfolders"][subfolder_name] = KBSubfolder(
-                    name=subfolder_name, files=[file_meta]
-                )
-            else:
-                existing = folders[root]["subfolders"][subfolder_name].files
-                if not any(f.name == file_meta.name for f in existing):
-                    existing.append(file_meta)
-
-            if file_meta.modified != "N/A":
-                folders[root]["updated"] = file_meta.modified
+            category_files.setdefault(cat, []).append(file_meta)
 
         result = [
             KBFolder(
-                name=data["name"],
-                description=data["description"],
-                icon=data["icon"],
-                updated=data["updated"],
-                subfolders=list(data["subfolders"].values()),
+                name=cat,
+                description=f"Documents and resources in the {cat} category.",
+                icon="folder",
+                updated=category_updated.get(cat, "Just now"),
+                subfolders=[KBSubfolder(name=cat, files=files)],
             )
-            for data in folders.values()
+            for cat, files in sorted(category_files.items())
         ]
 
         return KBResponse(folders=result)
@@ -222,15 +198,22 @@ def _validate_upload(file: UploadFile) -> Optional[str]:
 
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_documents(files: list[UploadFile] = File(...)):
+async def upload_documents(
+    files: list[UploadFile] = File(...),
+    category: str = Form("General"),
+):
     """
-    Upload PDF files to the docs/ directory for later ingestion.
+    Upload documents to the docs/ directory for later ingestion.
 
     Validates:
     - File count (max 20 per request)
-    - File extension (.pdf only)
-    - MIME type (application/pdf)
-    - File size (configurable, default 50 MB)
+    - File extension (allowed types)
+    - MIME type
+    - File size (configurable)
+
+    The optional ``category`` form field groups the uploaded files under a
+    named category so the knowledge base and chat scope filter can be
+    organised by topic (e.g. "Health", "Finance").  Defaults to "General".
     """
     if len(files) > _MAX_FILES_PER_REQUEST:
         raise HTTPException(
@@ -267,6 +250,14 @@ async def upload_documents(files: list[UploadFile] = File(...)):
 
         saved_files.append(safe_name)
         logger.info("Uploaded file: %s (%d bytes)", safe_name, bytes_written)
+
+    # Persist category assignments so the ingestion workflow can stamp each
+    # chunk with the correct category when it processes these files.
+    safe_category = category.strip() or "General"
+    cat_map = _read_categories()
+    for name in saved_files:
+        cat_map[name] = safe_category
+    _write_categories(cat_map)
 
     return UploadResponse(
         status="success",
@@ -402,6 +393,36 @@ def list_indexed_docs():
     return {"documents": vector_db.list_documents()}
 
 
+# ── Categories ───────────────────────────────────────────────────────────────
+
+@router.get("/api/categories")
+def list_categories():
+    """
+    Return a sorted list of all known category names.
+
+    Combines two sources so the list is complete even before ingestion runs:
+    - Chunk metadata in the in-memory vector DB (already-indexed files).
+    - ``categories.json`` on disk (files uploaded but not yet ingested).
+
+    "General" is always present as the default fallback.
+    """
+    names: set[str] = {"General"}
+
+    # Already-indexed chunks
+    for chunk in vector_db.metadata:
+        if not chunk.get("deleted"):
+            cat = chunk.get("category")
+            if cat:
+                names.add(cat)
+
+    # Pending (uploaded but not yet ingested)
+    for cat in _read_categories().values():
+        if cat:
+            names.add(cat)
+
+    return {"categories": sorted(names)}
+
+
 # ── Vault Stats ──────────────────────────────────────────────────────────────
 
 @router.get("/api/vault/stats")
@@ -527,6 +548,11 @@ async def ingest_url(payload: _URLIngestRequest):
         f.write(f"Source URL: {url}\n\n{text.strip()}")
     logger.info("URL ingest: saved %s (%d chars) as %s", url[:80], len(text), safe_name)
 
+    # Register under "General" so /kb shows it correctly.
+    cat_map = _read_categories()
+    cat_map.setdefault(safe_name, "General")
+    _write_categories(cat_map)
+
     # ── Trigger ingestion workflow ────────────────────────────────────
     try:
         handle = ingest_dbos.start_workflow(ingest_workflow)
@@ -597,6 +623,29 @@ async def delete_document(filename: str):
 
 import base64
 
+# ── Category helpers ──────────────────────────────────────────────────────────
+
+def _read_categories() -> dict[str, str]:
+    """Return the filename→category mapping from disk."""
+    path = settings.categories_file
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, "r") as f:
+            return json.load(f)
+    except Exception:
+        logger.exception("Failed to read categories file")
+        return {}
+
+
+def _write_categories(mapping: dict[str, str]) -> None:
+    """Persist the filename→category mapping to disk."""
+    try:
+        with open(settings.categories_file, "w") as f:
+            json.dump(mapping, f, indent=2)
+    except Exception:
+        logger.exception("Failed to write categories file")
+
 
 class _SaveToKBFileItem(BaseModel):
     name: str
@@ -646,6 +695,12 @@ async def save_to_kb(request: _SaveToKBRequest):
 
     if not saved:
         raise HTTPException(status_code=400, detail="No valid files could be saved")
+
+    # Register saved files under "General" so they appear correctly in /kb.
+    cat_map = _read_categories()
+    for name in saved:
+        cat_map.setdefault(name, "General")
+    _write_categories(cat_map)
 
     # Auto-trigger ingestion
     try:

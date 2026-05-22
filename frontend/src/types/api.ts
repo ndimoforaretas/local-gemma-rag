@@ -154,6 +154,12 @@ export interface SaveToKBResponse extends StatusResponse {
   saved_files: string[];
 }
 
+// ── Categories ──────────────────────────────────────────────────────
+
+export interface CategoriesResponse {
+  categories: string[];
+}
+
 // ── System ──────────────────────────────────────────────────────────
 
 export interface HealthResponse {

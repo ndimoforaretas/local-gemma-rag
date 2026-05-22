@@ -49,6 +49,19 @@ def _file_sha256(path: str) -> str:
     return h.hexdigest()
 
 
+def _get_file_category(filename: str) -> str:
+    """Look up the category assigned to a file during upload."""
+    cats_path = settings.categories_file
+    if not os.path.exists(cats_path):
+        return "General"
+    try:
+        with open(cats_path, "r") as f:
+            mapping: Dict[str, str] = json.load(f)
+        return mapping.get(filename) or "General"
+    except Exception:
+        return "General"
+
+
 # Minimum character count from pypdf before we try OCR on a page.
 _OCR_TEXT_THRESHOLD = 50
 
@@ -520,6 +533,7 @@ def process_single_document(filename: str) -> List[Dict]:
         return []
 
     file_hash = _file_sha256(path)
+    category = _get_file_category(filename)
 
     docs: List[Dict] = []
     for text, page_num in pages:
@@ -529,6 +543,7 @@ def process_single_document(filename: str) -> List[Dict]:
             "type": doc_type,
             "page": page_num,
             "file_hash": file_hash,
+            "category": category,
             "min_chunk_length": min_chunk_length,
         })
     return docs
@@ -616,7 +631,8 @@ def ingest_workflow() -> int:
                 "content": chunk,
                 "chunk_id": i,
                 "page": doc["page"],
-                "file_hash": doc.get("file_hash"),   # SHA-256 for change detection
+                "file_hash": doc.get("file_hash"),
+                "category": doc.get("category", "General"),
             })
             texts_to_embed.append(chunk)
 
