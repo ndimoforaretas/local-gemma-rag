@@ -27,7 +27,8 @@ export function WorkshopCard({
         type="button"
         onClick={onDelete}
         aria-label="Delete workshop"
-        className="absolute top-3 right-3 p-1.5 rounded-lg text-[#727785] hover:text-rose-500 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+        title="Delete workshop"
+        className="absolute top-3 right-3 p-1.5 rounded-lg text-[#727785] dark:text-[#8c909f] hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
       >
         <Trash2 size={14} />
       </button>

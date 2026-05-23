@@ -22,11 +22,11 @@ export function WorkshopMode({ onExit }: { onExit: () => void }) {
   return (
     <div className="h-full overflow-y-auto">
       {/*
-        min-h-full + flex column lets the phase content claim the remaining
-        vertical space via `my-auto`, exactly like QuizMode. Top bar stays
-        anchored at the top; long content (a full lesson) still scrolls.
+        Top-aligned: workshop content (list, outline, lesson) accumulates over
+        time, so we want new cards/lessons to grow downward from the top rather
+        than start in the middle of the viewport.
       */}
-      <div className="max-w-4xl mx-auto w-full px-6 sm:px-8 py-8 min-h-full flex flex-col">
+      <div className="max-w-6xl mx-auto w-full px-6 sm:px-8 py-8">
         <div className="flex items-center justify-between mb-6">
           <BackToHubButton onClick={onExit} />
           <div className="flex items-center gap-2">
@@ -37,7 +37,7 @@ export function WorkshopMode({ onExit }: { onExit: () => void }) {
           </div>
         </div>
 
-        <div className="my-auto w-full">
+        <div className="w-full">
 
         {w.phase === "list" && (
           <WorkshopList

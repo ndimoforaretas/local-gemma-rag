@@ -268,7 +268,40 @@ def generate_lesson(
     text = response["message"]["content"].strip()
     # Strip any accidental <think> blocks, mirroring the chat fix.
     text = re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE).strip()
+    text = _clean_lesson_content(text)
     return text or f"# {lesson_title}\n\n(The model returned no content. Try regenerating.)"
+
+
+def _clean_lesson_content(text: str) -> str:
+    """
+    Strip chat-style preamble and outro the model sometimes adds despite the prompt.
+
+    Removes:
+      - Any prose before the first `#` heading (the lesson title).
+      - Common closing patterns ("If you have a specific question…",
+        "Let me know…", "Feel free to ask…", "I hope this helps…").
+      - Trailing "If you have questions about any of these topics…" blocks.
+    """
+    # Trim everything before the first Markdown heading line.
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        if line.lstrip().startswith("#"):
+            text = "\n".join(lines[i:])
+            break
+
+    # Strip common chat-outro patterns from the end. Matches on the start
+    # of a new paragraph so we don't accidentally chop mid-sentence.
+    outro_patterns = [
+        r"\n\s*(?:\*\*|__)?If you (?:have|'d like)[^\n]*[\s\S]*$",
+        r"\n\s*(?:\*\*|__)?Let me know if[\s\S]*$",
+        r"\n\s*(?:\*\*|__)?Feel free to ask[\s\S]*$",
+        r"\n\s*(?:\*\*|__)?I hope this helps[\s\S]*$",
+        r"\n\s*(?:\*\*|__)?Hope this (?:helps|clarifies)[\s\S]*$",
+    ]
+    for pat in outro_patterns:
+        text = re.sub(pat, "", text, flags=re.IGNORECASE)
+
+    return text.strip()
 
 
 def _build_lesson_prompt(**kw) -> str:
@@ -281,7 +314,12 @@ def _build_lesson_prompt(**kw) -> str:
     )
     return (
         "You write a single workshop lesson as well-structured Markdown. "
-        "Do NOT output JSON, XML, or <think> tags. Just the Markdown lesson body.\n\n"
+        "Output ONLY the lesson body — no preamble, no acknowledgment of the source material, "
+        "no offers to clarify or answer follow-up questions, no <think> or XML tags, no JSON. "
+        "Your response MUST start with the exact heading line `# " + kw["lesson_title"] + "` "
+        "and nothing before it. Your response MUST end after the last Self-check question — "
+        "do NOT add 'If you have any questions…', 'Let me know…', 'Feel free to ask…', or "
+        "any other chat-style outro.\n\n"
         f"WORKSHOP: {kw['workshop_title']}\n"
         f"WORKSHOP SUMMARY: {kw['workshop_summary']}\n"
         f"DIFFICULTY: {kw['difficulty']}. {_DIFF_NOTE[kw['difficulty']]}\n\n"

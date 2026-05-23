@@ -1,14 +1,23 @@
 /**
- * Full-page lesson reader: rendered markdown + Mark complete + Back to outline.
+ * Full-page lesson reader: rendered Markdown + side TOC + Mark complete.
  *
- * Uses `marked` (already in the bundle for chat) to render the lesson body.
- * Completion state is owned by the parent — this view just exposes a button.
+ * Layout (desktop):  [ article (flex-1) ] [ sticky TOC (48 px col) ]
+ * Layout (narrow):   single column; TOC hidden.
+ *
+ * Rendering pipeline:
+ *   1. Strip the leading H1 from the backend Markdown (we render the title
+ *      explicitly so it can be styled separately from body content).
+ *   2. Parse H2/H3 headings client-side to build the TOC list.
+ *   3. Render Markdown via `marked`, then assign matching `id`s to the H2/H3
+ *      elements in the DOM so anchor scrolling + IntersectionObserver work.
  */
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { marked } from "marked";
 import type { LessonContent } from "./types";
+import { TocSidebar } from "./TocSidebar";
+import { parseTocHeadings } from "./tocHelpers";
 
 export function LessonView({
   lesson,
@@ -25,10 +34,26 @@ export function LessonView({
   onBack: () => void;
   onMarkComplete: () => void;
 }) {
-  const html = useMemo(
-    () => (lesson ? (marked.parse(lesson.content_md) as string) : ""),
+  // Body markdown with any leading H1 removed (title rendered separately).
+  const bodyMd = useMemo(
+    () => (lesson ? lesson.content_md.replace(/^\s*#\s+[^\n]+\n+/, "") : ""),
     [lesson?.content_md],
   );
+  const headings = useMemo(() => parseTocHeadings(bodyMd), [bodyMd]);
+  const html = useMemo(() => (bodyMd ? (marked.parse(bodyMd) as string) : ""), [bodyMd]);
+
+  // Capture the article element when it mounts so the TOC can scroll-spy it.
+  const [articleEl, setArticleEl] = useState<HTMLElement | null>(null);
+
+  // After render, stamp matching ids onto the H2/H3 elements so anchor links work.
+  useEffect(() => {
+    if (!articleEl) return;
+    const els = articleEl.querySelectorAll("h2, h3");
+    els.forEach((el, i) => {
+      const h = headings[i];
+      if (h) el.id = h.slug;
+    });
+  }, [articleEl, html, headings]);
 
   return (
     <div className="space-y-6">
@@ -49,9 +74,21 @@ export function LessonView({
       )}
 
       {!isLoading && lesson && (
-        <article className="p-6 sm:p-8 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23] prose prose-sm dark:prose-invert max-w-none">
-          <div dangerouslySetInnerHTML={{ __html: html }} />
-        </article>
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_12rem] lg:gap-6">
+          <article
+            ref={setArticleEl}
+            className="p-6 sm:p-8 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23]"
+          >
+            <h1 className="text-3xl font-bold tracking-tight text-[#191c1e] dark:text-white mb-6">
+              {lesson.title}
+            </h1>
+            <div
+              className="prose prose-sm dark:prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
+          </article>
+          <TocSidebar headings={headings} articleEl={articleEl} />
+        </div>
       )}
 
       {!isLoading && lesson && (
