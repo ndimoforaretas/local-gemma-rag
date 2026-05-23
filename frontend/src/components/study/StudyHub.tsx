@@ -10,6 +10,7 @@ import { useState } from "react";
 import { GraduationCap, ArrowLeft } from "lucide-react";
 import { ModeCard } from "./ModeCard";
 import { QuizMode } from "./QuizMode";
+import { WorkshopMode } from "./WorkshopMode";
 import { STUDY_MODES, type StudyModeId } from "./studyModes";
 
 type ActiveMode = "hub" | StudyModeId;
@@ -19,6 +20,9 @@ export function StudyHub() {
 
   if (mode === "quiz") {
     return <QuizMode onExit={() => setMode("hub")} />;
+  }
+  if (mode === "workshop") {
+    return <WorkshopMode onExit={() => setMode("hub")} />;
   }
 
   return (

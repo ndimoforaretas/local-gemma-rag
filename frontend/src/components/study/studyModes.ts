@@ -30,7 +30,7 @@ export const STUDY_MODES: StudyModeDef[] = [
     description:
       "Multi-lesson workshops built from your knowledge base, lesson-by-lesson.",
     icon: BookOpen,
-    available: false,
+    available: true,
   },
   {
     id: "flashcards",

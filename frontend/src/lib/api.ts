@@ -32,7 +32,9 @@ async function handleJsonResponse<T>(resp: Response): Promise<T> {
     let msg = `Request failed (${resp.status})`;
     try {
       const body = await resp.json();
-      msg = body.error ?? body.detail ?? msg;
+      // detail is the specific message; error is the generic category
+      // (set by our middleware). Prefer the specific one.
+      msg = body.detail ?? body.error ?? msg;
     } catch {
       /* response may not be JSON */
     }
@@ -75,7 +77,9 @@ export const api = {
       let msg = "RAG request failed";
       try {
         const body = await resp.json();
-        msg = body.error ?? body.detail ?? msg;
+        // detail is the specific message; error is the generic category
+      // (set by our middleware). Prefer the specific one.
+      msg = body.detail ?? body.error ?? msg;
       } catch {
         /* ignore */
       }
@@ -267,6 +271,53 @@ export const api = {
   getProgressAchievements: async () => {
     const resp = await fetch(`${API_BASE}/api/progress/achievements`);
     return handleJsonResponse<import("../types/api").AchievementsResponse>(resp);
+  },
+
+  // ── Workshops ────────────────────────────────────────────────────────
+  listWorkshops: async () => {
+    const resp = await fetch(`${API_BASE}/api/study/workshops`);
+    return handleJsonResponse<import("../types/api").WorkshopListResponse>(resp);
+  },
+
+  getWorkshop: async (id: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/workshop/${id}`);
+    return handleJsonResponse<import("../types/api").Workshop>(resp);
+  },
+
+  createWorkshopOutline: async (req: {
+    difficulty: import("../types/api").WorkshopDifficulty;
+    num_lessons: number;
+    document_filter: string[];
+  }) => {
+    const resp = await fetch(`${API_BASE}/api/study/workshop/outline`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    });
+    return handleJsonResponse<import("../types/api").Workshop>(resp);
+  },
+
+  getOrGenerateLesson: async (workshopId: number, lessonIdx: number) => {
+    const resp = await fetch(
+      `${API_BASE}/api/study/workshop/${workshopId}/lesson/${lessonIdx}`,
+      { method: "POST" },
+    );
+    return handleJsonResponse<import("../types/api").LessonContent>(resp);
+  },
+
+  completeLesson: async (workshopId: number, lessonIdx: number) => {
+    const resp = await fetch(
+      `${API_BASE}/api/study/workshop/${workshopId}/lesson/${lessonIdx}/complete`,
+      { method: "POST" },
+    );
+    return handleJsonResponse<import("../types/api").LessonCompleteResponse>(resp);
+  },
+
+  deleteWorkshop: async (id: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/workshop/${id}`, {
+      method: "DELETE",
+    });
+    return handleJsonResponse<{ status: string }>(resp);
   },
 
   submitQuiz: async (req: {

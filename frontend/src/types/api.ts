@@ -206,3 +206,57 @@ export interface AchievementItem {
 export interface AchievementsResponse {
   achievements: AchievementItem[];
 }
+
+// ── Workshops ───────────────────────────────────────────────────────────
+
+export type WorkshopDifficulty = "beginner" | "intermediate" | "advanced";
+
+export interface WorkshopLesson {
+  lesson_idx: number;
+  title: string;
+  est_minutes: number;
+  completed_at: number | null;
+  has_content: boolean;
+}
+
+export interface Workshop {
+  id: number;
+  created_at: number;
+  difficulty: WorkshopDifficulty;
+  scope: string[];
+  title: string;
+  summary: string;
+  key_points: string[];
+  objectives: string[];
+  completed_at: number | null;
+  lessons: WorkshopLesson[];
+}
+
+export interface WorkshopListItem {
+  id: number;
+  created_at: number;
+  difficulty: WorkshopDifficulty;
+  title: string;
+  summary: string;
+  total_lessons: number;
+  completed_lessons: number;
+  completed_at: number | null;
+}
+
+export interface WorkshopListResponse {
+  workshops: WorkshopListItem[];
+}
+
+export interface LessonContent {
+  lesson_idx: number;
+  title: string;
+  content_md: string;
+  completed_at: number | null;
+}
+
+export interface LessonCompleteResponse {
+  lessons_total: number;
+  lessons_done: number;
+  workshop_completed: boolean;
+  newly_earned_achievements: string[];
+}

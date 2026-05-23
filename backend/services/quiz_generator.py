@@ -101,11 +101,22 @@ def generate_quiz(
     )
 
     settings = get_settings()
-    response = ollama.chat(
-        model=settings.llm_model,
-        messages=[{"role": "user", "content": prompt}],
-        options={"thinking": False, "temperature": 0.3},
-    )
+    # `format="json"` forces grammar-constrained generation in Ollama so the
+    # response is guaranteed-parseable JSON. Falls back gracefully on older
+    # ollama-python versions that don't accept the kwarg.
+    try:
+        response = ollama.chat(
+            model=settings.llm_model,
+            messages=[{"role": "user", "content": prompt}],
+            options={"thinking": False, "temperature": 0.3},
+            format="json",
+        )
+    except TypeError:
+        response = ollama.chat(
+            model=settings.llm_model,
+            messages=[{"role": "user", "content": prompt}],
+            options={"thinking": False, "temperature": 0.3},
+        )
     raw_text = response["message"]["content"]
     logger.info(
         "Quiz raw response: difficulty=%s requested=%d chars=%d",

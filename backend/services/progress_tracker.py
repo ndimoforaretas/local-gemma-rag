@@ -97,6 +97,31 @@ def _init_schema(conn: sqlite3.Connection) -> None:
 
         CREATE INDEX IF NOT EXISTS idx_quiz_finished_at
             ON quiz_attempts(finished_at);
+
+        -- Workshop Creator (Mode 2) ----------------------------------------
+        CREATE TABLE IF NOT EXISTS workshops (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at    REAL    NOT NULL,
+            difficulty    TEXT    NOT NULL,
+            scope_json    TEXT    NOT NULL,    -- JSON array of source filenames
+            title         TEXT    NOT NULL,
+            summary       TEXT    NOT NULL,
+            outline_json  TEXT    NOT NULL,    -- key_points + objectives JSON
+            completed_at  REAL                  -- set when every lesson is done
+        );
+
+        CREATE TABLE IF NOT EXISTS workshop_lessons (
+            workshop_id    INTEGER NOT NULL REFERENCES workshops(id) ON DELETE CASCADE,
+            lesson_idx     INTEGER NOT NULL,
+            title          TEXT    NOT NULL,
+            est_minutes    INTEGER NOT NULL,
+            content_md     TEXT,               -- NULL until generated on demand
+            completed_at   REAL,               -- NULL until user marks complete
+            PRIMARY KEY (workshop_id, lesson_idx)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_workshops_created
+            ON workshops(created_at);
         """
     )
     conn.commit()
@@ -187,6 +212,182 @@ def record_message(
                 "message_count": row["message_count"],
                 "newly_opened": newly_opened,
             }
+        finally:
+            conn.close()
+
+
+def create_workshop(
+    difficulty: str,
+    scope: list[str],
+    title: str,
+    summary: str,
+    key_points: list[str],
+    objectives: list[str],
+    lessons: list[dict],  # [{title, est_minutes}, ...]
+    created_at: Optional[float] = None,
+) -> int:
+    """Persist a fresh workshop + its lesson stubs. Returns the new workshop id."""
+    import json as _json
+
+    ts = created_at if created_at is not None else _dt.datetime.now().timestamp()
+    outline = {"key_points": key_points, "objectives": objectives}
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO workshops "
+                "(created_at, difficulty, scope_json, title, summary, outline_json) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (ts, difficulty, _json.dumps(scope), title, summary, _json.dumps(outline)),
+            )
+            ws_id = cur.lastrowid or 0
+            for idx, lesson in enumerate(lessons):
+                cur.execute(
+                    "INSERT INTO workshop_lessons "
+                    "(workshop_id, lesson_idx, title, est_minutes) VALUES (?, ?, ?, ?)",
+                    (ws_id, idx, lesson["title"], int(lesson.get("est_minutes", 5))),
+                )
+            conn.commit()
+            return ws_id
+        finally:
+            conn.close()
+
+
+def get_workshop(workshop_id: int) -> Optional[dict]:
+    """Return the full workshop including all lesson rows, or None if missing."""
+    import json as _json
+
+    conn = _connect()
+    try:
+        _init_schema(conn)
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM workshops WHERE id = ?", (workshop_id,))
+        row = cur.fetchone()
+        if not row:
+            return None
+        outline = _json.loads(row["outline_json"])
+        cur.execute(
+            "SELECT lesson_idx, title, est_minutes, content_md, completed_at "
+            "FROM workshop_lessons WHERE workshop_id = ? ORDER BY lesson_idx",
+            (workshop_id,),
+        )
+        lessons = [dict(r) for r in cur.fetchall()]
+        return {
+            "id": row["id"],
+            "created_at": row["created_at"],
+            "difficulty": row["difficulty"],
+            "scope": _json.loads(row["scope_json"]),
+            "title": row["title"],
+            "summary": row["summary"],
+            "key_points": outline.get("key_points", []),
+            "objectives": outline.get("objectives", []),
+            "completed_at": row["completed_at"],
+            "lessons": lessons,
+        }
+    finally:
+        conn.close()
+
+
+def list_workshops() -> list[dict]:
+    """Return all workshops with summary + completion progress, newest first."""
+    conn = _connect()
+    try:
+        _init_schema(conn)
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT w.id, w.created_at, w.difficulty, w.title, w.summary, w.completed_at, "
+            "       COUNT(l.lesson_idx) AS total_lessons, "
+            "       SUM(CASE WHEN l.completed_at IS NOT NULL THEN 1 ELSE 0 END) AS completed_lessons "
+            "FROM workshops w LEFT JOIN workshop_lessons l ON l.workshop_id = w.id "
+            "GROUP BY w.id ORDER BY w.created_at DESC"
+        )
+        return [
+            {
+                "id": r["id"],
+                "created_at": r["created_at"],
+                "difficulty": r["difficulty"],
+                "title": r["title"],
+                "summary": r["summary"],
+                "completed_at": r["completed_at"],
+                "total_lessons": int(r["total_lessons"] or 0),
+                "completed_lessons": int(r["completed_lessons"] or 0),
+            }
+            for r in cur.fetchall()
+        ]
+    finally:
+        conn.close()
+
+
+def save_lesson_content(workshop_id: int, lesson_idx: int, content_md: str) -> None:
+    """Cache a generated lesson's full markdown content."""
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            conn.execute(
+                "UPDATE workshop_lessons SET content_md = ? "
+                "WHERE workshop_id = ? AND lesson_idx = ?",
+                (content_md, workshop_id, lesson_idx),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+
+def mark_lesson_complete(workshop_id: int, lesson_idx: int) -> dict:
+    """
+    Mark a lesson complete (idempotent — re-marking keeps the first timestamp).
+    If this completes every lesson in the workshop, also stamp workshops.completed_at.
+    Returns a small summary so the caller can update achievements.
+    """
+    ts = _dt.datetime.now().timestamp()
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE workshop_lessons SET completed_at = COALESCE(completed_at, ?) "
+                "WHERE workshop_id = ? AND lesson_idx = ?",
+                (ts, workshop_id, lesson_idx),
+            )
+            cur.execute(
+                "SELECT COUNT(*) AS total, "
+                "       SUM(CASE WHEN completed_at IS NOT NULL THEN 1 ELSE 0 END) AS done "
+                "FROM workshop_lessons WHERE workshop_id = ?",
+                (workshop_id,),
+            )
+            row = cur.fetchone()
+            total = int(row["total"] or 0)
+            done = int(row["done"] or 0)
+            workshop_completed = total > 0 and done >= total
+            if workshop_completed:
+                cur.execute(
+                    "UPDATE workshops SET completed_at = COALESCE(completed_at, ?) WHERE id = ?",
+                    (ts, workshop_id),
+                )
+            conn.commit()
+            return {
+                "lessons_total": total,
+                "lessons_done": done,
+                "workshop_completed": workshop_completed,
+            }
+        finally:
+            conn.close()
+
+
+def delete_workshop(workshop_id: int) -> bool:
+    """Remove a workshop + its lessons. Returns True if a row was deleted."""
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute("DELETE FROM workshops WHERE id = ?", (workshop_id,))
+            conn.commit()
+            return cur.rowcount > 0
         finally:
             conn.close()
 
@@ -423,6 +624,20 @@ def stats_for_eval(now_ts: Optional[float] = None) -> dict:
         )
         advanced_passes = int(cur.fetchone()["n"] or 0)
 
+        # ── Workshop stats ─────────────────────────────────────────────
+        cur.execute("SELECT COUNT(*) AS n FROM workshops")
+        total_workshops_created = int(cur.fetchone()["n"] or 0)
+
+        cur.execute(
+            "SELECT COUNT(*) AS n FROM workshops WHERE completed_at IS NOT NULL"
+        )
+        workshops_completed = int(cur.fetchone()["n"] or 0)
+
+        cur.execute(
+            "SELECT COUNT(*) AS n FROM workshop_lessons WHERE completed_at IS NOT NULL"
+        )
+        lessons_completed = int(cur.fetchone()["n"] or 0)
+
         return {
             "total_seconds": total_seconds,
             "total_messages": total_messages,
@@ -434,6 +649,9 @@ def stats_for_eval(now_ts: Optional[float] = None) -> dict:
             "total_quizzes": total_quizzes,
             "best_quiz_score": best_quiz_score,
             "advanced_quiz_passes": advanced_passes,
+            "total_workshops_created": total_workshops_created,
+            "workshops_completed": workshops_completed,
+            "lessons_completed": lessons_completed,
         }
     finally:
         conn.close()

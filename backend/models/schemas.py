@@ -157,3 +157,62 @@ class QuizSubmitResponse(BaseModel):
     """Returned after recording an attempt — includes any badges just unlocked."""
     score_pct: int
     newly_earned_achievements: list[str] = []
+
+
+# ── Study Hub: Workshops ────────────────────────────────────────────────────
+
+class WorkshopCreateRequest(BaseModel):
+    """Body for POST /api/study/workshop/outline."""
+    difficulty: str = Field(..., pattern="^(beginner|intermediate|advanced)$")
+    num_lessons: int = Field(..., ge=3, le=15)
+    document_filter: list[str] = Field(..., min_length=1)
+
+
+class WorkshopLessonOut(BaseModel):
+    lesson_idx: int
+    title: str
+    est_minutes: int
+    completed_at: Optional[float] = None
+    has_content: bool = False  # whether content_md is cached
+
+
+class WorkshopOut(BaseModel):
+    id: int
+    created_at: float
+    difficulty: str
+    scope: list[str]
+    title: str
+    summary: str
+    key_points: list[str]
+    objectives: list[str]
+    completed_at: Optional[float] = None
+    lessons: list[WorkshopLessonOut]
+
+
+class WorkshopListItem(BaseModel):
+    id: int
+    created_at: float
+    difficulty: str
+    title: str
+    summary: str
+    total_lessons: int
+    completed_lessons: int
+    completed_at: Optional[float] = None
+
+
+class WorkshopListResponse(BaseModel):
+    workshops: list[WorkshopListItem]
+
+
+class LessonContentResponse(BaseModel):
+    lesson_idx: int
+    title: str
+    content_md: str
+    completed_at: Optional[float] = None
+
+
+class LessonCompleteResponse(BaseModel):
+    lessons_total: int
+    lessons_done: int
+    workshop_completed: bool
+    newly_earned_achievements: list[str] = []

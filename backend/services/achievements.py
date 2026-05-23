@@ -133,6 +133,35 @@ ACHIEVEMENTS: list[Achievement] = [
         icon="🏃",
         check=lambda s: s.get("total_quizzes", 0) >= 10,
     ),
+    # ── Workshop Creator badges (Mode 2) ─────────────────────────────────
+    Achievement(
+        code="workshop_outline",
+        name="Workshop Outline",
+        description="Generate your first workshop.",
+        icon="📋",
+        check=lambda s: s.get("total_workshops_created", 0) >= 1,
+    ),
+    Achievement(
+        code="lesson_learned",
+        name="Lesson Learned",
+        description="Complete your first workshop lesson.",
+        icon="📖",
+        check=lambda s: s.get("lessons_completed", 0) >= 1,
+    ),
+    Achievement(
+        code="workshop_graduate",
+        name="Workshop Graduate",
+        description="Finish every lesson in a single workshop.",
+        icon="🎓",
+        check=lambda s: s.get("workshops_completed", 0) >= 1,
+    ),
+    Achievement(
+        code="workshop_marathon",
+        name="Workshop Marathon",
+        description="Complete 5 workshops in total.",
+        icon="📚",
+        check=lambda s: s.get("workshops_completed", 0) >= 5,
+    ),
 ]
 
 
