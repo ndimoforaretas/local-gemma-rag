@@ -125,12 +125,12 @@ python -m backend.main
 
 The app has **four top-level sections** in the sidebar — each highlighted in purple when active, each remembered across browser refreshes:
 
-| Section              | What it's for                                                                       |
-| -------------------- | ----------------------------------------------------------------------------------- |
-| **💬 Chat**          | Ask anything about your documents. Cited answers, scope filter, voice, attachments. |
+| Section               | What it's for                                                                         |
+| --------------------- | ------------------------------------------------------------------------------------- |
+| **💬 Chat**           | Ask anything about your documents. Cited answers, scope filter, voice, attachments.   |
 | **📚 Knowledge Base** | Upload, categorise, and manage your documents. SHA-256 change detection on re-upload. |
-| **🎓 Study Hub**     | Four AI-powered study modes: Quiz · Workshop · Flashcards · Mindmaps.               |
-| **📊 Dashboard**     | Total study time, current streak, 25 achievement badges, 90-day activity heatmap.   |
+| **🎓 Study Hub**      | Four AI-powered study modes: Quiz · Workshop · Flashcards · Mindmaps.                 |
+| **📊 Dashboard**      | Total study time, current streak, 25 achievement badges, 90-day activity heatmap.     |
 
 > **Full walkthrough** — every feature, every keyboard shortcut, every export option:
 > 📖 **[docs/GUIDE.md](docs/GUIDE.md)** (also pre-loaded into the knowledge base and powers the 15-tile starter card grid on a new chat).
@@ -142,6 +142,7 @@ The app has **four top-level sections** in the sidebar — each highlighted in p
 A compact tour of what ships in the box. Each row links to the section of the user guide with the full reference.
 
 ### Chat
+
 - **🧠 Thinking Mode** — collapsible reasoning panel streams Gemma 4's chain of thought before the answer
 - **🔍 Hybrid Retrieval** — FAISS dense + BM25 keyword fused with Reciprocal Rank Fusion
 - **🔍 Document Scope Filter** — limit any question to a category or specific files; stamped on the message as a permanent badge
@@ -152,23 +153,27 @@ A compact tour of what ships in the box. Each row links to the section of the us
 - **💬 Multi-Session History** — auto-titled threads, persisted to disk
 
 ### Knowledge Base
+
 - **📄 8 document formats** — PDF (with OCR), DOCX, PPTX, XLSX, MD, CSV, TXT, HTML — each with structure-aware chunking
 - **📂 Categories** — tag documents into topical folders; powers the scope filter and Study Hub modes
 - **🔁 Hash-aware re-ingest** — re-upload an edited file and SHA-256 detection auto-replaces old chunks
 - **🛟 Durable workflows** — DBOS-checkpointed; crash-safe and resumable
 
 ### Study Hub (4 modes)
+
 - **🧠 Quiz Mode** — 5 / 10 / 20 questions · MCQ + True/False · 3 difficulties · resume on refresh · export Markdown + PDF
 - **📖 Workshop Creator** — 5 or 10 lessons · two-pass generation (outline first, lessons on demand) · sticky right-side TOC · recap quiz on completion
 - **🃏 Flashcards** — 10 / 20 / 40 cards · CSS 3D flip · per-card Got-it / Review status · status-aware gradient borders
 - **🗺️ Mindmaps** — radial concept maps · pan + zoom · export Markdown · PNG · PDF
 
 ### Progress Dashboard
+
 - **Three hero stats** — total study time, sessions, current streak
 - **🏆 25 Achievement Badges** — auto-tracked across chat (10), quizzes (4), workshops (4), flashcards (4), mindmaps (3)
 - **GitHub-style 90-day heatmap** — 5 purple intensity levels by daily duration · click any day for the drill-down modal
 
 ### Privacy & Persistence
+
 - **🔒 Privacy Vault Audit Panel** — live "zero external connections" indicator, document/chunk counts, Ollama host
 - **Everything local** — vectors, chat history, categories, study sessions, achievements all on disk
 - **Native Save-As dialogs** for exports via the browser File System Access API (with graceful fallback)
@@ -184,19 +189,19 @@ A compact tour of what ships in the box. Each row links to the section of the us
 cp .env.example .env
 ```
 
-| Variable                            | Default                                              | Description                                                  |
-| ----------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------ |
-| `LLM_MODEL`                         | `gemma4:e4b`                                         | Chat model                                                   |
-| `EMBEDDING_MODEL`                   | `embeddinggemma`                                     | Embedding model                                              |
-| `OLLAMA_HOST`                       | `http://localhost:11434`                             | Ollama server URL                                            |
-| `THINKING_MODE`                     | `true`                                               | Enable/disable 🧠 Reasoning panel                            |
-| `WHISPER_MODEL`                     | `base`                                               | Whisper model size (`tiny` · `base` · `small` · `medium`)    |
-| `DB_URL`                            | `postgresql://postgres:password@localhost:5432/dbos` | PostgreSQL connection                                        |
-| `PROGRESS_DB_FILE`                  | `progress.db`                                        | SQLite for study sessions, achievements, quizzes, decks…     |
-| `STUDY_SESSION_IDLE_GAP_SECONDS`    | `900`                                                | Idle gap (sec) that ends a study session — default 15 min    |
-| `MAX_UPLOAD_SIZE_MB`                | `500`                                                | Per-file upload limit                                        |
-| `CHUNK_SIZE`                        | `1000`                                               | Characters per chunk                                         |
-| `CHUNK_OVERLAP`                     | `100`                                                | Overlap between adjacent chunks                              |
+| Variable                         | Default                                              | Description                                               |
+| -------------------------------- | ---------------------------------------------------- | --------------------------------------------------------- |
+| `LLM_MODEL`                      | `gemma4:e4b`                                         | Chat model                                                |
+| `EMBEDDING_MODEL`                | `embeddinggemma`                                     | Embedding model                                           |
+| `OLLAMA_HOST`                    | `http://localhost:11434`                             | Ollama server URL                                         |
+| `THINKING_MODE`                  | `true`                                               | Enable/disable 🧠 Reasoning panel                         |
+| `WHISPER_MODEL`                  | `base`                                               | Whisper model size (`tiny` · `base` · `small` · `medium`) |
+| `DB_URL`                         | `postgresql://postgres:password@localhost:5432/dbos` | PostgreSQL connection                                     |
+| `PROGRESS_DB_FILE`               | `progress.db`                                        | SQLite for study sessions, achievements, quizzes, decks…  |
+| `STUDY_SESSION_IDLE_GAP_SECONDS` | `900`                                                | Idle gap (sec) that ends a study session — default 15 min |
+| `MAX_UPLOAD_SIZE_MB`             | `500`                                                | Per-file upload limit                                     |
+| `CHUNK_SIZE`                     | `1000`                                               | Characters per chunk                                      |
+| `CHUNK_OVERLAP`                  | `100`                                                | Overlap between adjacent chunks                           |
 
 ---
 
@@ -240,14 +245,14 @@ FastAPI (backend/main.py)
 
 The Strands agent has **6 tools** at its disposal. The agent decides which to call (and in what order) based on the user's question — no hard-coded routing. All run locally, all return data the agent can chain into the next call.
 
-| Tool                                              | Purpose                                                              |
-| ------------------------------------------------- | -------------------------------------------------------------------- |
-| `search_knowledge_base(query)`                    | Hybrid FAISS + BM25 search, top-7, RRF fusion. Scope-filter-aware.   |
-| `list_documents()`                                | Inventory of every indexed file with type and chunk count.           |
-| `analyze_document(filename)`                      | Inner Gemma call producing a structured summary (topics, entities, key facts). |
-| `compare_documents(doc_a, doc_b, question)`       | Inner Gemma call answering a specific question across two documents. |
-| `calculator(expression)`                          | Safe AST evaluator — no `eval()`, no arbitrary code.                 |
-| `current_time()`                                  | Timestamp for time-aware queries.                                    |
+| Tool                                        | Purpose                                                                        |
+| ------------------------------------------- | ------------------------------------------------------------------------------ |
+| `search_knowledge_base(query)`              | Hybrid FAISS + BM25 search, top-7, RRF fusion. Scope-filter-aware.             |
+| `list_documents()`                          | Inventory of every indexed file with type and chunk count.                     |
+| `analyze_document(filename)`                | Inner Gemma call producing a structured summary (topics, entities, key facts). |
+| `compare_documents(doc_a, doc_b, question)` | Inner Gemma call answering a specific question across two documents.           |
+| `calculator(expression)`                    | Safe AST evaluator — no `eval()`, no arbitrary code.                           |
+| `current_time()`                            | Timestamp for time-aware queries.                                              |
 
 ---
 
@@ -299,15 +304,15 @@ All four Study Hub modes share a defensive pattern designed around the realities
 
 ### Storage
 
-| Layer        | Files                                          | Purpose                                                     |
-| ------------ | ---------------------------------------------- | ----------------------------------------------------------- |
-| **Disk**     | `vector_store.faiss`, `vector_store.json`      | Embeddings and chunk metadata                               |
-| **Disk**     | `categories.json`                              | Document → category mapping                                 |
-| **Disk**     | `chat_history.json`                            | Multi-session chat persistence                              |
-| **SQLite**   | `progress.db`                                  | Study sessions, quizzes, workshops, decks, mindmaps, badges |
-| **RAM**      | `VectorDB` singleton                           | Sub-ms hybrid search (FAISS + BM25 in-memory)               |
-| **Postgres** | DBOS system tables                             | Workflow checkpoints for crash recovery                     |
-| **Browser**  | `localStorage`                                 | Active view + in-progress quiz resume                       |
+| Layer        | Files                                     | Purpose                                                     |
+| ------------ | ----------------------------------------- | ----------------------------------------------------------- |
+| **Disk**     | `vector_store.faiss`, `vector_store.json` | Embeddings and chunk metadata                               |
+| **Disk**     | `categories.json`                         | Document → category mapping                                 |
+| **Disk**     | `chat_history.json`                       | Multi-session chat persistence                              |
+| **SQLite**   | `progress.db`                             | Study sessions, quizzes, workshops, decks, mindmaps, badges |
+| **RAM**      | `VectorDB` singleton                      | Sub-ms hybrid search (FAISS + BM25 in-memory)               |
+| **Postgres** | DBOS system tables                        | Workflow checkpoints for crash recovery                     |
+| **Browser**  | `localStorage`                            | Active view + in-progress quiz resume                       |
 
 All storage is local. The Vault Audit Panel confirms no external connections at runtime.
 
@@ -456,6 +461,6 @@ python -m pytest backend/tests/ -v
 
 Built with [Gemma 4](https://ollama.com/library/gemma4) · [Ollama](https://ollama.com) · [Strands Agents](https://github.com/strands-agents/sdk-python) · [FastAPI](https://fastapi.tiangolo.com)
 
-_Your data. Your hardware. Your AI._
+\_Your data. Your hardware. Your AI. Your vault.\_
 
 </div>
