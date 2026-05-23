@@ -1,9 +1,11 @@
-import { MessageSquare, Database, Sun, Moon } from "lucide-react";
+import { MessageSquare, Database, GraduationCap, Sun, Moon } from "lucide-react";
 import { motion } from "framer-motion";
 
+export type AppView = "chat" | "sync" | "study";
+
 interface SidebarProps {
-  activeView: "chat" | "sync";
-  setActiveView: (view: "chat" | "sync") => void;
+  activeView: AppView;
+  setActiveView: (view: AppView) => void;
   isDark: boolean;
   onToggleDark: () => void;
 }
@@ -12,6 +14,7 @@ export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: Sid
   const navItems = [
     { id: "chat", label: "Chat", icon: MessageSquare },
     { id: "sync", label: "Knowledge Base", icon: Database },
+    { id: "study", label: "Study Hub", icon: GraduationCap },
   ] as const;
 
   return (
@@ -40,7 +43,7 @@ export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: Sid
         {navItems.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
-            onClick={() => setActiveView(id as "chat" | "sync")}
+            onClick={() => setActiveView(id as AppView)}
             aria-current={activeView === id ? "page" : undefined}
             className={`
               relative flex items-center gap-3 px-3 py-3 rounded-xl text-base font-medium transition-all duration-200

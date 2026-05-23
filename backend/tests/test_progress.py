@@ -224,11 +224,12 @@ def test_daily_endpoint_validates_range(client):
     assert client.get("/api/progress/daily?days=400").status_code == 422
 
 
-def test_achievements_endpoint_lists_all_10_badges(client):
+def test_achievements_endpoint_lists_all_seeded_badges(client):
     res = client.get("/api/progress/achievements")
     assert res.status_code == 200
     body = res.json()
-    assert len(body["achievements"]) == 10
+    # 10 chat-progress badges + 4 quiz badges added in Step 4.
+    assert len(body["achievements"]) >= 14
     # All locked initially.
     assert all(a["earned_at"] is None for a in body["achievements"])
     assert all(a["is_earned"] is False for a in body["achievements"])

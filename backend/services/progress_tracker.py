@@ -85,6 +85,18 @@ def _init_schema(conn: sqlite3.Connection) -> None:
             code       TEXT PRIMARY KEY,
             earned_at  REAL NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS quiz_attempts (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            finished_at    REAL    NOT NULL,
+            difficulty     TEXT    NOT NULL,
+            num_questions  INTEGER NOT NULL,
+            correct_count  INTEGER NOT NULL,
+            score_pct      INTEGER NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_quiz_finished_at
+            ON quiz_attempts(finished_at);
         """
     )
     conn.commit()
@@ -175,6 +187,32 @@ def record_message(
                 "message_count": row["message_count"],
                 "newly_opened": newly_opened,
             }
+        finally:
+            conn.close()
+
+
+def record_quiz_attempt(
+    difficulty: str,
+    num_questions: int,
+    correct_count: int,
+    score_pct: int,
+    finished_at: Optional[float] = None,
+) -> int:
+    """Persist a finished quiz attempt. Returns the new row id."""
+    ts = finished_at if finished_at is not None else _dt.datetime.now().timestamp()
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO quiz_attempts "
+                "(finished_at, difficulty, num_questions, correct_count, score_pct) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (ts, difficulty, num_questions, correct_count, score_pct),
+            )
+            conn.commit()
+            return cur.lastrowid or 0
         finally:
             conn.close()
 
@@ -370,6 +408,21 @@ def stats_for_eval(now_ts: Optional[float] = None) -> dict:
         streak = _current_streak_days(conn)
         local_hour = _dt.datetime.fromtimestamp(ts).hour
 
+        # ── Quiz stats ───────────────────────────────────────────────────
+        cur.execute("SELECT COUNT(*) AS n FROM quiz_attempts")
+        total_quizzes = int(cur.fetchone()["n"] or 0)
+
+        cur.execute(
+            "SELECT MAX(score_pct) AS top FROM quiz_attempts"
+        )
+        best_quiz_score = int(cur.fetchone()["top"] or 0)
+
+        cur.execute(
+            "SELECT COUNT(*) AS n FROM quiz_attempts "
+            "WHERE difficulty = 'advanced' AND score_pct >= 80"
+        )
+        advanced_passes = int(cur.fetchone()["n"] or 0)
+
         return {
             "total_seconds": total_seconds,
             "total_messages": total_messages,
@@ -378,6 +431,9 @@ def stats_for_eval(now_ts: Optional[float] = None) -> dict:
             "scope_filter_uses": scope_filter_uses,
             "current_streak_days": streak,
             "local_hour": local_hour,
+            "total_quizzes": total_quizzes,
+            "best_quiz_score": best_quiz_score,
+            "advanced_quiz_passes": advanced_passes,
         }
     finally:
         conn.close()

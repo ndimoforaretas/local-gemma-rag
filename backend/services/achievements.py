@@ -104,6 +104,35 @@ ACHIEVEMENTS: list[Achievement] = [
         icon="🎓",
         check=lambda s: s["longest_session_seconds"] >= 30 * 60,
     ),
+    # ── Quiz Mode badges (Step 4) ─────────────────────────────────────────
+    Achievement(
+        code="first_quiz",
+        name="First Quiz",
+        description="Complete your first quiz.",
+        icon="🧠",
+        check=lambda s: s.get("total_quizzes", 0) >= 1,
+    ),
+    Achievement(
+        code="perfect_score",
+        name="Perfect Score",
+        description="Score 100% on any quiz.",
+        icon="💯",
+        check=lambda s: s.get("best_quiz_score", 0) >= 100,
+    ),
+    Achievement(
+        code="advanced_scholar",
+        name="Advanced Scholar",
+        description="Score 80% or higher on an Advanced-level quiz.",
+        icon="🎖️",
+        check=lambda s: s.get("advanced_quiz_passes", 0) >= 1,
+    ),
+    Achievement(
+        code="quiz_marathon",
+        name="Quiz Marathon",
+        description="Complete 10 quizzes in total.",
+        icon="🏃",
+        check=lambda s: s.get("total_quizzes", 0) >= 10,
+    ),
 ]
 
 

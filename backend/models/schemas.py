@@ -119,3 +119,41 @@ class WorkflowStatusResponse(BaseModel):
     workflow_id: str
     status: str
     steps: list[WorkflowStep] = []
+
+
+# ── Study Hub: Quiz ─────────────────────────────────────────────────────────
+
+class QuizGenerateRequest(BaseModel):
+    """Body for /api/study/quiz/generate."""
+    difficulty: str = Field(..., pattern="^(beginner|intermediate|advanced)$")
+    num_questions: int = Field(..., ge=1, le=20)
+    question_types: list[str] = Field(..., min_length=1)
+    document_filter: Optional[list[str]] = None
+
+
+class QuizQuestionOut(BaseModel):
+    """One quiz question shipped to the frontend."""
+    type: str
+    question: str
+    options: list[str]
+    correct_index: int
+    explanation: str = ""
+
+
+class QuizGenerateResponse(BaseModel):
+    questions: list[QuizQuestionOut]
+    source_chunks_used: int
+
+
+class QuizSubmitRequest(BaseModel):
+    """Body for /api/study/quiz/submit."""
+    difficulty: str = Field(..., pattern="^(beginner|intermediate|advanced)$")
+    num_questions: int = Field(..., ge=1, le=20)
+    correct_count: int = Field(..., ge=0, le=20)
+    scope_used: Optional[list[str]] = None
+
+
+class QuizSubmitResponse(BaseModel):
+    """Returned after recording an attempt — includes any badges just unlocked."""
+    score_pct: int
+    newly_earned_achievements: list[str] = []

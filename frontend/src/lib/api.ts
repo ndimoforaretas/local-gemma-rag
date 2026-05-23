@@ -228,6 +228,47 @@ export const api = {
     const resp = await fetch(`${API_BASE}/rag/suggestions`);
     return handleJsonResponse<SuggestionsResponse>(resp);
   },
+
+  // ── Study Hub ────────────────────────────────────────────────────────
+  generateQuiz: async (req: {
+    difficulty: "beginner" | "intermediate" | "advanced";
+    num_questions: number;
+    question_types: ("mcq" | "true_false")[];
+    document_filter?: string[];
+  }): Promise<{
+    questions: {
+      type: "mcq" | "true_false";
+      question: string;
+      options: string[];
+      correct_index: number;
+      explanation: string;
+    }[];
+    source_chunks_used: number;
+  }> => {
+    const resp = await fetch(`${API_BASE}/api/study/quiz/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    });
+    return handleJsonResponse(resp);
+  },
+
+  submitQuiz: async (req: {
+    difficulty: "beginner" | "intermediate" | "advanced";
+    num_questions: number;
+    correct_count: number;
+    scope_used?: string[];
+  }): Promise<{
+    score_pct: number;
+    newly_earned_achievements: string[];
+  }> => {
+    const resp = await fetch(`${API_BASE}/api/study/quiz/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    });
+    return handleJsonResponse(resp);
+  },
 };
 
 export default api;
