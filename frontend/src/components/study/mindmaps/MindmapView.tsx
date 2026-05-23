@@ -5,6 +5,7 @@
  */
 
 import { useMemo } from "react";
+import { Download } from "lucide-react";
 import type { Mindmap } from "./types";
 import { MindmapCanvas } from "./MindmapCanvas";
 import { MindmapExportMenu } from "./MindmapExportMenu";
@@ -22,7 +23,7 @@ export function MindmapView({
 
   return (
     <div className="space-y-4">
-      <header className="flex items-center justify-between gap-4 flex-wrap">
+      <header className="flex items-start justify-between gap-4 flex-wrap">
         <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-wider font-semibold inline-block px-2 py-0.5 rounded-full bg-[#a855f7]/15 text-[#a855f7] dark:text-[#ddb7ff] mb-2">
             {mindmap.tree.children.length} themes ·{" "}
@@ -32,11 +33,17 @@ export function MindmapView({
             {mindmap.title}
           </h1>
         </div>
-        <MindmapExportMenu
-          mindmap={mindmap}
-          svgId={svgId}
-          onExported={onExported}
-        />
+        <div className="flex flex-col items-end gap-1.5">
+          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
+            <Download size={12} />
+            Export this mindmap
+          </div>
+          <MindmapExportMenu
+            mindmap={mindmap}
+            svgId={svgId}
+            onExported={onExported}
+          />
+        </div>
       </header>
 
       <p className="text-xs text-[#727785] dark:text-[#8c909f]">

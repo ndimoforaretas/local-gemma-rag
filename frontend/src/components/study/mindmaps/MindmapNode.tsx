@@ -1,21 +1,32 @@
 /**
- * One mindmap node rendered as an SVG group: rounded rect + centered label.
+ * One mindmap node rendered as a pure SVG group: rounded rect + wrapped text.
  *
  * Visual tier by level:
- *   0 (root)  — large purple pill with white text
- *   1 (theme) — medium purple-tinted pill
- *   2 (leaf)  — small outlined pill
+ *   0 (root)  — large pill, white text on purple→pink gradient
+ *   1 (theme) — medium pill, purple-tinted bg, purple text
+ *   2 (leaf)  — small pill, white bg, near-black text
  *
- * Label uses an SVG <foreignObject> wrapping HTML so it word-wraps cleanly.
+ * We use native SVG <text>/<tspan> (not <foreignObject>) so the canvas
+ * doesn't get tainted during PNG export. Labels are wrapped client-side
+ * into up to 3 lines; overflow is truncated with an ellipsis.
  */
 
 import type { PositionedNode } from "./types";
 
-const SIZES: Record<0 | 1 | 2, { w: number; h: number; fontSize: number; pad: number }> = {
-  0: { w: 220, h: 80, fontSize: 18, pad: 10 },
-  1: { w: 180, h: 64, fontSize: 14, pad: 8 },
-  2: { w: 150, h: 52, fontSize: 12, pad: 6 },
+interface SizeSpec {
+  w: number;
+  h: number;
+  fontSize: number;
+  maxCharsPerLine: number;
+}
+
+const SIZES: Record<0 | 1 | 2, SizeSpec> = {
+  0: { w: 230, h: 80, fontSize: 17, maxCharsPerLine: 18 },
+  1: { w: 190, h: 64, fontSize: 13, maxCharsPerLine: 22 },
+  2: { w: 160, h: 54, fontSize: 12, maxCharsPerLine: 22 },
 };
+
+const MAX_LINES = 3;
 
 export function MindmapNodeSvg({ node }: { node: PositionedNode }) {
   const s = SIZES[node.level];
@@ -38,6 +49,13 @@ export function MindmapNodeSvg({ node }: { node: PositionedNode }) {
       : node.level === 1
         ? "#a855f7"
         : "#191c1e";
+  const fontWeight = node.level === 0 ? 800 : node.level === 1 ? 700 : 600;
+
+  const lines = wrapLabel(node.label, s.maxCharsPerLine, MAX_LINES);
+  const lineHeight = s.fontSize * 1.2;
+  const totalHeight = lines.length * lineHeight;
+  // First-line baseline so the whole block centers vertically in the pill.
+  const firstLineY = s.h / 2 - totalHeight / 2 + lineHeight / 2;
 
   return (
     <g transform={`translate(${node.x - s.w / 2}, ${node.y - s.h / 2})`}>
@@ -49,31 +67,59 @@ export function MindmapNodeSvg({ node }: { node: PositionedNode }) {
         stroke={stroke}
         strokeWidth={strokeWidth}
       />
-      <foreignObject x={s.pad} y={0} width={s.w - 2 * s.pad} height={s.h}>
-        <div
-          // xmlns required so foreignObject children render in some browsers.
-          // Cast suppresses TS — the attribute is valid here even though
-          // React's HTML div type doesn't enumerate it.
-          {...({ xmlns: "http://www.w3.org/1999/xhtml" } as Record<string, string>)}
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            textAlign: "center",
-            fontFamily: "system-ui, -apple-system, sans-serif",
-            fontSize: s.fontSize,
-            fontWeight: node.level === 0 ? 800 : node.level === 1 ? 700 : 600,
-            color: textColor,
-            lineHeight: 1.15,
-            wordBreak: "break-word",
-            overflow: "hidden",
-          }}
-        >
-          {node.label}
-        </div>
-      </foreignObject>
+      <text
+        x={s.w / 2}
+        y={firstLineY}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontSize={s.fontSize}
+        fontWeight={fontWeight}
+        fill={textColor}
+        fontFamily="system-ui, -apple-system, sans-serif"
+      >
+        {lines.map((line, i) => (
+          <tspan key={i} x={s.w / 2} dy={i === 0 ? 0 : lineHeight}>
+            {line}
+          </tspan>
+        ))}
+      </text>
     </g>
   );
+}
+
+/**
+ * Word-wrap a label into up to `maxLines` lines of `maxChars` each.
+ * If the text doesn't fit, the last line is truncated with an ellipsis.
+ */
+function wrapLabel(text: string, maxChars: number, maxLines: number): string[] {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let current = "";
+  let i = 0;
+  while (i < words.length && lines.length < maxLines) {
+    const candidate = current ? `${current} ${words[i]}` : words[i];
+    if (candidate.length <= maxChars) {
+      current = candidate;
+      i++;
+    } else if (current) {
+      lines.push(current);
+      current = "";
+    } else {
+      // Single word longer than the limit — break it hard.
+      lines.push(words[i].slice(0, maxChars - 1) + "…");
+      i++;
+      current = "";
+    }
+  }
+  if (current && lines.length < maxLines) lines.push(current);
+
+  // Overflow: more words remain — ellipsize the last line.
+  if (i < words.length && lines.length > 0) {
+    const last = lines[lines.length - 1];
+    lines[lines.length - 1] =
+      last.length + 1 > maxChars
+        ? last.slice(0, maxChars - 1) + "…"
+        : last + "…";
+  }
+  return lines;
 }

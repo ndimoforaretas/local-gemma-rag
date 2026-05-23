@@ -37,10 +37,14 @@ function walk(node: MindmapNode, depth: number, out: string[]) {
   node.children?.forEach((c) => walk(c, depth + 1, out));
 }
 
-export function downloadMarkdown(mm: Mindmap): void {
+export async function downloadMarkdown(mm: Mindmap): Promise<void> {
   const md = buildMarkdown(mm);
   const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
-  triggerDownload(blob, `${slugify(mm.title)}-${dateStamp()}.md`);
+  await saveBlob(blob, `${slugify(mm.title)}-${dateStamp()}.md`, {
+    description: "Markdown file",
+    mimeType: "text/markdown",
+    extension: "md",
+  });
 }
 
 // ── SVG → PNG ──────────────────────────────────────────────────────────────
@@ -94,7 +98,11 @@ export async function downloadPng(mm: Mindmap, svgId: string): Promise<void> {
   const svg = document.getElementById(svgId) as SVGSVGElement | null;
   if (!svg) throw new Error("Mindmap SVG element not found in DOM.");
   const blob = await svgToPng(svg);
-  triggerDownload(blob, `${slugify(mm.title)}-${dateStamp()}.png`);
+  await saveBlob(blob, `${slugify(mm.title)}-${dateStamp()}.png`, {
+    description: "PNG image",
+    mimeType: "image/png",
+    extension: "png",
+  });
 }
 
 // ── PDF (via hidden-iframe print) ──────────────────────────────────────────
@@ -142,11 +150,60 @@ export async function printAsPdf(mm: Mindmap, svgId: string): Promise<void> {
 
 // ── Shared helpers ─────────────────────────────────────────────────────────
 
-function triggerDownload(blob: Blob, filename: string): void {
+/**
+ * Save a Blob to disk. Tries the native File System Access API first so the
+ * user gets a real "Save As…" dialog (renamable, location-pickable). Falls
+ * back to the classic anchor-download for browsers that don't support it
+ * (Firefox / Safari). A user cancellation in the picker is silently swallowed.
+ */
+async function saveBlob(
+  blob: Blob,
+  suggestedName: string,
+  opts: { description: string; mimeType: string; extension: string },
+): Promise<void> {
+  const w = window as unknown as {
+    showSaveFilePicker?: (options: {
+      suggestedName?: string;
+      types?: {
+        description?: string;
+        accept: Record<string, string[]>;
+      }[];
+    }) => Promise<{
+      createWritable: () => Promise<{
+        write: (data: Blob) => Promise<void>;
+        close: () => Promise<void>;
+      }>;
+    }>;
+  };
+
+  if (typeof w.showSaveFilePicker === "function") {
+    try {
+      const handle = await w.showSaveFilePicker({
+        suggestedName,
+        types: [
+          {
+            description: opts.description,
+            accept: { [opts.mimeType]: [`.${opts.extension}`] },
+          },
+        ],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    } catch (err) {
+      // User cancelled the dialog — bail silently. Real errors fall through
+      // to the legacy download so the file isn't lost.
+      if ((err as DOMException).name === "AbortError") return;
+      // Any other error: fall back below.
+    }
+  }
+
+  // Legacy fallback: classic anchor download (goes to default Downloads folder).
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = filename;
+  a.download = suggestedName;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

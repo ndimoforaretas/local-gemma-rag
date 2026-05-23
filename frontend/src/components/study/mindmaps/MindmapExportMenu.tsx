@@ -24,11 +24,13 @@ export function MindmapExportMenu({
   const run = async (kind: "md" | "png" | "pdf") => {
     setBusy(kind);
     try {
-      if (kind === "md") downloadMarkdown(mindmap);
+      if (kind === "md") await downloadMarkdown(mindmap);
       else if (kind === "png") await downloadPng(mindmap, svgId);
       else await printAsPdf(mindmap, svgId);
       onExported();
     } catch (err) {
+      // Cancellation of the native Save-As dialog is benign; real errors
+      // bubble up here so we surface them to the dev console.
       console.error("Mindmap export failed:", err);
     } finally {
       setBusy(null);
@@ -42,18 +44,21 @@ export function MindmapExportMenu({
         busy={busy === "md"}
         icon={<FileText size={14} />}
         label=".md"
+        tooltip="Download as Markdown — opens a Save As dialog where you can rename and choose a folder"
       />
       <ExportBtn
         onClick={() => run("png")}
         busy={busy === "png"}
         icon={<ImageIcon size={14} />}
         label=".png"
+        tooltip="Download as PNG image — opens a Save As dialog where you can rename and choose a folder"
       />
       <ExportBtn
         onClick={() => run("pdf")}
         busy={busy === "pdf"}
         icon={<Printer size={14} />}
         label=".pdf"
+        tooltip="Save as PDF via the browser print dialog"
         primary
       />
     </div>
@@ -65,12 +70,14 @@ function ExportBtn({
   busy,
   icon,
   label,
+  tooltip,
   primary = false,
 }: {
   onClick: () => void;
   busy: boolean;
   icon: React.ReactNode;
   label: string;
+  tooltip: string;
   primary?: boolean;
 }) {
   const base =
@@ -79,7 +86,14 @@ function ExportBtn({
     ? "bg-[#a855f7] hover:bg-[#9333ea] text-white"
     : "border border-[#c2c6d6] dark:border-[#424754] hover:border-[#a855f7]/50 text-[#191c1e] dark:text-[#e1e2ec]";
   return (
-    <button type="button" onClick={onClick} disabled={busy} className={`${base} ${variant}`}>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={busy}
+      title={tooltip}
+      aria-label={tooltip}
+      className={`${base} ${variant}`}
+    >
       {busy ? <Loader2 size={14} className="animate-spin" /> : icon}
       {label}
     </button>
