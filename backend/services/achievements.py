@@ -162,6 +162,35 @@ ACHIEVEMENTS: list[Achievement] = [
         icon="📚",
         check=lambda s: s.get("workshops_completed", 0) >= 5,
     ),
+    # ── Flashcards badges (Mode 3) ────────────────────────────────────────
+    Achievement(
+        code="first_deck",
+        name="First Deck",
+        description="Generate your first flashcard deck.",
+        icon="🃏",
+        check=lambda s: s.get("total_decks_created", 0) >= 1,
+    ),
+    Achievement(
+        code="card_reviewer",
+        name="Card Reviewer",
+        description="Flip 50 flashcards in total.",
+        icon="📇",
+        check=lambda s: s.get("total_card_flips", 0) >= 50,
+    ),
+    Achievement(
+        code="deck_master",
+        name="Deck Master",
+        description="Mark every card in a single deck as mastered.",
+        icon="🎴",
+        check=lambda s: s.get("decks_mastered", 0) >= 1,
+    ),
+    Achievement(
+        code="deck_collector",
+        name="Deck Collector",
+        description="Create 5 flashcard decks.",
+        icon="🧩",
+        check=lambda s: s.get("total_decks_created", 0) >= 5,
+    ),
 ]
 
 

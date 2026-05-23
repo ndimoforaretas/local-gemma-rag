@@ -260,3 +260,42 @@ export interface LessonCompleteResponse {
   workshop_completed: boolean;
   newly_earned_achievements: string[];
 }
+
+// ── Flashcards ──────────────────────────────────────────────────────────
+
+export type FlashcardStatus = "mastered" | "review" | null;
+
+export interface Flashcard {
+  card_idx: number;
+  front: string;
+  back: string;
+  status: FlashcardStatus;
+  flip_count: number;
+}
+
+export interface FlashcardDeck {
+  id: number;
+  created_at: number;
+  difficulty: WorkshopDifficulty;
+  scope: string[];
+  title: string;
+  card_count: number;
+  cards: Flashcard[];
+}
+
+export interface FlashcardDeckListItem {
+  id: number;
+  created_at: number;
+  difficulty: WorkshopDifficulty;
+  title: string;
+  card_count: number;
+  mastered_count: number;
+}
+
+export interface FlashcardDeckListResponse {
+  decks: FlashcardDeckListItem[];
+}
+
+export interface FlashcardStatusResponse {
+  newly_earned_achievements: string[];
+}

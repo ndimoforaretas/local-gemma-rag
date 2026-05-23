@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { GraduationCap, ArrowLeft } from "lucide-react";
+import { FlashcardsMode } from "./FlashcardsMode";
 import { ModeCard } from "./ModeCard";
 import { QuizMode } from "./QuizMode";
 import { WorkshopMode } from "./WorkshopMode";
@@ -23,6 +24,9 @@ export function StudyHub() {
   }
   if (mode === "workshop") {
     return <WorkshopMode onExit={() => setMode("hub")} />;
+  }
+  if (mode === "flashcards") {
+    return <FlashcardsMode onExit={() => setMode("hub")} />;
   }
 
   return (

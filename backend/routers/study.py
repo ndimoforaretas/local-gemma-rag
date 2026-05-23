@@ -15,6 +15,13 @@ from typing import cast
 from fastapi import APIRouter, HTTPException
 
 from backend.models.schemas import (
+    FlashcardCreateRequest,
+    FlashcardDeckListItem,
+    FlashcardDeckListResponse,
+    FlashcardDeckOut,
+    FlashcardOut,
+    FlashcardStatusRequest,
+    FlashcardStatusResponse,
     LessonCompleteResponse,
     LessonContentResponse,
     QuizGenerateRequest,
@@ -29,7 +36,12 @@ from backend.models.schemas import (
     WorkshopOut,
 )
 from backend.services import achievements as ach_service
-from backend.services import progress_tracker, quiz_generator, workshop_generator
+from backend.services import (
+    flashcard_generator,
+    progress_tracker,
+    quiz_generator,
+    workshop_generator,
+)
 
 logger = logging.getLogger("cognivault.study")
 
@@ -293,5 +305,126 @@ def _workshop_to_response(ws: dict | None) -> WorkshopOut:
                 has_content=bool(l["content_md"]),
             )
             for l in ws["lessons"]
+        ],
+    )
+
+
+# ── Flashcards ───────────────────────────────────────────────────────────────
+
+
+_ALLOWED_CARD_COUNTS = {10, 20, 40}
+
+
+@router.post("/flashcards/deck", response_model=FlashcardDeckOut)
+def create_flashcard_deck(req: FlashcardCreateRequest) -> FlashcardDeckOut:
+    if req.num_cards not in _ALLOWED_CARD_COUNTS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"num_cards must be one of {sorted(_ALLOWED_CARD_COUNTS)}",
+        )
+    try:
+        result = flashcard_generator.generate_deck(
+            difficulty=req.difficulty,  # type: ignore[arg-type]
+            num_cards=req.num_cards,
+            source_filter=req.document_filter,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except Exception:
+        logger.exception("Flashcard deck generation failed")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to generate the flashcard deck. The model may be unavailable.",
+        )
+
+    deck_id = progress_tracker.create_flashcard_deck(
+        difficulty=req.difficulty,
+        scope=req.document_filter,
+        title=result.title,
+        cards=[{"front": c.front, "back": c.back} for c in result.cards],
+    )
+    try:
+        ach_service.evaluate_and_persist()
+    except Exception:
+        logger.exception("Achievement eval after deck create failed (non-fatal)")
+
+    return _deck_to_response(progress_tracker.get_flashcard_deck(deck_id))
+
+
+@router.get("/flashcards/decks", response_model=FlashcardDeckListResponse)
+def list_flashcard_decks() -> FlashcardDeckListResponse:
+    return FlashcardDeckListResponse(
+        decks=[FlashcardDeckListItem(**d) for d in progress_tracker.list_flashcard_decks()],
+    )
+
+
+@router.get("/flashcards/deck/{deck_id}", response_model=FlashcardDeckOut)
+def get_flashcard_deck(deck_id: int) -> FlashcardDeckOut:
+    deck = progress_tracker.get_flashcard_deck(deck_id)
+    if not deck:
+        raise HTTPException(status_code=404, detail="Deck not found.")
+    return _deck_to_response(deck)
+
+
+@router.post(
+    "/flashcards/deck/{deck_id}/card/{card_idx}/status",
+    response_model=FlashcardStatusResponse,
+)
+def set_card_status(
+    deck_id: int, card_idx: int, req: FlashcardStatusRequest
+) -> FlashcardStatusResponse:
+    deck = progress_tracker.get_flashcard_deck(deck_id)
+    if not deck:
+        raise HTTPException(status_code=404, detail="Deck not found.")
+    if card_idx < 0 or card_idx >= len(deck["cards"]):
+        raise HTTPException(status_code=404, detail="Card index out of range.")
+
+    try:
+        progress_tracker.set_flashcard_status(deck_id, card_idx, req.status)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    if req.record_flip:
+        progress_tracker.increment_flashcard_flip(deck_id, card_idx)
+        # Flashcard study counts toward the user's daily study time.
+        # Best-effort; never fails the request.
+        try:
+            progress_tracker.record_message(had_scope_filter=True)
+        except Exception:
+            logger.exception("Study session update on card flip failed (non-fatal)")
+
+    newly_earned: list[str] = []
+    try:
+        newly_earned = ach_service.evaluate_and_persist()
+    except Exception:
+        logger.exception("Achievement eval after card status failed (non-fatal)")
+    return FlashcardStatusResponse(newly_earned_achievements=newly_earned)
+
+
+@router.delete("/flashcards/deck/{deck_id}", response_model=dict)
+def delete_flashcard_deck(deck_id: int) -> dict:
+    if not progress_tracker.delete_flashcard_deck(deck_id):
+        raise HTTPException(status_code=404, detail="Deck not found.")
+    return {"status": "deleted"}
+
+
+def _deck_to_response(deck: dict | None) -> FlashcardDeckOut:
+    assert deck is not None
+    return FlashcardDeckOut(
+        id=deck["id"],
+        created_at=deck["created_at"],
+        difficulty=deck["difficulty"],
+        scope=deck["scope"],
+        title=deck["title"],
+        card_count=deck["card_count"],
+        cards=[
+            FlashcardOut(
+                card_idx=c["card_idx"],
+                front=c["front"],
+                back=c["back"],
+                status=c["status"],
+                flip_count=c["flip_count"] or 0,
+            )
+            for c in deck["cards"]
         ],
     )

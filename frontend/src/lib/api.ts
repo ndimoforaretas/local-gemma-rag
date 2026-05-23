@@ -320,6 +320,53 @@ export const api = {
     return handleJsonResponse<{ status: string }>(resp);
   },
 
+  // ── Flashcards ───────────────────────────────────────────────────────
+  listFlashcardDecks: async () => {
+    const resp = await fetch(`${API_BASE}/api/study/flashcards/decks`);
+    return handleJsonResponse<import("../types/api").FlashcardDeckListResponse>(resp);
+  },
+
+  getFlashcardDeck: async (id: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/flashcards/deck/${id}`);
+    return handleJsonResponse<import("../types/api").FlashcardDeck>(resp);
+  },
+
+  createFlashcardDeck: async (req: {
+    difficulty: import("../types/api").WorkshopDifficulty;
+    num_cards: number;
+    document_filter: string[];
+  }) => {
+    const resp = await fetch(`${API_BASE}/api/study/flashcards/deck`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    });
+    return handleJsonResponse<import("../types/api").FlashcardDeck>(resp);
+  },
+
+  setFlashcardStatus: async (
+    deckId: number,
+    cardIdx: number,
+    req: { status: import("../types/api").FlashcardStatus; record_flip: boolean },
+  ) => {
+    const resp = await fetch(
+      `${API_BASE}/api/study/flashcards/deck/${deckId}/card/${cardIdx}/status`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req),
+      },
+    );
+    return handleJsonResponse<import("../types/api").FlashcardStatusResponse>(resp);
+  },
+
+  deleteFlashcardDeck: async (id: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/flashcards/deck/${id}`, {
+      method: "DELETE",
+    });
+    return handleJsonResponse<{ status: string }>(resp);
+  },
+
   submitQuiz: async (req: {
     difficulty: "beginner" | "intermediate" | "advanced";
     num_questions: number;

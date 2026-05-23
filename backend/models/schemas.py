@@ -216,3 +216,53 @@ class LessonCompleteResponse(BaseModel):
     lessons_done: int
     workshop_completed: bool
     newly_earned_achievements: list[str] = []
+
+
+# ── Study Hub: Flashcards ───────────────────────────────────────────────────
+
+class FlashcardCreateRequest(BaseModel):
+    """Body for POST /api/study/flashcards/deck."""
+    difficulty: str = Field(..., pattern="^(beginner|intermediate|advanced)$")
+    num_cards: int = Field(..., ge=5, le=60)
+    document_filter: list[str] = Field(..., min_length=1)
+
+
+class FlashcardOut(BaseModel):
+    card_idx: int
+    front: str
+    back: str
+    status: Optional[str] = None  # 'mastered' | 'review' | None
+    flip_count: int = 0
+
+
+class FlashcardDeckOut(BaseModel):
+    id: int
+    created_at: float
+    difficulty: str
+    scope: list[str]
+    title: str
+    card_count: int
+    cards: list[FlashcardOut]
+
+
+class FlashcardDeckListItem(BaseModel):
+    id: int
+    created_at: float
+    difficulty: str
+    title: str
+    card_count: int
+    mastered_count: int
+
+
+class FlashcardDeckListResponse(BaseModel):
+    decks: list[FlashcardDeckListItem]
+
+
+class FlashcardStatusRequest(BaseModel):
+    status: Optional[str] = Field(None, pattern="^(mastered|review)$")
+    # If true, also increment flip_count (used when the user flips the card).
+    record_flip: bool = False
+
+
+class FlashcardStatusResponse(BaseModel):
+    newly_earned_achievements: list[str] = []

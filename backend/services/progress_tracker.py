@@ -122,6 +122,30 @@ def _init_schema(conn: sqlite3.Connection) -> None:
 
         CREATE INDEX IF NOT EXISTS idx_workshops_created
             ON workshops(created_at);
+
+        -- Flashcards (Mode 3) ---------------------------------------------
+        CREATE TABLE IF NOT EXISTS flashcard_decks (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at    REAL    NOT NULL,
+            difficulty    TEXT    NOT NULL,
+            scope_json    TEXT    NOT NULL,
+            title         TEXT    NOT NULL,
+            card_count    INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS flashcards (
+            deck_id      INTEGER NOT NULL REFERENCES flashcard_decks(id) ON DELETE CASCADE,
+            card_idx     INTEGER NOT NULL,
+            front        TEXT    NOT NULL,
+            back         TEXT    NOT NULL,
+            -- status: NULL (unmarked), 'mastered', 'review'
+            status       TEXT,
+            flip_count   INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (deck_id, card_idx)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_decks_created
+            ON flashcard_decks(created_at);
         """
     )
     conn.commit()
@@ -392,6 +416,146 @@ def delete_workshop(workshop_id: int) -> bool:
             conn.close()
 
 
+def create_flashcard_deck(
+    difficulty: str,
+    scope: list[str],
+    title: str,
+    cards: list[dict],  # [{front, back}, ...]
+    created_at: Optional[float] = None,
+) -> int:
+    """Persist a fresh deck and its cards. Returns the new deck id."""
+    import json as _json
+
+    ts = created_at if created_at is not None else _dt.datetime.now().timestamp()
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO flashcard_decks "
+                "(created_at, difficulty, scope_json, title, card_count) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (ts, difficulty, _json.dumps(scope), title, len(cards)),
+            )
+            deck_id = cur.lastrowid or 0
+            for idx, card in enumerate(cards):
+                cur.execute(
+                    "INSERT INTO flashcards (deck_id, card_idx, front, back) "
+                    "VALUES (?, ?, ?, ?)",
+                    (deck_id, idx, card["front"], card["back"]),
+                )
+            conn.commit()
+            return deck_id
+        finally:
+            conn.close()
+
+
+def get_flashcard_deck(deck_id: int) -> Optional[dict]:
+    """Return the deck + all its cards, or None if missing."""
+    import json as _json
+
+    conn = _connect()
+    try:
+        _init_schema(conn)
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM flashcard_decks WHERE id = ?", (deck_id,))
+        row = cur.fetchone()
+        if not row:
+            return None
+        cur.execute(
+            "SELECT card_idx, front, back, status, flip_count "
+            "FROM flashcards WHERE deck_id = ? ORDER BY card_idx",
+            (deck_id,),
+        )
+        cards = [dict(r) for r in cur.fetchall()]
+        return {
+            "id": row["id"],
+            "created_at": row["created_at"],
+            "difficulty": row["difficulty"],
+            "scope": _json.loads(row["scope_json"]),
+            "title": row["title"],
+            "card_count": row["card_count"],
+            "cards": cards,
+        }
+    finally:
+        conn.close()
+
+
+def list_flashcard_decks() -> list[dict]:
+    """All decks with mastered-count progress, newest first."""
+    conn = _connect()
+    try:
+        _init_schema(conn)
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT d.id, d.created_at, d.difficulty, d.title, d.card_count, "
+            "       SUM(CASE WHEN c.status = 'mastered' THEN 1 ELSE 0 END) AS mastered_count "
+            "FROM flashcard_decks d LEFT JOIN flashcards c ON c.deck_id = d.id "
+            "GROUP BY d.id ORDER BY d.created_at DESC"
+        )
+        return [
+            {
+                "id": r["id"],
+                "created_at": r["created_at"],
+                "difficulty": r["difficulty"],
+                "title": r["title"],
+                "card_count": int(r["card_count"] or 0),
+                "mastered_count": int(r["mastered_count"] or 0),
+            }
+            for r in cur.fetchall()
+        ]
+    finally:
+        conn.close()
+
+
+def set_flashcard_status(deck_id: int, card_idx: int, status: Optional[str]) -> None:
+    """Set status to 'mastered', 'review', or None (unmarked)."""
+    if status not in (None, "mastered", "review"):
+        raise ValueError(f"Invalid status: {status!r}")
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            conn.execute(
+                "UPDATE flashcards SET status = ? WHERE deck_id = ? AND card_idx = ?",
+                (status, deck_id, card_idx),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+
+def increment_flashcard_flip(deck_id: int, card_idx: int) -> None:
+    """Bump the flip_count for a card. Used by the "Card Reviewer" badge."""
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            conn.execute(
+                "UPDATE flashcards SET flip_count = flip_count + 1 "
+                "WHERE deck_id = ? AND card_idx = ?",
+                (deck_id, card_idx),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+
+def delete_flashcard_deck(deck_id: int) -> bool:
+    """Remove a deck + cascade its cards. Returns True if a row was deleted."""
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute("DELETE FROM flashcard_decks WHERE id = ?", (deck_id,))
+            conn.commit()
+            return cur.rowcount > 0
+        finally:
+            conn.close()
+
+
 def record_quiz_attempt(
     difficulty: str,
     num_questions: int,
@@ -638,6 +802,26 @@ def stats_for_eval(now_ts: Optional[float] = None) -> dict:
         )
         lessons_completed = int(cur.fetchone()["n"] or 0)
 
+        # ── Flashcard stats ─────────────────────────────────────────────
+        cur.execute("SELECT COUNT(*) AS n FROM flashcard_decks")
+        total_decks_created = int(cur.fetchone()["n"] or 0)
+
+        cur.execute("SELECT COALESCE(SUM(flip_count), 0) AS n FROM flashcards")
+        total_card_flips = int(cur.fetchone()["n"] or 0)
+
+        # A deck is "mastered" when every card in it is marked status='mastered'.
+        cur.execute(
+            "SELECT COUNT(*) AS n FROM ("
+            "  SELECT d.id "
+            "  FROM flashcard_decks d "
+            "  LEFT JOIN flashcards c ON c.deck_id = d.id "
+            "  GROUP BY d.id "
+            "  HAVING COUNT(c.card_idx) > 0 "
+            "     AND COUNT(c.card_idx) = SUM(CASE WHEN c.status='mastered' THEN 1 ELSE 0 END)"
+            ")"
+        )
+        decks_mastered = int(cur.fetchone()["n"] or 0)
+
         return {
             "total_seconds": total_seconds,
             "total_messages": total_messages,
@@ -652,6 +836,9 @@ def stats_for_eval(now_ts: Optional[float] = None) -> dict:
             "total_workshops_created": total_workshops_created,
             "workshops_completed": workshops_completed,
             "lessons_completed": lessons_completed,
+            "total_decks_created": total_decks_created,
+            "total_card_flips": total_card_flips,
+            "decks_mastered": decks_mastered,
         }
     finally:
         conn.close()

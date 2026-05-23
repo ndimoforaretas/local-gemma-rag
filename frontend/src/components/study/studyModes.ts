@@ -37,7 +37,7 @@ export const STUDY_MODES: StudyModeDef[] = [
     label: "Flashcards",
     description: "Scrollable flip-cards generated from your documents.",
     icon: Layers,
-    available: false,
+    available: true,
   },
   {
     id: "mindmaps",
