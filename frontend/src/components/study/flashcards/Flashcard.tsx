@@ -1,18 +1,20 @@
 /**
- * Single flip card.
+ * Single flip card with status-aware gradient razzle.
  *
- * Click the body to flip the card (front ↔ back). On the back, two status
- * chips ("Got it" / "Review again") let the user mark progress without
- * re-flipping.
+ * Layout: outer perspective wrapper, inner div with preserve-3d that rotates
+ * on Y axis. Each face is two stacked layers — a gradient "border" wrapper
+ * and a solid inner card with the content. Faces use [backface-visibility:hidden]
+ * so only one face is ever painted.
  *
- * Implementation: CSS 3D — outer perspective wrapper, inner div with
- * `transform-style: preserve-3d` rotates on Y axis. Front and back are
- * stacked siblings, back rotated 180° and the parent's rotation reveals it.
+ * Gradient hue + glow follows `card.status` via the helpers in
+ * `flashcardStyles.ts`. The whole card lifts slightly on hover.
  */
 
 import { useState } from "react";
 import { Check, RotateCw } from "lucide-react";
 import type { Flashcard as FlashcardT } from "./types";
+import { gradientForStatus, glowForStatus } from "./flashcardStyles";
+import { StatusBadge, StatusButton } from "./FlashcardStatusControls";
 
 export function Flashcard({
   card,
@@ -30,78 +32,84 @@ export function Flashcard({
   const handleFlip = () => {
     const willFlip = !flipped;
     setFlipped(willFlip);
-    // Only count a flip the first time the user reveals the back of each card
-    // per page load (avoids inflating flip_count on idle clicks).
-    if (willFlip) {
-      onSetStatus(card.card_idx, card.status, true);
-    }
+    if (willFlip) onSetStatus(card.card_idx, card.status, true);
   };
 
   const mark = (status: FlashcardT["status"]) => (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Toggle off if the same status is clicked again.
     onSetStatus(card.card_idx, card.status === status ? null : status, false);
   };
 
+  const gradient = gradientForStatus(card.status);
+  const glow = glowForStatus(card.status);
+
   return (
-    <div className="[perspective:1200px] h-56">
-      <div
-        onClick={handleFlip}
-        role="button"
-        aria-label={flipped ? "Show prompt" : "Show answer"}
-        className={`relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d] cursor-pointer ${
-          flipped ? "[transform:rotateY(180deg)]" : ""
-        }`}
-      >
-        {/* Front */}
-        <CardFace>
-          <div className="text-[10px] uppercase tracking-wider font-semibold text-[#a855f7] mb-2">
-            #{card.card_idx + 1}
-          </div>
-          <p className="text-base font-medium text-[#191c1e] dark:text-white leading-snug">
-            {card.front}
-          </p>
-          <div className="mt-auto pt-3 flex items-center justify-between text-[10px] text-[#727785] dark:text-[#8c909f]">
-            <span className="flex items-center gap-1">
-              <RotateCw size={10} /> Click to flip
-            </span>
+    <div className="[perspective:1200px] h-64 group">
+      {/*
+        The hover-lift lives on this OUTER wrapper, separate from the flip
+        rotation on the inner element. Putting both on the same element makes
+        the hover transform replace (not compose with) the rotation, which
+        visually breaks "click to flip" while the mouse is still over the card.
+      */}
+      <div className="w-full h-full transition-transform duration-300 group-hover:-translate-y-0.5">
+        <div
+          onClick={handleFlip}
+          role="button"
+          aria-label={flipped ? "Show prompt" : "Show answer"}
+          className={`relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d] cursor-pointer ${
+            flipped ? "[transform:rotateY(180deg)]" : ""
+          }`}
+        >
+        <CardFace gradient={gradient} glow={glow}>
+          <div className="flex items-center justify-between mb-3">
+            <NumberBadge n={card.card_idx + 1} />
             <StatusBadge status={card.status} />
+          </div>
+          <div className="flex-1 flex items-center justify-center text-center px-1">
+            <p className="text-lg font-semibold text-[#191c1e] dark:text-white leading-snug">
+              {card.front}
+            </p>
+          </div>
+          <div className="flex items-center justify-center gap-1.5 mt-3">
+            <RotateCw size={12} className="text-[#a855f7] dark:text-[#ddb7ff]" />
+            <span className="text-xs font-bold text-[#a855f7] dark:text-[#ddb7ff]">
+              Click to flip
+            </span>
           </div>
         </CardFace>
 
-        {/* Back */}
-        <CardFace back>
-          <div className="text-[10px] uppercase tracking-wider font-semibold text-[#a855f7] mb-2">
-            Answer
+        <CardFace gradient={gradient} glow={glow} back>
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-xs uppercase tracking-wider font-extrabold text-[#a855f7] dark:text-[#ddb7ff]">
+              Answer
+            </div>
+            <span className="text-xs font-medium text-[#727785] dark:text-[#8c909f] tabular-nums">
+              #{card.card_idx + 1}
+            </span>
           </div>
-          <p className="text-sm text-[#191c1e] dark:text-[#e1e2ec] leading-relaxed flex-1 overflow-y-auto">
-            {card.back}
-          </p>
-          <div className="mt-3 flex gap-2 pt-2 border-t border-[#c2c6d6]/40 dark:border-[#424754]/40">
-            <button
-              type="button"
+          <div className="flex-1 flex items-center justify-center text-center overflow-y-auto px-1">
+            <p className="text-sm text-[#191c1e] dark:text-[#e1e2ec] leading-relaxed">
+              {card.back}
+            </p>
+          </div>
+          <div className="mt-3 pt-3 border-t border-[#c2c6d6]/30 dark:border-[#424754]/40 flex gap-2">
+            <StatusButton
+              tone="emerald"
+              active={card.status === "mastered"}
               onClick={mark("mastered")}
-              className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1 border transition-colors ${
-                card.status === "mastered"
-                  ? "bg-emerald-500/20 border-emerald-500 text-emerald-700 dark:text-emerald-300"
-                  : "border-[#c2c6d6] dark:border-[#424754] hover:border-emerald-500/50 text-[#424754] dark:text-[#c2c6d6]"
-              }`}
-            >
-              <Check size={11} /> Got it
-            </button>
-            <button
-              type="button"
+              icon={<Check size={14} />}
+              label="Got it"
+            />
+            <StatusButton
+              tone="amber"
+              active={card.status === "review"}
               onClick={mark("review")}
-              className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1 border transition-colors ${
-                card.status === "review"
-                  ? "bg-amber-500/20 border-amber-500 text-amber-700 dark:text-amber-300"
-                  : "border-[#c2c6d6] dark:border-[#424754] hover:border-amber-500/50 text-[#424754] dark:text-[#c2c6d6]"
-              }`}
-            >
-              <RotateCw size={11} /> Review
-            </button>
+              icon={<RotateCw size={14} />}
+              label="Review"
+            />
           </div>
         </CardFace>
+        </div>
       </div>
     </div>
   );
@@ -109,34 +117,32 @@ export function Flashcard({
 
 function CardFace({
   children,
+  gradient,
+  glow,
   back = false,
 }: {
   children: React.ReactNode;
+  gradient: string;
+  glow: string;
   back?: boolean;
 }) {
   return (
     <div
-      className={`absolute inset-0 p-5 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23] shadow-sm flex flex-col [backface-visibility:hidden] ${
+      className={`absolute inset-0 rounded-2xl p-[1.5px] bg-gradient-to-br ${gradient} shadow-md ${glow} transition-shadow group-hover:shadow-xl [backface-visibility:hidden] ${
         back ? "[transform:rotateY(180deg)]" : ""
       }`}
     >
-      {children}
+      <div className="w-full h-full p-5 rounded-2xl bg-white dark:bg-[#191b23] flex flex-col">
+        {children}
+      </div>
     </div>
   );
 }
 
-function StatusBadge({ status }: { status: FlashcardT["status"] }) {
-  if (!status) return null;
-  if (status === "mastered") {
-    return (
-      <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-        Mastered
-      </span>
-    );
-  }
+function NumberBadge({ n }: { n: number }) {
   return (
-    <span className="px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
-      Review
-    </span>
+    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#a855f7]/20 to-[#ec4899]/20 text-[#a855f7] dark:text-[#ddb7ff] flex items-center justify-center text-lg font-extrabold tabular-nums">
+      {n}
+    </div>
   );
 }

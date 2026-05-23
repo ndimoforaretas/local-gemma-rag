@@ -3,8 +3,7 @@
  * Layout matches WorkshopMode (top-aligned, wide container).
  */
 
-import { Layers } from "lucide-react";
-import { BackToHubButton } from "./StudyHub";
+import { Breadcrumbs, type Crumb } from "../Breadcrumbs";
 import { FlashcardDeckView } from "./flashcards/FlashcardDeckView";
 import { FlashcardsConfigPanel } from "./flashcards/FlashcardsConfigPanel";
 import { FlashcardsGeneratingCard } from "./flashcards/FlashcardsGeneratingCard";
@@ -13,18 +12,13 @@ import { useFlashcards } from "./flashcards/useFlashcards";
 
 export function FlashcardsMode({ onExit }: { onExit: () => void }) {
   const f = useFlashcards();
+  const crumbs = buildCrumbs(f, onExit);
 
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-6xl mx-auto w-full px-6 sm:px-8 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <BackToHubButton onClick={onExit} />
-          <div className="flex items-center gap-2">
-            <Layers className="text-[#a855f7]" size={20} />
-            <span className="text-sm font-semibold text-[#191c1e] dark:text-white">
-              Flashcards
-            </span>
-          </div>
+        <div className="mb-6">
+          <Breadcrumbs crumbs={crumbs} />
         </div>
 
         <div className="w-full">
@@ -81,4 +75,24 @@ export function FlashcardsMode({ onExit }: { onExit: () => void }) {
       </div>
     </div>
   );
+}
+
+/** Phase-aware breadcrumb trail for the flashcards flow. */
+function buildCrumbs(
+  f: ReturnType<typeof useFlashcards>,
+  onExit: () => void,
+): Crumb[] {
+  const crumbs: Crumb[] = [
+    { label: "Study Hub", onClick: onExit },
+    {
+      label: "Flashcards",
+      onClick: f.phase === "list" ? undefined : f.backToList,
+    },
+  ];
+  if (f.phase === "config") {
+    crumbs.push({ label: "New Deck" });
+  } else if (f.phase === "deck" && f.active.data) {
+    crumbs.push({ label: f.active.data.title });
+  }
+  return crumbs;
 }

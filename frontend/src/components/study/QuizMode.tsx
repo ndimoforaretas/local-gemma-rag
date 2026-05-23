@@ -5,8 +5,7 @@
  * just layout: top bar, then one of four panels based on phase + loading.
  */
 
-import { Brain } from "lucide-react";
-import { BackToHubButton } from "./StudyHub";
+import { Breadcrumbs } from "../Breadcrumbs";
 import { QuizConfigPanel } from "./quiz/QuizConfigPanel";
 import { QuizGeneratingCard } from "./quiz/QuizGeneratingCard";
 import { QuizPlayerPanel } from "./quiz/QuizPlayerPanel";
@@ -25,14 +24,13 @@ export function QuizMode({ onExit }: { onExit: () => void }) {
         normal document flow; long content (e.g. results recap) still scrolls.
       */}
       <div className="max-w-4xl mx-auto w-full px-6 sm:px-8 py-8 min-h-full flex flex-col">
-        <div className="flex items-center justify-between mb-6">
-          <BackToHubButton onClick={onExit} />
-          <div className="flex items-center gap-2">
-            <Brain className="text-[#a855f7]" size={20} />
-            <span className="text-sm font-semibold text-[#191c1e] dark:text-[#e1e2ec]">
-              Quiz Mode
-            </span>
-          </div>
+        <div className="mb-6">
+          <Breadcrumbs
+            crumbs={[
+              { label: "Study Hub", onClick: onExit },
+              { label: "Quiz Mode" },
+            ]}
+          />
         </div>
 
         <div className="my-auto w-full">

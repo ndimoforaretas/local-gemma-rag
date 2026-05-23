@@ -7,6 +7,20 @@ import { Brain, BookOpen, Layers, Network, type LucideIcon } from "lucide-react"
 
 export type StudyModeId = "quiz" | "workshop" | "flashcards" | "mindmaps";
 
+/** "hub" = the mode-picker landing, otherwise one of the mode pages. */
+export type ActiveStudyMode = "hub" | StudyModeId;
+
+/** Type guard so App.tsx can safely restore from localStorage. */
+export function isActiveStudyMode(value: unknown): value is ActiveStudyMode {
+  return (
+    value === "hub" ||
+    value === "quiz" ||
+    value === "workshop" ||
+    value === "flashcards" ||
+    value === "mindmaps"
+  );
+}
+
 export interface StudyModeDef {
   id: StudyModeId;
   label: string;

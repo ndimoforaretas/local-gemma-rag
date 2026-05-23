@@ -6,27 +6,34 @@
  * to come back to this picker.
  */
 
-import { useState } from "react";
-import { GraduationCap, ArrowLeft } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 import { FlashcardsMode } from "./FlashcardsMode";
 import { ModeCard } from "./ModeCard";
 import { QuizMode } from "./QuizMode";
 import { WorkshopMode } from "./WorkshopMode";
-import { STUDY_MODES, type StudyModeId } from "./studyModes";
+import { STUDY_MODES, type ActiveStudyMode } from "./studyModes";
 
-type ActiveMode = "hub" | StudyModeId;
-
-export function StudyHub() {
-  const [mode, setMode] = useState<ActiveMode>("hub");
-
+/**
+ * StudyHub is now a controlled component. The parent (App.tsx) owns the
+ * active mode + persists it to localStorage, which:
+ *   1) lets sidebar clicks reset the hub to its picker view, and
+ *   2) restores the user to the same mode after a page refresh.
+ */
+export function StudyHub({
+  mode,
+  onChangeMode,
+}: {
+  mode: ActiveStudyMode;
+  onChangeMode: (m: ActiveStudyMode) => void;
+}) {
   if (mode === "quiz") {
-    return <QuizMode onExit={() => setMode("hub")} />;
+    return <QuizMode onExit={() => onChangeMode("hub")} />;
   }
   if (mode === "workshop") {
-    return <WorkshopMode onExit={() => setMode("hub")} />;
+    return <WorkshopMode onExit={() => onChangeMode("hub")} />;
   }
   if (mode === "flashcards") {
-    return <FlashcardsMode onExit={() => setMode("hub")} />;
+    return <FlashcardsMode onExit={() => onChangeMode("hub")} />;
   }
 
   return (
@@ -59,7 +66,7 @@ export function StudyHub() {
                 description={m.description}
                 icon={m.icon}
                 available={m.available}
-                onClick={() => setMode(m.id)}
+                onClick={() => onChangeMode(m.id)}
               />
             ))}
           </div>
@@ -69,16 +76,3 @@ export function StudyHub() {
   );
 }
 
-/** Small back-arrow used by every mode to return to the picker. */
-export function BackToHubButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-flex items-center gap-1.5 text-sm text-[#424754] dark:text-[#c2c6d6] hover:text-[#191c1e] dark:hover:text-[#e1e2ec] transition-colors"
-    >
-      <ArrowLeft size={14} />
-      Back to Study Hub
-    </button>
-  );
-}
