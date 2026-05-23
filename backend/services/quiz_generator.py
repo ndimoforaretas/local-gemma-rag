@@ -190,7 +190,11 @@ def _build_prompt(
         "You generate quizzes from study material. Output ONLY a JSON array. "
         "Do not include any commentary, markdown fences, or explanation text outside the JSON.\n\n"
         f"DIFFICULTY: {difficulty}. {diff_note}\n"
-        f"NUMBER OF QUESTIONS: exactly {num_questions}.\n"
+        f"NUMBER OF QUESTIONS: EXACTLY {num_questions}. This is a hard requirement — "
+        f"the array MUST contain exactly {num_questions} elements, no more, no fewer. "
+        f"If the material seems thin, re-read it and find more angles to question — "
+        f"definitions, applications, comparisons, edge cases — but produce all "
+        f"{num_questions} questions.\n"
         f"ALLOWED QUESTION TYPES: {types_csv}.\n\n"
         "QUESTION TYPE SHAPES:\n- "
         + "\n- ".join(type_descriptions) + "\n\n"
@@ -205,10 +209,12 @@ def _build_prompt(
         "- Make incorrect MCQ options plausible but clearly wrong on close reading.\n"
         "- Vary the position of the correct answer across questions.\n"
         "- Do not number the questions; just emit the array.\n"
-        "- Output MUST be parseable by JSON.parse with no preprocessing.\n\n"
+        "- Output MUST be parseable by JSON.parse with no preprocessing.\n"
+        f"- Before emitting, COUNT your questions. If fewer than {num_questions}, "
+        "add more until you have the exact count.\n\n"
         "SOURCE MATERIAL:\n"
         f"{context_section}\n\n"
-        f"Now emit the JSON array of exactly {num_questions} questions."
+        f"Now emit the JSON array of EXACTLY {num_questions} questions."
     )
 
 

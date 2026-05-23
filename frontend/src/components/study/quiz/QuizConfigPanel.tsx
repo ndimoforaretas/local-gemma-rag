@@ -33,15 +33,20 @@ export interface QuizConfigPanelProps {
 }
 
 export function QuizConfigPanel(p: QuizConfigPanelProps) {
-  const canStart = p.types.length > 0 && !p.isLoading;
+  const hasScope = p.scope.length > 0;
+  const canStart = hasScope && p.types.length > 0 && !p.isLoading;
   return (
     <>
       <ConfigHeader />
 
       <div className="bg-white dark:bg-[#191b23] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-6 sm:p-8 space-y-7">
         <Section
-          label="Document scope"
-          hint="Leave empty to draw from the whole knowledge base."
+          label="Document scope (required)"
+          hint={
+            hasScope
+              ? "Quizzes are most accurate when scoped to a single category or a few related files."
+              : "Pick at least one category or file. Whole-KB quizzes give scattered, lower-quality results."
+          }
         >
           <DocScopeFilter selected={p.scope} onChange={p.setScope} />
         </Section>
