@@ -32,5 +32,5 @@ frontend/node_modules/
 frontend/dist/
 
 # Internal planning docs (not for end users)
-PLAN.md
+STUDY_HUB_PLAN.md
 memory/
