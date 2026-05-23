@@ -32,7 +32,9 @@ async function handleJsonResponse<T>(resp: Response): Promise<T> {
     let msg = `Request failed (${resp.status})`;
     try {
       const body = await resp.json();
-      msg = body.error ?? body.detail ?? msg;
+      // detail is the specific message; error is the generic category
+      // (set by our middleware). Prefer the specific one.
+      msg = body.detail ?? body.error ?? msg;
     } catch {
       /* response may not be JSON */
     }
@@ -75,7 +77,9 @@ export const api = {
       let msg = "RAG request failed";
       try {
         const body = await resp.json();
-        msg = body.error ?? body.detail ?? msg;
+        // detail is the specific message; error is the generic category
+      // (set by our middleware). Prefer the specific one.
+      msg = body.detail ?? body.error ?? msg;
       } catch {
         /* ignore */
       }
@@ -227,6 +231,192 @@ export const api = {
   getSuggestions: async (): Promise<SuggestionsResponse> => {
     const resp = await fetch(`${API_BASE}/rag/suggestions`);
     return handleJsonResponse<SuggestionsResponse>(resp);
+  },
+
+  // ── Study Hub ────────────────────────────────────────────────────────
+  generateQuiz: async (req: {
+    difficulty: "beginner" | "intermediate" | "advanced";
+    num_questions: number;
+    question_types: ("mcq" | "true_false")[];
+    document_filter?: string[];
+  }): Promise<{
+    questions: {
+      type: "mcq" | "true_false";
+      question: string;
+      options: string[];
+      correct_index: number;
+      explanation: string;
+    }[];
+    source_chunks_used: number;
+  }> => {
+    const resp = await fetch(`${API_BASE}/api/study/quiz/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    });
+    return handleJsonResponse(resp);
+  },
+
+  // ── Progress Dashboard ───────────────────────────────────────────────
+  getProgressSummary: async () => {
+    const resp = await fetch(`${API_BASE}/api/progress/summary`);
+    return handleJsonResponse<import("../types/api").ProgressSummary>(resp);
+  },
+
+  getProgressDaily: async (days = 30) => {
+    const resp = await fetch(`${API_BASE}/api/progress/daily?days=${days}`);
+    return handleJsonResponse<import("../types/api").DailyActivityResponse>(resp);
+  },
+
+  getProgressAchievements: async () => {
+    const resp = await fetch(`${API_BASE}/api/progress/achievements`);
+    return handleJsonResponse<import("../types/api").AchievementsResponse>(resp);
+  },
+
+  // ── Workshops ────────────────────────────────────────────────────────
+  listWorkshops: async () => {
+    const resp = await fetch(`${API_BASE}/api/study/workshops`);
+    return handleJsonResponse<import("../types/api").WorkshopListResponse>(resp);
+  },
+
+  getWorkshop: async (id: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/workshop/${id}`);
+    return handleJsonResponse<import("../types/api").Workshop>(resp);
+  },
+
+  createWorkshopOutline: async (req: {
+    difficulty: import("../types/api").WorkshopDifficulty;
+    num_lessons: number;
+    document_filter: string[];
+  }) => {
+    const resp = await fetch(`${API_BASE}/api/study/workshop/outline`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    });
+    return handleJsonResponse<import("../types/api").Workshop>(resp);
+  },
+
+  getOrGenerateLesson: async (workshopId: number, lessonIdx: number) => {
+    const resp = await fetch(
+      `${API_BASE}/api/study/workshop/${workshopId}/lesson/${lessonIdx}`,
+      { method: "POST" },
+    );
+    return handleJsonResponse<import("../types/api").LessonContent>(resp);
+  },
+
+  completeLesson: async (workshopId: number, lessonIdx: number) => {
+    const resp = await fetch(
+      `${API_BASE}/api/study/workshop/${workshopId}/lesson/${lessonIdx}/complete`,
+      { method: "POST" },
+    );
+    return handleJsonResponse<import("../types/api").LessonCompleteResponse>(resp);
+  },
+
+  deleteWorkshop: async (id: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/workshop/${id}`, {
+      method: "DELETE",
+    });
+    return handleJsonResponse<{ status: string }>(resp);
+  },
+
+  // ── Flashcards ───────────────────────────────────────────────────────
+  listFlashcardDecks: async () => {
+    const resp = await fetch(`${API_BASE}/api/study/flashcards/decks`);
+    return handleJsonResponse<import("../types/api").FlashcardDeckListResponse>(resp);
+  },
+
+  getFlashcardDeck: async (id: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/flashcards/deck/${id}`);
+    return handleJsonResponse<import("../types/api").FlashcardDeck>(resp);
+  },
+
+  createFlashcardDeck: async (req: {
+    difficulty: import("../types/api").WorkshopDifficulty;
+    num_cards: number;
+    document_filter: string[];
+  }) => {
+    const resp = await fetch(`${API_BASE}/api/study/flashcards/deck`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    });
+    return handleJsonResponse<import("../types/api").FlashcardDeck>(resp);
+  },
+
+  setFlashcardStatus: async (
+    deckId: number,
+    cardIdx: number,
+    req: { status: import("../types/api").FlashcardStatus; record_flip: boolean },
+  ) => {
+    const resp = await fetch(
+      `${API_BASE}/api/study/flashcards/deck/${deckId}/card/${cardIdx}/status`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req),
+      },
+    );
+    return handleJsonResponse<import("../types/api").FlashcardStatusResponse>(resp);
+  },
+
+  deleteFlashcardDeck: async (id: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/flashcards/deck/${id}`, {
+      method: "DELETE",
+    });
+    return handleJsonResponse<{ status: string }>(resp);
+  },
+
+  // ── Mindmaps ─────────────────────────────────────────────────────────
+  listMindmaps: async () => {
+    const resp = await fetch(`${API_BASE}/api/study/mindmaps`);
+    return handleJsonResponse<import("../types/api").MindmapListResponse>(resp);
+  },
+
+  getMindmap: async (id: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/mindmaps/mindmap/${id}`);
+    return handleJsonResponse<import("../types/api").Mindmap>(resp);
+  },
+
+  createMindmap: async (req: { document_filter: string[]; depth?: number }) => {
+    const resp = await fetch(`${API_BASE}/api/study/mindmaps/mindmap`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ depth: 2, ...req }),
+    });
+    return handleJsonResponse<import("../types/api").Mindmap>(resp);
+  },
+
+  recordMindmapExport: async (id: number) => {
+    const resp = await fetch(
+      `${API_BASE}/api/study/mindmaps/mindmap/${id}/export`,
+      { method: "POST" },
+    );
+    return handleJsonResponse<import("../types/api").MindmapExportResponse>(resp);
+  },
+
+  deleteMindmap: async (id: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/mindmaps/mindmap/${id}`, {
+      method: "DELETE",
+    });
+    return handleJsonResponse<{ status: string }>(resp);
+  },
+
+  submitQuiz: async (req: {
+    difficulty: "beginner" | "intermediate" | "advanced";
+    num_questions: number;
+    correct_count: number;
+    scope_used?: string[];
+  }): Promise<{
+    score_pct: number;
+    newly_earned_achievements: string[];
+  }> => {
+    const resp = await fetch(`${API_BASE}/api/study/quiz/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    });
+    return handleJsonResponse(resp);
   },
 };
 

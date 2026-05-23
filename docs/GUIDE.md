@@ -1,377 +1,358 @@
 # Gemma CogniVault — User Guide
 
-> **Everything you need to know to get the most out of the app.**
-> This guide is pre-loaded into the knowledge base and powers the suggestion cards on first launch.
+> Your fully local AI study companion. This guide is pre-loaded into the knowledge base and powers the starter cards on a new chat.
 
 ---
 
 ## Table of Contents
 
-1. [What is Gemma CogniVault?](#1-what-is-gemma-cognivault)
-2. [The Interface at a Glance](#2-the-interface-at-a-glance)
-3. [Chat View — Complete Feature Reference](#3-chat-view--complete-feature-reference)
-4. [Knowledge Base View — Complete Feature Reference](#4-knowledge-base-view--complete-feature-reference)
-5. [When to Use Chat Attachments vs. Knowledge Base](#5-when-to-use-chat-attachments-vs-knowledge-base)
-6. [Power-User Tips](#6-power-user-tips)
-7. [FAQ](#7-faq)
+1. [What CogniVault Does](#1-what-cognivault-does)
+2. [The Interface](#2-the-interface)
+3. [Chat — Full Reference](#3-chat--full-reference)
+4. [Knowledge Base — Full Reference](#4-knowledge-base--full-reference)
+5. [Study Hub](#5-study-hub)
+6. [Progress Dashboard](#6-progress-dashboard)
+7. [Achievements (25 badges)](#7-achievements-25-badges)
+8. [Privacy & Data Storage](#8-privacy--data-storage)
+9. [Tips & Tricks](#9-tips--tricks)
+10. [FAQ](#10-faq)
 
 ---
 
-## 1. What is Gemma CogniVault?
+## 1. What CogniVault Does
 
-Gemma CogniVault is a **fully local, privacy-first AI assistant** that answers questions about your own documents. Nothing leaves your machine — no API keys, no cloud services, no usage fees.
+CogniVault is a **100% local, privacy-first AI study app**. Nothing leaves your machine — no API keys, no cloud calls, no usage fees.
 
-Under the hood it combines:
+It does four things well:
 
-| Component | What it does |
-|-----------|-------------|
-| **Ollama + Gemma 4 E4B** | Runs the language model locally — supports text, images, and reasoning |
-| **FAISS + BM25** | Hybrid retrieval: vector similarity search fused with keyword matching |
-| **DBOS durable workflows** | Makes ingestion crash-proof and resumable |
-| **PostgreSQL** | Stores workflow state and chat history |
+- **Chats with your documents.** Upload PDFs, Word docs, slides, spreadsheets, plain text, and ask questions. Every answer comes with citations.
+- **Generates active study material.** Quizzes, multi-lesson workshops, flashcard decks, and visual mindmaps — all from your own documents.
+- **Tracks your learning progress.** Total study time, streak, daily activity heatmap, and 25 achievement badges.
+- **Stays out of your way.** Resume anywhere on refresh, export anything, delete everything — your data is just files on disk.
 
-The app has two primary views: **Chat** and **Knowledge Base**.
+Under the hood: Ollama + Gemma 4 (LLM), `embeddinggemma` (embeddings), FAISS + BM25 (hybrid retrieval), DBOS (durable ingestion), SQLite (progress + study state), FastAPI backend, React + Vite frontend.
 
 ---
 
-## 2. The Interface at a Glance
+## 2. The Interface
 
-### Left Sidebar — Navigation
+The left sidebar has **four top-level sections**. The active section is highlighted in purple.
 
-| Item | What it does |
-|------|-------------|
-| **Chat** (speech bubble icon) | Opens the conversation interface |
-| **Knowledge Base** (database icon) | Opens the document manager |
+| Section | What it does |
+|---|---|
+| **Chat** | Conversational interface — ask anything about your documents. |
+| **Knowledge Base** | Upload, categorise, and delete documents. |
+| **Study Hub** | Generate quizzes, workshops, flashcards, mindmaps. |
+| **Dashboard** | See your study time, achievements, and daily activity heatmap. |
 
-### Top Header — Utility Controls
+Your current section persists across browser refreshes. Refresh inside Quiz Mode and you land back in Quiz Mode.
 
-| Control | What it does |
-|---------|-------------|
-| **Local Workspace** badge | Confirms the app is running entirely locally |
-| **Sun / Moon button** | Toggles between light and dark mode instantly |
-| **User avatar** | Shows connection status (green = Ollama reachable) |
+Inside the Study Hub, **breadcrumbs** at the top show your exact location (e.g. *Study Hub › Workshop Creator › Python Fundamentals › Lesson 2*). Every crumb except the current one is clickable to jump back to that level.
 
 ---
 
-## 3. Chat View — Complete Feature Reference
+## 3. Chat — Full Reference
 
-The Chat view is your primary interface with the AI. Open it by clicking **Chat** in the sidebar.
+### Asking a question
 
----
+Type into the composer at the bottom and press **Enter** to send. **Shift+Enter** inserts a newline.
 
-### 3.1 Suggestion Cards
+The AI streams its response in real time. If thinking mode is on, a collapsible **Reasoning** panel above the answer shows the model's chain of thought.
 
-When you start a **fresh conversation** (no messages yet), a grid of clickable suggestion cards appears below the welcome message.
+### Attaching files to a single message
 
-- Each card covers a common feature or workflow.
-- **Click any card** to send it immediately — no typing required.
-- Cards disappear as soon as the conversation begins.
-- When documents are indexed, cards are tailored to your actual document titles.
+Click the **paperclip** icon in the composer to attach up to **5 files per message**:
 
----
+- **Images** (PNG, JPEG, GIF, WebP) — the AI describes and analyses them visually.
+- **Text-like files** (PDF, DOCX, TXT, MD, CSV, JSON, YAML, code) — content is extracted (~15K characters max per file) and appended to the prompt.
 
-### 3.2 The Chat Input
+Chat attachments are **one-off** — they're not indexed into your Knowledge Base. Use the Knowledge Base for content you'll ask about repeatedly.
 
-The text field at the bottom of the chat area supports:
+### Voice input
 
-| Action | How |
-|--------|-----|
-| **Send a message** | Type and press `Enter` |
-| **New line without sending** | `Shift + Enter` |
-| **Attach a file or image** | Click the paperclip icon |
-| **Voice input** | Click the microphone icon (see §3.3) |
-| **Character counter** | Shown once you exceed ~80% of the 5,000-character limit |
+Click the **microphone** icon to dictate. Speech is transcribed locally and inserted into the composer; you can review and edit before sending.
 
-The input box auto-resizes vertically as you type, up to about five visible lines before it scrolls.
+### Scoping the chat to specific documents
 
----
+Click the **filter pill** ("All documents ▾") just above the composer. Pick a category (everything inside) or individual files. The next message you send will search ONLY those documents.
 
-### 3.3 Voice Input
+- The active scope is **stamped on the user message** as a purple badge so you can see what was active when you asked.
+- The pill clears after sending so the next message uses the full KB unless you re-scope.
+- This scope also drives the **starter suggestion cards** on a new chat — anything clicked from the empty state is automatically scoped to this guide.
 
-Click the **microphone icon** in the chat input bar to ask a question with your voice.
+### Sources sidebar
 
-1. Click the mic icon — your browser will request microphone permission on first use.
-2. Speak your question clearly.
-3. Click the **stop icon** (square) when you are done.
-4. Your speech is transcribed locally by Whisper — no cloud service is used.
-5. The transcribed text appears in the input box. Review it, then press `Enter` to send.
+The right panel shows **every chunk** the AI cited in its last answer. Each entry has:
 
-> **Note:** Voice input requires the Whisper model to be available. If the mic icon is not visible, Whisper may not be installed. See the README for setup instructions.
+- Source filename + page (when applicable)
+- Relevance score
+- **View chunk** — expand the exact text the AI saw
+- **Open** — jump to the file in the Knowledge Base
 
----
+### Chat history
 
-### 3.4 File Attachments in Chat
+The clock icon (top right) toggles the history sidebar. Every conversation is saved automatically; click any session to resume it. Use the trash icon to delete a session.
 
-Attach a file alongside your question for the AI to read on the fly. This is for one-off files — it does **not** permanently index them.
+### Editing and regenerating
 
-**Supported types:**
+- **Edit a user message** → the AI re-answers with the edited text; later turns are discarded.
+- **Regenerate an AI message** → the AI re-answers the same question (useful when the response felt off or you want a different angle).
 
-| Category | Formats | Size limit |
-|----------|---------|------------|
-| Images | JPG, PNG, GIF, WebP | 10 MB |
-| PDFs | `.pdf` — text extracted automatically | 10 MB |
-| Word documents | `.docx` — full text extracted | 10 MB |
-| Text / Code | `.txt`, `.md`, `.csv`, `.json`, `.xml`, `.yaml`, `.yml`, `.log`, `.py`, `.js`, `.ts`, `.tsx`, `.jsx`, `.sql` | 5 MB |
+### Saving a chat attachment to the Knowledge Base
 
-After sending a text or document file, a **green bridge card** appears offering to save it to the Knowledge Base permanently. Click **Add to KB** to index it for future sessions.
-
-> **Tip:** For a PDF you only need to reference once, attaching it in chat is the fastest path. For documents you query regularly, add them to the Knowledge Base so you never need to re-attach.
+When you attach a text-like file to a chat message, an **emerald "Save to Knowledge Base"** card appears next to the response. One click ingests the file into the KB for future questions.
 
 ---
 
-### 3.5 Image Analysis
+## 4. Knowledge Base — Full Reference
 
-Attach any image (screenshot, chart, photo, diagram) to your message and ask questions about it. The AI reads the image directly using its built-in vision capability.
+### Supported file formats
 
-**Example uses:**
-- "What does this chart show and does it match what's in my Q3 report?"
-- "Summarise the text in this screenshot."
-- "Identify the key components in this architecture diagram."
+| Format | Notes |
+|---|---|
+| **PDF** | Text-based and scanned (OCR fallback) |
+| **DOCX** | Microsoft Word documents |
+| **PPTX** | PowerPoint — one chunk per slide |
+| **XLSX** | Excel — one chunk per sheet |
+| **CSV** | Tabular data |
+| **TXT / MD** | Plain text and Markdown |
+| **HTML** | Web pages (you provide the file) |
+| **JSON** | Structured data |
 
-The AI combines what it sees in the image with any relevant content it retrieves from your knowledge base.
+### Uploading
 
----
+Drag files onto the upload zone, or use the picker. Ingestion runs as a **durable workflow** — if the app crashes mid-ingest, it resumes on restart from where it left off (no partially-indexed documents in your KB).
 
-### 3.6 Streaming Responses and the Thinking Panel
+### Organising with categories
 
-AI responses stream to the screen in real time. While the AI is generating:
+Each document can be tagged with a **category** (e.g. "Programming", "Recipes", "Work"). Categories show up as expandable folders in the document scope filter, so you can quickly limit a chat or quiz to one topic area.
 
-- A three-dot animation appears in the response bubble.
-- The input and send button are disabled until the stream completes.
-- The page scrolls automatically to keep the latest content in view.
+To rename, recategorise, or delete a document, use the row actions in the Knowledge Base view.
 
-**The Thinking Panel** appears above the final answer when the AI uses its extended reasoning mode. It shows the model's internal reasoning chain — how it decided which tools to call, how it interpreted your question, and how it reconciled information from multiple sources.
+### Deleting
 
-- Click the thinking panel header to expand or collapse the reasoning chain.
-- The thinking panel updates in real time as the model reasons, before the answer appears.
-- This is especially visible on complex, multi-document questions.
+Click the row's delete icon → confirm. The document's chunks are soft-deleted from the vector store and excluded from all future retrieval immediately.
 
----
+### Updating a document
 
-### 3.7 Context Sidebar — Source Citations
-
-Whenever the AI searches your knowledge base, a **Context Used** panel appears on the right side of the chat area showing every source it retrieved.
-
-Each citation card shows:
-
-| Field | Description |
-|-------|-------------|
-| **Document name** | The source filename |
-| **File type badge** | PDF, DOCX, CSV, etc. |
-| **Page number** | The page within the document (where applicable) |
-| **View chunk** | Click to expand and read the exact text the AI retrieved |
-
-**On mobile:** tap the "N sources" badge in the chat header to open the context panel as a slide-in overlay.
-
-> **Tip:** If an answer seems wrong, open the Context sidebar to see which chunks the AI actually used. If the right document is not listed, it may not be indexed yet — check the Knowledge Base view.
+Re-uploading a file with the same name is currently skipped (filename-based dedup). To replace, **delete the old version first**, then upload the new one.
 
 ---
 
-### 3.8 Edit-and-Resend and Regenerate
+## 5. Study Hub
 
-You are not locked in to a conversation as it happened. You can rewind and try again.
+The Study Hub turns your documents into **active learning material**. Four modes — pick one from the mode picker.
 
-**Edit a previous message:**
-1. Hover over any message (user or AI) to reveal the pencil icon.
-2. Click it to open the inline editor.
-3. Modify the text. Press Cmd+Enter (Mac) or Ctrl+Enter (Windows) to resend, or Escape to cancel.
-4. The conversation history rewinds to that point and the AI re-reasons from there.
+All modes share three rules:
 
-**Regenerate an AI response:**
-1. Hover over any AI message to reveal the regenerate icon.
-2. Click it — the AI re-answers the preceding question from scratch.
-3. Useful if the first answer was incomplete or missed the point.
+- **Scope is mandatory** — pick a category or specific files first. Whole-KB generation produces scattered, lower-quality results.
+- **Generation runs locally** — first time takes 10–60 seconds depending on mode.
+- **State is saved** — you can come back to any quiz, workshop, deck, or mindmap later.
 
-> All earlier messages in the conversation are preserved — only the rewound portion is replaced.
+### 5.1 Quiz Mode
 
----
+Generates a quiz from your scoped documents.
 
-### 3.9 Message Actions
+**Configuration:** difficulty (Beginner / Intermediate / Advanced) · count (5 / 10 / 20) · question types (Multiple Choice / True-False, multi-select).
 
-Hover over any AI message bubble to reveal:
+**Player:** one question at a time. Click an option, hit **Submit answer** for instant feedback (correct/incorrect + explanation), then **Next question**. Final screen shows score + per-question recap.
 
-| Button | What it does |
-|--------|-------------|
-| **Copy** | Copies the raw markdown text. Icon turns to a tick for 2 seconds. |
-| **Download** | Saves the response as a .md file. |
-| **Regenerate** | Re-generates the answer (see section 3.8). |
+**Resume on refresh:** if you refresh mid-quiz, a purple banner offers to resume from where you left off. Saved for 24 hours.
 
----
+**Export the finished quiz:** Markdown or PDF. Three content levels — *questions only* · *with answers* · *with answers & explanations*.
 
-### 3.10 Markdown Rendering
+**Badges:** 🧠 First Quiz · 💯 Perfect Score · 🎖️ Advanced Scholar · 🏃 Quiz Marathon (10 quizzes).
 
-AI responses render full Markdown:
+### 5.2 Workshop Creator
 
-- Bold, italic, strikethrough text
-- Inline code and fenced code blocks with syntax highlighting
-- Numbered and bulleted lists, blockquotes, horizontal rules
-- Tables — numeric columns are right-aligned automatically
+Multi-lesson workshops built from your documents.
 
----
+**Configuration:** difficulty + lesson count (5 or 10).
 
-### 3.11 Chat History
+**Two-pass generation:**
 
-Click the history icon in the chat header to open the history panel.
+1. **Outline first** (fast): title, summary, key points, learning objectives, lesson titles with reading-time estimates.
+2. **Lessons on demand**: click a lesson card to generate just that lesson's full body. Each lesson is structured Markdown (Introduction · Core content · Key takeaways · Self-check) with a sticky right-side TOC.
 
-| Feature | Detail |
-|---------|--------|
-| **Session list** | All conversations, sorted newest first |
-| **Recency labels** | Today HH:MM, Yesterday HH:MM, or full date |
-| **Switch session** | Click any row to load it |
-| **Delete session** | Trash icon then confirmation modal |
+Mark each lesson **Complete** when done. When every lesson is complete, a **Take recap quiz** CTA appears — auto-generates a 5-question quiz from the same scope + difficulty.
 
-Start a new blank conversation with the New Chat button. Sessions are auto-saved after every message.
+**Badges:** 📋 Workshop Outline · 📖 Lesson Learned · 🎓 Workshop Graduate · 📚 Workshop Marathon (5 workshops).
 
----
+### 5.3 Flashcards
 
-## 4. Knowledge Base View — Complete Feature Reference
+Scrollable decks of flip-cards for spaced review.
 
-Open the Knowledge Base by clicking **Knowledge Base** in the sidebar. This is where you manage the documents the AI can search.
+**Configuration:** difficulty + card count (10 / 20 / 40).
 
----
+**The deck:** responsive grid of cards. **Click** any card to flip it (CSS 3D rotation reveals the answer). On the back, mark **Got it** (emerald) or **Review** (amber). Cards keep their status across visits.
 
-### 4.1 Uploading Documents
+**Filter chips** at the top let you cycle through *All · Unmarked · Review · Mastered* — useful for revisiting only the cards that still need work.
 
-Drag files onto the drop zone or click it to browse. Uploads start the ingestion pipeline automatically.
+**Status-aware gradient borders** change colour with the card's state: purple→pink (unmarked), emerald→cyan (mastered), amber→rose (review).
 
-**9 supported formats:**
+**Each card flip counts toward your study time** (the 15-min idle gap rule applies).
 
-| Format | Chunking strategy |
-|--------|-----------------|
-| **PDF** (text) | Semantic sliding-window, page-by-page |
-| **PDF** (scanned / image-only) | OCR via Tesseract, then semantic chunking |
-| **DOCX** | Paragraph-aware splitting |
-| **Markdown** | Header-hierarchy breadcrumbs (Section: H1 > H2 > H3) |
-| **CSV** | 20-row chunks, header repeated on every chunk |
-| **PPTX** | One chunk per slide, including speaker notes |
-| **XLSX** | Sheet-labelled row chunks |
-| **HTML** | Clean article extraction, then semantic chunking |
-| **TXT** | Sliding-window with overlap |
+**Badges:** 🃏 First Deck · 📇 Card Reviewer (50 flips) · 🎴 Deck Master (all cards mastered in one deck) · 🧩 Deck Collector (5 decks).
 
-Maximum upload size per batch is set by MAX_UPLOAD_SIZE_MB (default 200 MB).
+### 5.4 Mindmaps
+
+Radial concept maps of your scoped material.
+
+**Configuration:** just scope. Depth is fixed at 2 (root → themes → sub-topics).
+
+**The map:** central root pill (purple-pink gradient), 4–6 themed branches around it, 2–4 sub-topics fanning out from each theme. **Drag** to pan, **scroll** to zoom (0.4× → 2.5×).
+
+**Export buttons** in the header:
+
+- **Markdown** — nested bulleted list. Opens a native Save As dialog (Chromium-based browsers).
+- **Image (PNG)** — rasterised at 2400 px wide on a dark background. Same Save As dialog.
+- **PDF** — opens the browser print dialog with the rendered image pre-filled.
+
+**Badges:** 🗺️ Mind Mapper · 📐 Cartographer (first export) · 🌐 Concept Network (5 mindmaps).
 
 ---
 
-### 4.2 The Ingestion Pipeline
+## 6. Progress Dashboard
 
-After uploading, a four-step durable workflow runs to embed your documents:
+A standalone view (4th sidebar item) that visualises everything you've done.
 
-| Step | What happens |
-|------|-------------|
-| **Scanning Library** | Finds new files not yet indexed |
-| **Gathering Document** | Extracts text and splits into overlapping chunks |
-| **Calibrating Neural Embeddings** | Sends chunks to Ollama to generate vector embeddings |
-| **Committing Knowledge Store** | Saves the FAISS index and metadata to disk |
+### Summary cards (top)
 
-Progress is shown as an animated timeline. When all four steps complete, the document list refreshes automatically.
+| Card | Shows |
+|---|---|
+| **Total study time** | Cumulative seconds across chat + quizzes + workshops + flashcards |
+| **Sessions** | How many distinct study sessions, plus total messages sent |
+| **Current streak** | Consecutive days with any study activity |
 
----
+### Achievements strip (middle)
 
-### 4.3 Browsing and Deleting Documents
+Horizontally scrollable row of every badge. Earned badges show in full colour; locked badges are dimmed with a lock overlay. Hover any badge to see the description and (for earned ones) the date you unlocked it.
 
-| Feature | How to use |
-|---------|------------|
-| **Expand or collapse folders** | Click the folder header |
-| **Sort files** | Name A to Z, Name Z to A, Date newest, Size largest |
-| **Delete a document** | Trash icon then confirmation modal |
+### Activity heatmap (bottom)
 
-After deletion the AI immediately stops finding that document. To permanently remove the file from disk, delete it from the docs/ folder directly.
+GitHub-style grid of the last **90 days** — 7 rows (Mon → Sun), 13 columns (one per week). Each cell is colour-coded by that day's total study duration:
 
----
+| Cell | Duration |
+|---|---|
+| Empty | No activity |
+| **Light purple** | < 15 min |
+| **Medium purple** | 15–60 min |
+| **Strong purple** | 1–3 h |
+| **Solid purple** | 3 h+ |
 
-## 5. When to Use Chat Attachments vs. Knowledge Base
-
-| Scenario | Best approach |
-|----------|--------------|
-| Ask about a document once | Attach it in chat |
-| Ask about the same document repeatedly | Add it to the Knowledge Base |
-| Synthesise across multiple documents | Add all of them to the Knowledge Base |
-| Chat about a PDF one-off | Attach it in chat (text extracted automatically) |
-| Asking about an image or chart | Chat attachment (vision) |
+**Click any cell** to open a modal with that day's details: total time, sessions, messages, and any achievements earned on that day.
 
 ---
 
-## 6. Power-User Tips
+## 7. Achievements (25 badges)
 
-### Get better answers
+Auto-tracked. They appear in the Dashboard's Achievements strip as you earn them.
 
-- **Name the document.** Mentioning the filename in your question helps the AI focus on the right source.
-- **Ask follow-up questions.** Context from earlier in a session is preserved — build on previous answers.
-- **Check the Context sidebar.** If an answer seems wrong, see exactly which chunks the AI used.
-- **Edit and retry.** If a question was ambiguous, use edit-and-resend to rephrase rather than starting a new session (section 3.8).
-- **Use the Thinking panel.** For complex questions, expand the reasoning panel to understand how the AI is approaching the problem.
+### Chat & Activity (10)
 
-### Keyboard shortcuts
+| Badge | How to earn |
+|---|---|
+| 🎯 First Question | Send your first chat message |
+| 💬 Conversationalist | 10 messages in one day |
+| 📚 Hour of Power | 1 hour total study time |
+| 🔥 3-Day Streak | Study on 3 consecutive days |
+| 🔥 7-Day Streak | Study on 7 consecutive days |
+| 🏆 Centurion | 100 messages total |
+| 🌙 Night Owl | Study between 10pm and 4am |
+| ⏰ Early Bird | Study between 5am and 8am |
+| 🔍 Curious Mind | Use the document scope filter for the first time |
+| 🎓 Deep Diver | A single study session of 30 minutes or more |
 
-| Shortcut | Action |
-|----------|--------|
-| `Enter` | Send message |
-| `Shift + Enter` | New line |
-| `Cmd/Ctrl + Enter` | Submit edited message |
-| `Escape` | Cancel editing |
-| `Tab` | Navigate between interactive elements |
+### Quiz (4)
 
----
+| Badge | How to earn |
+|---|---|
+| 🧠 First Quiz | Complete your first quiz |
+| 💯 Perfect Score | Score 100% on any quiz |
+| 🎖️ Advanced Scholar | Score ≥80% on an Advanced-level quiz |
+| 🏃 Quiz Marathon | Complete 10 quizzes total |
 
-## 7. FAQ
+### Workshop (4)
 
-**Q: Does anything get sent to the internet?**
-No. Every component — the LLM, the embedding model, the vector store, the transcription model, the database — runs locally on your machine. No data leaves your computer.
+| Badge | How to earn |
+|---|---|
+| 📋 Workshop Outline | Generate your first workshop |
+| 📖 Lesson Learned | Complete your first workshop lesson |
+| 🎓 Workshop Graduate | Finish every lesson in a single workshop |
+| 📚 Workshop Marathon | Complete 5 workshops |
 
----
+### Flashcards (4)
 
-**Q: Why isn't the AI finding my document?**
-Work through this checklist:
-1. Open the Knowledge Base view and confirm the file appears in the document list.
-2. If it is missing, upload it and wait for all four ingestion steps to complete.
-3. If it is listed but the AI still misses it, try re-phrasing your question — semantic search matches meaning, not exact keywords.
-4. Check the Context sidebar after your question to see which sources were actually used.
+| Badge | How to earn |
+|---|---|
+| 🃏 First Deck | Generate your first flashcard deck |
+| 📇 Card Reviewer | Flip 50 flashcards total |
+| 🎴 Deck Master | Mark every card in a single deck as mastered |
+| 🧩 Deck Collector | Create 5 flashcard decks |
 
----
+### Mindmaps (3)
 
-**Q: Can I chat about a PDF without adding it to the Knowledge Base?**
-Yes. Click the paperclip icon in the chat input, select your PDF, and send it with your question. The app extracts the text automatically and the AI reads it inline. This is great for one-off documents. For files you query regularly, add them to the Knowledge Base so you never need to re-attach.
-
----
-
-**Q: My scanned PDF is not being indexed — what is wrong?**
-Scanned PDFs (image-only, no selectable text) are processed via OCR using Tesseract. If OCR is not producing results, make sure Tesseract is installed on your system. Run brew install tesseract on macOS, or apt install tesseract-ocr on Linux. The README has full setup instructions.
-
----
-
-**Q: Can I ask questions that are not about my documents?**
-Yes. The AI has access to a calculator tool and a real-time clock tool. For general questions it will draw on its training knowledge — it only searches the knowledge base when the question warrants it.
-
----
-
-**Q: How do I search only one specific document?**
-Mention the document name directly in your question — for example: "According to annual_report_2024.pdf, what was the total revenue?" The AI uses the filename as a strong retrieval signal. For complete isolation, attach the document directly in chat.
+| Badge | How to earn |
+|---|---|
+| 🗺️ Mind Mapper | Create your first mindmap |
+| 📐 Cartographer | Export a mindmap (Markdown, PNG, or PDF) |
+| 🌐 Concept Network | Create 5 mindmaps total |
 
 ---
 
-**Q: How many documents can I index?**
-There is no hard limit. FAISS search degrades gracefully as the index grows. For very large collections, mention the relevant filename in your query to help the AI focus.
+## 8. Privacy & Data Storage
+
+**Everything stays on your machine.** No network calls to any third-party AI service.
+
+What's stored, and where:
+
+| Data | Location |
+|---|---|
+| Uploaded documents | `docs/` |
+| Vector embeddings + chunk metadata | `vector_store.faiss` + `vector_store.json` |
+| Document categories | `categories.json` |
+| Chat history | `chat_history.json` |
+| Study sessions, quiz attempts, workshops, decks, mindmaps, achievements | `progress.db` (SQLite) |
+| DBOS workflow state | local PostgreSQL |
+| In-progress quiz (for resume-on-refresh) | browser `localStorage` |
+
+To wipe a category of data: delete the corresponding file or table. Nothing else needs cleaning up — there are no telemetry pings, no remote backups, no analytics.
 
 ---
 
-**Q: Can I change the AI model?**
-Yes. Edit the LLM_MODEL and EMBEDDING_MODEL values in your .env file, then restart the app. Make sure the model is available in Ollama first by running ollama pull followed by the model name. Changing the embedding model requires re-indexing all documents since embeddings are model-specific.
+## 9. Tips & Tricks
+
+- **Pin your scope before a quiz, workshop, or mindmap.** Whole-KB generation produces unfocused results; one category or one file gives the best quality.
+- **Use the recap quiz at the end of a workshop.** Same scope + difficulty, tests exactly what you just learned — instant retention check.
+- **Colour-coded flashcard borders** are the fastest way to scan a deck — emerald = mastered, amber = needs review, purple = untouched.
+- **Click any heatmap day** to see exactly what you did — useful when you can't remember whether you actually studied yesterday.
+- **The chat scope badge** on your sent messages is permanent history — you can always see what scope a past answer was based on.
+- **Export anything.** Quizzes and mindmaps support Markdown; mindmaps also support PNG and PDF — great for sharing or printing.
 
 ---
 
-**Q: How do I completely reset the knowledge base?**
-Delete vector_store.faiss and vector_store.json from the project root, and remove the files in the docs/ folder. Restart the app and re-upload your documents.
+## 10. FAQ
 
----
+**Does CogniVault need an internet connection?**
+Only once, to download the Gemma model via Ollama. After that, fully offline.
 
-**Q: What is the Save to KB card that appears after sending a file?**
-When you attach a text file or PDF in chat, the app offers to permanently index it into the Knowledge Base so you can query it in future sessions. Click Add to KB to accept, or dismiss to skip.
+**How big can my Knowledge Base be?**
+There's no hard limit. Hybrid retrieval (FAISS + BM25) keeps queries fast even at thousands of chunks. Larger KBs mean larger files on disk but performance scales well.
 
----
+**Can I use my own model instead of Gemma 4?**
+Yes — change `llm_model` and `embedding_model` in `backend/config.py` (or via env vars). Any Ollama-compatible model works.
 
-**Q: Does the AI remember our previous conversations?**
-Within a single session, yes — the full conversation history is preserved so you can ask follow-up questions naturally. Previous sessions are saved to the history panel but their content is not automatically injected into new conversations. Start a new session fresh, or continue an existing one from the history panel.
+**What if the AI generates something wrong?**
+Every chat answer has citations in the right sidebar — open the source chunks to verify. For quizzes and mindmaps, the parser drops malformed items; if a quiz comes back with fewer questions than requested, narrow the scope and try again.
 
----
+**Can I share a quiz, workshop, or mindmap?**
+Yes — export as Markdown (works everywhere) or PDF. The recipient doesn't need CogniVault to read them.
 
-*This guide covers CogniVault as of May 2026 — including voice input, vision, thinking panel, edit-and-resend, citation preview, and 9-format ingestion.*
+**How do I back up my data?**
+Copy these files: `docs/`, `vector_store.*`, `categories.json`, `chat_history.json`, `progress.db`. They're all local; back them up however you back up the rest of your machine.
+
+**My quiz or mindmap generation failed — what now?**
+The model returns malformed JSON occasionally. CogniVault uses Ollama's `format="json"` grammar constraint plus a JSON-repair fallback plus an automatic retry, but a busy or low-on-context model can still fail. Try a narrower scope or generate again — usually works the second time.
+
+**Where do my badges live?**
+In `progress.db`'s `achievements_earned` table. Deleting the file resets all your progress (but leaves your documents intact).

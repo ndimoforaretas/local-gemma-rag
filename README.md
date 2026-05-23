@@ -4,16 +4,16 @@
 
 # Gemma CogniVault
 
-### A fully local, privacy-first AI Data Vault powered by Gemma 4
+### A fully local, privacy-first AI Study Companion powered by Gemma 4
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
 [![Gemma 4](https://img.shields.io/badge/Gemma%204-e4b-4285F4?logo=google&logoColor=white)](https://ollama.com/library/gemma4)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-202%20passing-brightgreen)](#-testing)
+[![Tests](https://img.shields.io/badge/tests-312%20passing-brightgreen)](#-testing)
 
-**Upload your documents. Ask anything. Nothing leaves your machine.**
+**Chat with your documents. Generate quizzes, workshops, flashcards, mindmaps. Track your progress. Nothing leaves your machine.**
 
 </div>
 
@@ -38,9 +38,9 @@
 
 AI assistants are transforming knowledge work — but for teams in regulated industries (finance, healthcare, legal), cloud AI creates an unacceptable risk surface: unknown data centres, uncertain jurisdictions, and audit trails that stop at the API boundary.
 
-**CogniVault is a 100% local AI Data Vault.** Your documents stay on your hardware. Inference runs via Ollama on `localhost`. No telemetry, no embeddings sent to third parties, no exceptions. A live Privacy Vault Audit Panel confirms zero external connections at runtime.
+**CogniVault is a 100% local AI Study Companion.** Your documents stay on your hardware. Inference runs via Ollama on `localhost`. No telemetry, no embeddings sent to third parties, no exceptions. A live Privacy Vault Audit Panel confirms zero external connections at runtime.
 
-It's also genuinely capable — Gemma 4's full capability surface (completion, vision, tools, and reasoning) running on your laptop.
+It's also genuinely capable — Gemma 4's full surface (completion, vision, tools, reasoning) running on your laptop, wrapped in an app that turns your documents into **quizzes, multi-lesson workshops, flashcard decks, and visual mindmaps**, with a learning-progress dashboard and 25 achievement badges to keep you coming back.
 
 ---
 
@@ -123,6 +123,8 @@ python -m backend.main
 
 ## 🗺️ How to Use
 
+The app has **four top-level sections** in the sidebar, each highlighted in purple when active. Your current section persists across browser refreshes.
+
 ### 1 — Build Your Knowledge Base
 
 Open the **Knowledge Base** tab. You can add documents in several ways:
@@ -132,7 +134,9 @@ Open the **Knowledge Base** tab. You can add documents in several ways:
 
 Supported formats: **PDF · DOCX · PPTX · XLSX · Markdown · CSV · TXT · HTML**
 
-After uploading, click **Ingest** to embed the documents. A progress panel shows each step. Re-upload an edited file and it is automatically re-indexed — stale chunks are replaced, not duplicated.
+After uploading, click **Ingest** to embed the documents. A progress panel shows each step. **Re-upload an edited file** and SHA-256 content hashing automatically detects the change — stale chunks are soft-deleted, the new content is re-indexed in their place.
+
+**Organise with categories.** Tag each document so the scope filter can let you study one topic at a time.
 
 ### 2 — Chat
 
@@ -142,25 +146,70 @@ Switch to the **Chat** tab and ask a question. CogniVault will:
 2. **Search** your documents using hybrid semantic + keyword retrieval
 3. **Answer** with inline citations linking back to exact source chunks
 
-**Attaching files to chat:** click the paperclip to attach up to 5 files at once (images, PDFs, DOCX, text). Images go to Gemma's vision model; documents are extracted and included as context.
+**Scope the chat to specific documents** by clicking the filter pill above the composer. Pick a category or individual files — only those will be searched. Active scope is stamped on the user message as a purple badge for permanent history.
 
-**Voice input:** click the 🎤 mic button to dictate your question — transcribed locally by Whisper, no cloud STT required.
+**Attach files to a single message** — paperclip icon, up to 5 files (images, PDFs, DOCX, text). Images go to Gemma's vision; documents are extracted and included as context.
+
+**Voice input** — click the 🎤 mic to dictate, transcribed locally by Whisper.
 
 ### 3 — Work with Citations
 
-After each answer a **Sources** panel appears on the right (or tap **"N sources ↗"** on mobile to open the drawer). Each citation card shows:
-
-- The source filename and page number
-- **View chunk** — click to reveal the exact retrieved passage Gemma used
-- **Open** — jump directly to the source file
+After each answer a **Sources** panel appears on the right (or tap **"N sources ↗"** on mobile to open the drawer). Each citation card shows the source filename, page number, relevance score, **View chunk** to reveal the exact retrieved passage, and **Open** to jump to the source file.
 
 ### 4 — Edit and Regenerate
 
-Hover over any of your messages to reveal an **✏️ Edit** button — click to modify and resend. Every subsequent message is removed and the conversation resumes cleanly from that point. On AI responses, **🔄 Regenerate** re-runs the same query for a fresh answer.
+Hover over any of your messages to reveal an **✏️ Edit** button — click to modify and resend. Subsequent messages are removed and the conversation resumes from that point. On AI responses, **🔄 Regenerate** re-runs the query for a fresh answer.
+
+### 5 — Study Hub (4 modes)
+
+Switch to **Study Hub** and pick a mode. All four turn your scoped documents into active learning material:
+
+- **🧠 Quiz Mode** — auto-generated quizzes (5/10/20 questions, MCQ + True/False, 3 difficulties). Instant feedback per question. Resume on refresh. Export as Markdown or PDF.
+- **📖 Workshop Creator** — multi-lesson workshops (5 or 10 lessons). Two-pass generation: outline first, lessons rendered on demand with a sticky right-side TOC. Mark each lesson complete, then take a recap quiz.
+- **🃏 Flashcards** — flip-card decks (10/20/40 cards). 3D flip animation. Mark **Got it** / **Review** per card. Status-aware gradient borders. Filter chips to revisit only what still needs work.
+- **🗺️ Mindmaps** — radial concept maps with pan + zoom. Export as Markdown, PNG, or PDF.
+
+### 6 — Track Your Progress
+
+Open the **Dashboard** tab to see:
+
+- **Total study time, sessions, current streak** — three hero stat cards
+- **Achievement strip** — horizontally scrollable row of 25 badges (earned in colour, locked dimmed)
+- **GitHub-style activity heatmap** — last 90 days, 5 purple intensity levels by daily duration. Click any day for that day's details + achievements earned
 
 ---
 
 ## ✨ Features
+
+### 🎓 Study Hub
+
+Four AI-powered study modes — all scope-aware, all stateful, all exportable:
+
+| Mode               | What it generates                                          | Export                  |
+| ------------------ | ---------------------------------------------------------- | ----------------------- |
+| **Quiz Mode**      | Multiple-choice + True/False quizzes (3 difficulties)      | Markdown · PDF          |
+| **Workshop Creator** | Multi-lesson workshops with intro / core / takeaways      | Coming soon             |
+| **Flashcards**     | Flip-card decks with per-card Got-it / Review status       | Coming soon             |
+| **Mindmaps**       | Interactive radial concept maps (pan / zoom)               | Markdown · PNG · PDF    |
+
+Each generated artefact is persisted to local SQLite — come back to it whenever, no regeneration needed. Quizzes resume from where you left off if you refresh mid-quiz.
+
+### 📊 Progress Dashboard
+
+A standalone view that tracks every interaction:
+
+- **Total study time** with a 15-minute idle-gap session model — automatically counts chat, quiz, workshop, and flashcard activity
+- **GitHub-style 90-day heatmap** with 5 purple intensity levels (no activity → 3+ hours)
+- **Click any heatmap day** to drill into time, sessions, messages, and achievements earned that day
+- **60s background refetch** — finish a quiz in another tab and the dashboard updates without reload
+
+### 🏆 25 Achievement Badges
+
+Auto-tracked across all activity. Examples: 🎯 First Question · 🔥 7-Day Streak · 💯 Perfect Score · 🎓 Workshop Graduate · 🎴 Deck Master · 🗺️ Mind Mapper · 🌙 Night Owl. Full list in the [user guide](docs/GUIDE.md).
+
+### 🔍 Document Scope Filter
+
+Limit any chat or study-mode generation to a category, subset of files, or single document. The active scope is stamped on user messages as a purple badge for permanent history. Mandatory for all Study Hub modes — focused scope → focused output.
 
 ### 🧠 Thinking Mode
 
@@ -227,17 +276,19 @@ Independent conversation threads with auto-generated titles, a collapsible histo
 cp .env.example .env
 ```
 
-| Variable             | Default                                              | Description                                               |
-| -------------------- | ---------------------------------------------------- | --------------------------------------------------------- |
-| `LLM_MODEL`          | `gemma4:e4b`                                         | Chat model                                                |
-| `EMBEDDING_MODEL`    | `embeddinggemma`                                     | Embedding model                                           |
-| `OLLAMA_HOST`        | `http://localhost:11434`                             | Ollama server URL                                         |
-| `THINKING_MODE`      | `true`                                               | Enable/disable 🧠 Reasoning panel                         |
-| `WHISPER_MODEL`      | `base`                                               | Whisper model size (`tiny` · `base` · `small` · `medium`) |
-| `DB_URL`             | `postgresql://postgres:password@localhost:5432/dbos` | PostgreSQL connection                                     |
-| `MAX_UPLOAD_SIZE_MB` | `500`                                                | Per-file upload limit                                     |
-| `CHUNK_SIZE`         | `1000`                                               | Characters per chunk                                      |
-| `CHUNK_OVERLAP`      | `100`                                                | Overlap between adjacent chunks                           |
+| Variable                            | Default                                              | Description                                                  |
+| ----------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------ |
+| `LLM_MODEL`                         | `gemma4:e4b`                                         | Chat model                                                   |
+| `EMBEDDING_MODEL`                   | `embeddinggemma`                                     | Embedding model                                              |
+| `OLLAMA_HOST`                       | `http://localhost:11434`                             | Ollama server URL                                            |
+| `THINKING_MODE`                     | `true`                                               | Enable/disable 🧠 Reasoning panel                            |
+| `WHISPER_MODEL`                     | `base`                                               | Whisper model size (`tiny` · `base` · `small` · `medium`)    |
+| `DB_URL`                            | `postgresql://postgres:password@localhost:5432/dbos` | PostgreSQL connection                                        |
+| `PROGRESS_DB_FILE`                  | `progress.db`                                        | SQLite for study sessions, achievements, quizzes, decks…     |
+| `STUDY_SESSION_IDLE_GAP_SECONDS`    | `900`                                                | Idle gap (sec) that ends a study session — default 15 min    |
+| `MAX_UPLOAD_SIZE_MB`                | `500`                                                | Per-file upload limit                                        |
+| `CHUNK_SIZE`                        | `1000`                                               | Characters per chunk                                         |
+| `CHUNK_OVERLAP`                     | `100`                                                | Overlap between adjacent chunks                              |
 
 ---
 
@@ -251,21 +302,28 @@ Browser
   ▼
 FastAPI (backend/main.py)
   │
-  ├── POST /rag ──────────► Phase 1: direct Ollama call (thinking=True)
-  │                              emits {"type":"thinking","data":"..."}
-  │                         Phase 2: Strands Agent (tool loop + answer)
-  │                              emits {"type":"text"|"metadata","data":...}
+  ├── POST /rag ──────────────► Phase 1: direct Ollama call (thinking=True)
+  │                                  emits {"type":"thinking","data":"..."}
+  │                             Phase 2: Strands Agent (tool loop + answer)
+  │                                  emits {"type":"text"|"metadata","data":...}
   │
-  ├── POST /upload ────────► validate → save to docs/
-  ├── POST /ingest ────────► durable workflow (hash-aware, crash-resumable)
-  ├── GET  /kb ───────────► knowledge base file listing
-  ├── GET  /api/vault/stats► privacy audit stats
-  ├── GET  /api/docs/list ► indexed document inventory
-  ├── DELETE /api/docs/:f ► soft-delete chunks + remove file
-  ├── POST /api/save-to-kb► base64 attachment → docs/ → ingest
-  ├── POST /api/transcribe► Whisper audio → text
-  └── GET|POST|DELETE
-      /api/history ───────► multi-session chat persistence
+  ├── POST /upload ────────────► validate → save to docs/
+  ├── POST /ingest ────────────► durable workflow (hash-aware, crash-resumable)
+  ├── GET  /kb ────────────────► knowledge base file listing
+  ├── GET  /api/vault/stats ───► privacy audit stats
+  ├── GET  /api/docs/list ─────► indexed document inventory
+  ├── DELETE /api/docs/:f ─────► soft-delete chunks + remove file
+  ├── POST /api/save-to-kb ────► base64 attachment → docs/ → ingest
+  ├── POST /api/transcribe ────► Whisper audio → text
+  ├── GET|POST|DELETE
+  │   /api/history ────────────► multi-session chat persistence
+  │
+  ├── /api/study/quiz/* ───────► generate quiz, submit attempt
+  ├── /api/study/workshop/* ───► outline + per-lesson generation, completion
+  ├── /api/study/flashcards/* ─► deck CRUD, card status + flip tracking
+  ├── /api/study/mindmaps/* ───► mindmap CRUD, export count
+  │
+  └── /api/progress/* ─────────► summary, daily activity, achievements
 ```
 
 ### Agent Tools
@@ -281,7 +339,7 @@ current_time()                            → timestamp
 
 ### Ingestion Pipeline
 
-Each ingestion run is a crash-resumable workflow. Every step is checkpointed — if the server restarts mid-way, it picks up from the last completed batch.
+Each ingestion run is a crash-resumable DBOS workflow. Every step is checkpointed — if the server restarts mid-way, it picks up from the last completed batch.
 
 ```
 1. Scan docs/  →  SHA-256 hash per file
@@ -307,13 +365,31 @@ Each ingestion run is a crash-resumable workflow. Every step is checkpointed —
 5. Save   →  append to FAISS IndexFlatIP + JSON metadata on disk
 ```
 
+### Study-Mode Generation
+
+All four Study Hub modes share a defensive pattern designed around the realities of local LLM JSON output:
+
+```
+1. Retrieve  →  hybrid search restricted by user-selected scope
+2. Prompt    →  strict JSON schema with explicit count + shape rules
+3. Generate  →  ollama.chat with format="json" (grammar-constrained)
+4. Parse     →  json.loads with trailing-comma + smart-quote repair fallback
+5. Validate  →  drop malformed items rather than fail the whole batch
+6. Retry     →  workshops auto-retry once with a stronger prompt on parse failure
+7. Persist   →  SQLite (progress.db) so the user can come back later
+```
+
 ### Storage
 
-| Layer        | Files                                     | Purpose                                       |
-| ------------ | ----------------------------------------- | --------------------------------------------- |
-| **Disk**     | `vector_store.faiss`, `vector_store.json` | Embeddings and chunk metadata                 |
-| **RAM**      | `VectorDB` singleton                      | Sub-ms hybrid search (FAISS + BM25 in-memory) |
-| **Postgres** | DBOS system tables                        | Workflow checkpoints for crash recovery       |
+| Layer        | Files                                          | Purpose                                                  |
+| ------------ | ---------------------------------------------- | -------------------------------------------------------- |
+| **Disk**     | `vector_store.faiss`, `vector_store.json`      | Embeddings and chunk metadata                            |
+| **Disk**     | `categories.json`                              | Document → category mapping                              |
+| **Disk**     | `chat_history.json`                            | Multi-session chat persistence                           |
+| **SQLite**   | `progress.db`                                  | Study sessions, quizzes, workshops, decks, mindmaps, badges |
+| **RAM**      | `VectorDB` singleton                           | Sub-ms hybrid search (FAISS + BM25 in-memory)            |
+| **Postgres** | DBOS system tables                             | Workflow checkpoints for crash recovery                  |
+| **Browser**  | `localStorage`                                 | Active view + in-progress quiz resume                    |
 
 All storage is local. The Vault Audit Panel confirms no external connections at runtime.
 
@@ -321,17 +397,20 @@ All storage is local. The Vault Audit Panel confirms no external connections at 
 
 ## 🛠️ Tech Stack
 
-| Layer                | Technology                                                                                                                   |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| **LLM & Embeddings** | [Ollama](https://ollama.com) · `gemma4:e4b` · `embeddinggemma`                                                               |
-| **Agent Framework**  | [Strands Agents SDK](https://github.com/strands-agents/sdk-python)                                                           |
-| **Backend**          | [FastAPI](https://fastapi.tiangolo.com) · Python 3.10+ · Pydantic                                                            |
-| **Vector Search**    | [FAISS](https://github.com/facebookresearch/faiss) IndexFlatIP + [BM25Okapi](https://github.com/dorianbrown/rank_bm25) · RRF |
-| **Document Parsing** | pypdf · python-docx · python-pptx · openpyxl · trafilatura · httpx                                                           |
-| **OCR**              | pytesseract · pymupdf · Pillow                                                                                               |
-| **Audio**            | faster-whisper (local Whisper inference)                                                                                     |
-| **Workflow Engine**  | [DBOS](https://dbos.dev) + PostgreSQL                                                                                        |
-| **Frontend**         | React 19 · TypeScript · Vite · TanStack Query · Framer Motion · Tailwind CSS v4                                              |
+| Layer                 | Technology                                                                                                                   |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **LLM & Embeddings**  | [Ollama](https://ollama.com) · `gemma4:e4b` · `embeddinggemma`                                                               |
+| **Agent Framework**   | [Strands Agents SDK](https://github.com/strands-agents/sdk-python)                                                           |
+| **Backend**           | [FastAPI](https://fastapi.tiangolo.com) · Python 3.10+ · Pydantic                                                            |
+| **Vector Search**     | [FAISS](https://github.com/facebookresearch/faiss) IndexFlatIP + [BM25Okapi](https://github.com/dorianbrown/rank_bm25) · RRF |
+| **Document Parsing**  | pypdf · python-docx · python-pptx · openpyxl · trafilatura · httpx                                                           |
+| **OCR**               | pytesseract · pymupdf · Pillow                                                                                               |
+| **Audio**             | faster-whisper (local Whisper inference)                                                                                     |
+| **Workflow Engine**   | [DBOS](https://dbos.dev) + PostgreSQL                                                                                        |
+| **Study + Progress**  | SQLite via Python `sqlite3` (zero new deps)                                                                                  |
+| **Frontend**          | React 19 · TypeScript · Vite · TanStack Query · Framer Motion · Tailwind CSS v4 · `marked`                                   |
+| **Mindmap Rendering** | Hand-rolled SVG with pan/zoom (no `@xyflow/react`, no `d3`)                                                                  |
+| **Mindmap Export**    | `XMLSerializer` → `<img>` → `<canvas>` → PNG/PDF (zero export-library deps)                                                  |
 
 ---
 
@@ -339,38 +418,69 @@ All storage is local. The Vault Audit Panel confirms no external connections at 
 
 ```
 ├── backend/
-│   ├── main.py                  # FastAPI app + router mounts
-│   ├── config.py                # Centralised settings (.env → pydantic-settings)
+│   ├── main.py                     # FastAPI app + router mounts
+│   ├── config.py                   # Centralised settings (.env → pydantic-settings)
 │   ├── routers/
-│   │   ├── rag.py               # POST /rag — two-phase stream
-│   │   ├── knowledge.py         # Upload, ingest, URL, KB browse, vault stats
-│   │   ├── history.py           # Multi-session chat persistence
-│   │   └── audio.py             # Whisper transcription endpoints
+│   │   ├── rag.py                  # POST /rag — two-phase stream
+│   │   ├── knowledge.py            # Upload, ingest, URL, KB browse, vault stats
+│   │   ├── history.py              # Multi-session chat persistence
+│   │   ├── audio.py                # Whisper transcription endpoints
+│   │   ├── study.py                # Quiz + Workshop + Flashcard + Mindmap endpoints
+│   │   └── progress.py             # Dashboard data (summary, daily, achievements)
 │   ├── services/
-│   │   ├── rag_agent.py         # Two-phase thinking + Strands agent stream
-│   │   ├── vector_db.py         # Hybrid FAISS+BM25 search, RRF, delete
-│   │   └── ingest.py            # Durable ingestion workflow + all extractors
-│   ├── tools/agent_tools.py     # 6 agent tools
-│   ├── models/schemas.py        # Pydantic request/response models
-│   └── tests/                   # 202 tests across 12 test files
+│   │   ├── rag_agent.py            # Two-phase thinking + Strands agent stream
+│   │   ├── vector_db.py            # Hybrid FAISS+BM25 search, RRF, delete
+│   │   ├── ingest.py               # Durable ingestion workflow + all extractors
+│   │   ├── progress_tracker.py     # SQLite layer for sessions, quizzes, decks, …
+│   │   ├── achievements.py         # 25 badge definitions + evaluator
+│   │   ├── quiz_generator.py       # Quiz JSON generator (format="json" + repair)
+│   │   ├── workshop_generator.py   # Two-pass outline + lesson generator
+│   │   ├── flashcard_generator.py  # Flashcard deck generator
+│   │   └── mindmap_generator.py    # Mindmap tree generator
+│   ├── tools/agent_tools.py        # 6 agent tools
+│   ├── models/schemas.py           # Pydantic request/response models
+│   └── tests/                      # 312 tests across 16 test files
 ├── frontend/src/
+│   ├── App.tsx                     # Top-level shell + view persistence
 │   ├── components/
-│   │   ├── KnowledgeBase.tsx    # Chat UI + streaming consumer
-│   │   ├── ChatMessageList.tsx  # Messages + ThinkingPanel + edit/regen
-│   │   ├── ChatInput.tsx        # Input bar + attachments + mic
-│   │   ├── ContextSidebar.tsx   # Citation sidebar (push on desktop, drawer on mobile)
-│   │   ├── KnowledgeSync.tsx    # Upload drop zone + ingestion progress
-│   │   ├── VaultAudit.tsx       # Privacy Vault Audit Panel
-│   │   └── HistorySidebar.tsx   # Multi-session history
-│   ├── lib/api.ts               # Typed API client
-│   └── types/api.ts             # Shared TypeScript interfaces
-├── docs/GUIDE.md                # Pre-seeded user guide
-├── docker-compose.yaml          # PostgreSQL
+│   │   ├── Sidebar.tsx             # 4-section nav with purple-pill active state
+│   │   ├── Breadcrumbs.tsx         # Shared phase-aware navigation crumbs
+│   │   ├── KnowledgeBase.tsx       # Chat UI + streaming consumer
+│   │   ├── ChatMessageList.tsx     # Messages + ThinkingPanel + edit/regen
+│   │   ├── ChatInput.tsx           # Input bar + attachments + mic
+│   │   ├── ContextSidebar.tsx      # Citation sidebar
+│   │   ├── DocScopeFilter.tsx      # Category-aware scope picker
+│   │   ├── KnowledgeSync.tsx       # Upload drop zone + ingestion progress
+│   │   ├── VaultAudit.tsx          # Privacy Vault Audit Panel
+│   │   ├── HistorySidebar.tsx      # Multi-session history
+│   │   ├── SuggestionCards.tsx     # 15-tile starter grid (GUIDE-scoped)
+│   │   ├── study/                  # Study Hub — all 4 modes
+│   │   │   ├── StudyHub.tsx        # Mode picker
+│   │   │   ├── QuizMode.tsx        # Quiz orchestrator
+│   │   │   ├── WorkshopMode.tsx    # Workshop orchestrator
+│   │   │   ├── FlashcardsMode.tsx  # Flashcards orchestrator
+│   │   │   ├── MindmapsMode.tsx    # Mindmaps orchestrator
+│   │   │   ├── quiz/               # Quiz panels + state hook + export
+│   │   │   ├── workshop/           # Workshop list, outline, lesson, TOC
+│   │   │   ├── flashcards/         # Flip card + filter chips + status controls
+│   │   │   └── mindmaps/           # SVG renderer + radial layout + export
+│   │   └── dashboard/              # Progress Dashboard
+│   │       ├── ProgressDashboard.tsx   # Top-level page
+│   │       ├── SummaryCards.tsx        # 3 hero stats
+│   │       ├── AchievementStrip.tsx    # Horizontal scrollable badges
+│   │       ├── ActivityHeatmap.tsx     # GitHub-style 90-day grid
+│   │       └── DayDetailModal.tsx      # Per-day drill-down
+│   ├── lib/
+│   │   ├── api.ts                  # Typed API client
+│   │   └── saveBlob.ts             # Native File System Access API + fallback
+│   └── types/api.ts                # Shared TypeScript interfaces
+├── docs/GUIDE.md                   # Pre-seeded user guide (powers starter cards)
+├── docker-compose.yaml             # PostgreSQL
 ├── requirements.txt
 └── scripts/
-    ├── setup.sh                 # One-time setup
-    ├── start.sh                 # Start app
-    └── stop.sh                  # Stop app
+    ├── setup.sh                    # One-time setup
+    ├── start.sh                    # Start app
+    └── stop.sh                     # Stop app
 ```
 
 ---
@@ -382,7 +492,7 @@ All storage is local. The Vault Audit Panel confirms no external connections at 
 python -m pytest backend/tests/ -v
 ```
 
-**202 tests** across 12 test files:
+**312 tests** across 16 test files:
 
 | Test File                    | What it covers                                           |
 | ---------------------------- | -------------------------------------------------------- |
@@ -398,6 +508,12 @@ python -m pytest backend/tests/ -v
 | `test_new_formats.py`        | PPTX, XLSX, HTML extractors, extension routing           |
 | `test_reingest.py`           | SHA-256 change detection, idempotency                    |
 | `test_vector_db.py`          | BM25, FAISS, RRF fusion, hybrid search                   |
+| `test_audio.py`              | Whisper transcription endpoint                           |
+| `test_progress.py`           | Sessions, daily aggregation, achievement criteria        |
+| `test_quiz.py`               | Quiz parsing, endpoint, quiz achievements                |
+| `test_workshop.py`           | Outline + lesson parsing, CRUD, workshop achievements    |
+| `test_flashcards.py`         | Deck parsing + CRUD + 4 flashcard achievements           |
+| `test_mindmaps.py`           | Tree parsing + CRUD + 3 mindmap achievements             |
 
 ---
 
@@ -413,6 +529,8 @@ python -m pytest backend/tests/ -v
 | 🧠 Reasoning panel missing        | Thinking mode off or wrong model | Confirm `gemma4:e4b` is pulled; check `THINKING_MODE=true`                  |
 | 🎤 Mic button transcription fails | faster-whisper not installed     | `pip install faster-whisper`                                                |
 | OCR not working on scanned PDFs   | pytesseract/pymupdf missing      | `pip install pymupdf pytesseract Pillow` + `brew install tesseract` (macOS) |
+| Quiz / mindmap returns fewer items than requested | Scope too broad     | Narrow the scope (one file or one category) and regenerate                  |
+| Achievement / dashboard data missing | `progress.db` not yet created | Will be created automatically on first message / quiz / etc.                |
 
 ---
 

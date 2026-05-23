@@ -289,6 +289,11 @@ export function KnowledgeBase() {
     attachments: Attachment[] = [],
     directQuery?: string,
     trimHistoryToTurns?: number,
+    // Optional one-shot scope. When provided (e.g. starter-suggestion click),
+    // this is used INSTEAD of the user's current documentFilter and the filter
+    // pill is left untouched — the suggestion's scope shouldn't clobber the
+    // user's manually-set filter for their next query.
+    scopeOverride?: string[],
   ) => {
     const queryText = directQuery !== undefined ? directQuery : input.trim();
     if ((!queryText && attachments.length === 0) || isLoading) return;
@@ -350,12 +355,21 @@ export function KnowledgeBase() {
     // Persist the cleared citations now that we have a confirmed session id.
     updateSessionContextItems(currentSessionId, []);
 
-    // Capture and clear the scope filter so it's stamped on this message only.
-    const activeScopeFilter = documentFilter.length > 0 ? [...documentFilter] : undefined;
+    // Capture the scope filter so it's stamped on this message only.
+    // When a scopeOverride is supplied (suggestion-card click) it wins and
+    // we leave the user's documentFilter alone; otherwise we use and clear
+    // the filter pill as before.
+    let activeScopeFilter: string[] | undefined;
+    if (scopeOverride && scopeOverride.length > 0) {
+      activeScopeFilter = [...scopeOverride];
+    } else {
+      activeScopeFilter =
+        documentFilter.length > 0 ? [...documentFilter] : undefined;
+      setDocumentFilter([]);
+    }
     const activeScopeLabel = activeScopeFilter
       ? computeScopeLabel(activeScopeFilter, indexedDocsData?.documents ?? [])
       : undefined;
-    setDocumentFilter([]);
 
     const newMsgId = Date.now().toString();
     updateSessionMessages(currentSessionId, (prev) => [
@@ -379,7 +393,7 @@ export function KnowledgeBase() {
         userMessage,
         attachments,
         currentSessionId,
-        documentFilter.length > 0 ? documentFilter : undefined,
+        activeScopeFilter,
         trimHistoryToTurns,
       );
 
@@ -742,7 +756,9 @@ export function KnowledgeBase() {
           onCopy={handleCopyMessage}
           onExport={handleExportMessage}
           messagesEndRef={messagesEndRef}
-          onSuggestionSelect={(prompt) => handleSend([], prompt)}
+          onSuggestionSelect={(prompt, scope) =>
+            handleSend([], prompt, undefined, scope)
+          }
           onEdit={handleEdit}
           onRegenerate={handleRegenerate}
         />

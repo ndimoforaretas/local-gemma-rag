@@ -173,3 +173,163 @@ export interface HealthResponse {
   vector_db_loaded: boolean;
   indexed_chunks: number;
 }
+
+// ── Progress Dashboard ──────────────────────────────────────────────
+
+export interface ProgressSummary {
+  total_seconds: number;
+  total_sessions: number;
+  total_messages: number;
+  current_streak_days: number;
+}
+
+export interface DailyActivityEntry {
+  date: string; // YYYY-MM-DD
+  seconds: number;
+  message_count: number;
+  session_count: number;
+}
+
+export interface DailyActivityResponse {
+  days: DailyActivityEntry[];
+}
+
+export interface AchievementItem {
+  code: string;
+  name: string;
+  description: string;
+  icon: string;
+  earned_at: number | null;
+  is_earned: boolean;
+}
+
+export interface AchievementsResponse {
+  achievements: AchievementItem[];
+}
+
+// ── Workshops ───────────────────────────────────────────────────────────
+
+export type WorkshopDifficulty = "beginner" | "intermediate" | "advanced";
+
+export interface WorkshopLesson {
+  lesson_idx: number;
+  title: string;
+  est_minutes: number;
+  completed_at: number | null;
+  has_content: boolean;
+}
+
+export interface Workshop {
+  id: number;
+  created_at: number;
+  difficulty: WorkshopDifficulty;
+  scope: string[];
+  title: string;
+  summary: string;
+  key_points: string[];
+  objectives: string[];
+  completed_at: number | null;
+  lessons: WorkshopLesson[];
+}
+
+export interface WorkshopListItem {
+  id: number;
+  created_at: number;
+  difficulty: WorkshopDifficulty;
+  title: string;
+  summary: string;
+  total_lessons: number;
+  completed_lessons: number;
+  completed_at: number | null;
+}
+
+export interface WorkshopListResponse {
+  workshops: WorkshopListItem[];
+}
+
+export interface LessonContent {
+  lesson_idx: number;
+  title: string;
+  content_md: string;
+  completed_at: number | null;
+}
+
+export interface LessonCompleteResponse {
+  lessons_total: number;
+  lessons_done: number;
+  workshop_completed: boolean;
+  newly_earned_achievements: string[];
+}
+
+// ── Flashcards ──────────────────────────────────────────────────────────
+
+export type FlashcardStatus = "mastered" | "review" | null;
+
+export interface Flashcard {
+  card_idx: number;
+  front: string;
+  back: string;
+  status: FlashcardStatus;
+  flip_count: number;
+}
+
+export interface FlashcardDeck {
+  id: number;
+  created_at: number;
+  difficulty: WorkshopDifficulty;
+  scope: string[];
+  title: string;
+  card_count: number;
+  cards: Flashcard[];
+}
+
+export interface FlashcardDeckListItem {
+  id: number;
+  created_at: number;
+  difficulty: WorkshopDifficulty;
+  title: string;
+  card_count: number;
+  mastered_count: number;
+}
+
+export interface FlashcardDeckListResponse {
+  decks: FlashcardDeckListItem[];
+}
+
+export interface FlashcardStatusResponse {
+  newly_earned_achievements: string[];
+}
+
+// ── Mindmaps ────────────────────────────────────────────────────────────
+
+export interface MindmapNode {
+  label: string;
+  children: MindmapNode[];
+}
+
+export interface Mindmap {
+  id: number;
+  created_at: number;
+  scope: string[];
+  depth: number;
+  title: string;
+  tree: MindmapNode;
+  export_count: number;
+}
+
+export interface MindmapListItem {
+  id: number;
+  created_at: number;
+  depth: number;
+  title: string;
+  export_count: number;
+}
+
+export interface MindmapListResponse {
+  mindmaps: MindmapListItem[];
+}
+
+export interface MindmapExportResponse {
+  export_count: number;
+  newly_earned_achievements: string[];
+}

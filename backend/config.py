@@ -57,6 +57,11 @@ class Settings(BaseSettings):
     # --- Database (DBOS) ---
     db_url: str = "postgresql://postgres:password@localhost:5432/dbos"
 
+    # --- Learning Progress Tracker ---
+    progress_db_file: str = "progress.db"
+    # Idle gap (seconds) after which a new study session begins.
+    study_session_idle_gap_seconds: int = 15 * 60
+
     # --- Server ---
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:8000"]
     max_upload_size_mb: int = 200

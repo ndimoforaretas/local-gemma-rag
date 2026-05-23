@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Filter, X, ChevronDown, ChevronRight, FileText, Folder } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
@@ -37,6 +37,9 @@ function IndeterminateCheckbox({
 export function DocScopeFilter({ selected, onChange }: DocScopeFilterProps) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // Popover opens upward in chat (trigger near bottom) but should flip
+  // downward in Study Hub (trigger near top). Computed when `open` flips true.
+  const [direction, setDirection] = useState<"up" | "down">("down");
   const panelRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -92,6 +95,19 @@ export function DocScopeFilter({ selected, onChange }: DocScopeFilterProps) {
     onChange([]);
     setOpen(false);
   };
+
+  // Decide open direction based on available viewport space.
+  // Runs synchronously before paint so the popover never flashes in the wrong spot.
+  useLayoutEffect(() => {
+    if (!open || !buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const ESTIMATED_PANEL_HEIGHT = 360;
+    if (spaceBelow >= ESTIMATED_PANEL_HEIGHT) setDirection("down");
+    else if (spaceAbove >= ESTIMATED_PANEL_HEIGHT) setDirection("up");
+    else setDirection(spaceBelow >= spaceAbove ? "down" : "up");
+  }, [open]);
 
   // Close on outside click
   useEffect(() => {
@@ -173,7 +189,9 @@ export function DocScopeFilter({ selected, onChange }: DocScopeFilterProps) {
       {open && (
         <div
           ref={panelRef}
-          className="absolute bottom-full left-0 mb-2 z-50 w-80 rounded-xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#1d2027] shadow-xl shadow-black/10 dark:shadow-black/30 overflow-hidden"
+          className={`absolute left-0 z-50 w-80 rounded-xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#1d2027] shadow-xl shadow-black/10 dark:shadow-black/30 overflow-hidden ${
+            direction === "up" ? "bottom-full mb-2" : "top-full mt-2"
+          }`}
           role="dialog"
           aria-label="Select categories or documents to search"
         >
