@@ -23,8 +23,13 @@ const SUGGESTIONS = [
   },
 ] as const;
 
+// Every starter chip is about *using the app* — scope all of them to the
+// pre-loaded user guide so the agent can't drag in unrelated KB chunks
+// just because they happen to mention "files" or "upload".
+const GUIDE_SCOPE: string[] = ["GUIDE.md"];
+
 interface SuggestionCardsProps {
-  onSelect: (prompt: string) => void;
+  onSelect: (prompt: string, scope?: string[]) => void;
 }
 
 export function SuggestionCards({ onSelect }: SuggestionCardsProps) {
@@ -36,7 +41,7 @@ export function SuggestionCards({ onSelect }: SuggestionCardsProps) {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.05 }}
-          onClick={() => onSelect(text)}
+          onClick={() => onSelect(text, GUIDE_SCOPE)}
           className="text-left px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-500/40 hover:border-emerald-500 dark:hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:shadow-sm transition-all group cursor-pointer">
           <div className="flex items-center gap-3">
             <Icon

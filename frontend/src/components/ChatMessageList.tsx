@@ -88,7 +88,7 @@ interface ChatMessageListProps {
   onCopy: (content: string, id: string) => void;
   onExport: (content: string, id: string) => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
-  onSuggestionSelect: (prompt: string) => void;
+  onSuggestionSelect: (prompt: string, scope?: string[]) => void;
   /** Called when the user submits an edited version of a user message. */
   onEdit?: (messageIndex: number, newContent: string) => void;
   /** Called when the user clicks Regenerate on an AI message. */
