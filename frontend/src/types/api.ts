@@ -299,3 +299,37 @@ export interface FlashcardDeckListResponse {
 export interface FlashcardStatusResponse {
   newly_earned_achievements: string[];
 }
+
+// ── Mindmaps ────────────────────────────────────────────────────────────
+
+export interface MindmapNode {
+  label: string;
+  children: MindmapNode[];
+}
+
+export interface Mindmap {
+  id: number;
+  created_at: number;
+  scope: string[];
+  depth: number;
+  title: string;
+  tree: MindmapNode;
+  export_count: number;
+}
+
+export interface MindmapListItem {
+  id: number;
+  created_at: number;
+  depth: number;
+  title: string;
+  export_count: number;
+}
+
+export interface MindmapListResponse {
+  mindmaps: MindmapListItem[];
+}
+
+export interface MindmapExportResponse {
+  export_count: number;
+  newly_earned_achievements: string[];
+}

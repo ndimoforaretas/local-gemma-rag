@@ -191,6 +191,28 @@ ACHIEVEMENTS: list[Achievement] = [
         icon="🧩",
         check=lambda s: s.get("total_decks_created", 0) >= 5,
     ),
+    # ── Mindmaps badges (Mode 4) ──────────────────────────────────────────
+    Achievement(
+        code="mind_mapper",
+        name="Mind Mapper",
+        description="Create your first mindmap.",
+        icon="🗺️",
+        check=lambda s: s.get("total_mindmaps", 0) >= 1,
+    ),
+    Achievement(
+        code="cartographer",
+        name="Cartographer",
+        description="Export a mindmap (PDF, PNG, or Markdown).",
+        icon="📐",
+        check=lambda s: s.get("total_mindmap_exports", 0) >= 1,
+    ),
+    Achievement(
+        code="concept_network",
+        name="Concept Network",
+        description="Create 5 mindmaps in total.",
+        icon="🌐",
+        check=lambda s: s.get("total_mindmaps", 0) >= 5,
+    ),
 ]
 
 

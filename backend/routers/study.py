@@ -24,6 +24,11 @@ from backend.models.schemas import (
     FlashcardStatusResponse,
     LessonCompleteResponse,
     LessonContentResponse,
+    MindmapCreateRequest,
+    MindmapExportResponse,
+    MindmapListItem,
+    MindmapListResponse,
+    MindmapOut,
     QuizGenerateRequest,
     QuizGenerateResponse,
     QuizQuestionOut,
@@ -38,6 +43,7 @@ from backend.models.schemas import (
 from backend.services import achievements as ach_service
 from backend.services import (
     flashcard_generator,
+    mindmap_generator,
     progress_tracker,
     quiz_generator,
     workshop_generator,
@@ -428,3 +434,76 @@ def _deck_to_response(deck: dict | None) -> FlashcardDeckOut:
             for c in deck["cards"]
         ],
     )
+
+
+# ── Mindmaps ────────────────────────────────────────────────────────────────
+
+
+@router.post("/mindmaps/mindmap", response_model=MindmapOut)
+def create_mindmap(req: MindmapCreateRequest) -> MindmapOut:
+    try:
+        result = mindmap_generator.generate_mindmap(source_filter=req.document_filter)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except Exception:
+        logger.exception("Mindmap generation failed")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to generate the mindmap. The model may be unavailable.",
+        )
+
+    mm_id = progress_tracker.create_mindmap(
+        scope=req.document_filter,
+        depth=req.depth,
+        title=result.title,
+        tree=result.tree,
+    )
+    try:
+        ach_service.evaluate_and_persist()
+    except Exception:
+        logger.exception("Achievement eval after mindmap create failed (non-fatal)")
+
+    mm = progress_tracker.get_mindmap(mm_id)
+    assert mm is not None
+    return MindmapOut(**mm)
+
+
+@router.get("/mindmaps", response_model=MindmapListResponse)
+def list_mindmaps() -> MindmapListResponse:
+    return MindmapListResponse(
+        mindmaps=[MindmapListItem(**m) for m in progress_tracker.list_mindmaps()],
+    )
+
+
+@router.get("/mindmaps/mindmap/{mindmap_id}", response_model=MindmapOut)
+def get_mindmap(mindmap_id: int) -> MindmapOut:
+    mm = progress_tracker.get_mindmap(mindmap_id)
+    if not mm:
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
+    return MindmapOut(**mm)
+
+
+@router.post("/mindmaps/mindmap/{mindmap_id}/export", response_model=MindmapExportResponse)
+def record_mindmap_export(mindmap_id: int) -> MindmapExportResponse:
+    """Bump export_count (called when the user downloads MD/PNG/PDF)."""
+    mm = progress_tracker.get_mindmap(mindmap_id)
+    if not mm:
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
+
+    progress_tracker.increment_mindmap_export(mindmap_id)
+    newly_earned: list[str] = []
+    try:
+        newly_earned = ach_service.evaluate_and_persist()
+    except Exception:
+        logger.exception("Achievement eval after mindmap export failed (non-fatal)")
+    return MindmapExportResponse(
+        export_count=mm["export_count"] + 1,
+        newly_earned_achievements=newly_earned,
+    )
+
+
+@router.delete("/mindmaps/mindmap/{mindmap_id}", response_model=dict)
+def delete_mindmap(mindmap_id: int) -> dict:
+    if not progress_tracker.delete_mindmap(mindmap_id):
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
+    return {"status": "deleted"}

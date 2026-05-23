@@ -266,3 +266,43 @@ class FlashcardStatusRequest(BaseModel):
 
 class FlashcardStatusResponse(BaseModel):
     newly_earned_achievements: list[str] = []
+
+
+# ── Study Hub: Mindmaps ─────────────────────────────────────────────────────
+
+class MindmapCreateRequest(BaseModel):
+    document_filter: list[str] = Field(..., min_length=1)
+    # Depth is locked at 2 for MVP but kept in the request for forward-compat.
+    depth: int = Field(2, ge=2, le=3)
+
+
+class MindmapNode(BaseModel):
+    label: str
+    children: list["MindmapNode"] = []
+
+
+class MindmapOut(BaseModel):
+    id: int
+    created_at: float
+    scope: list[str]
+    depth: int
+    title: str
+    tree: MindmapNode
+    export_count: int
+
+
+class MindmapListItem(BaseModel):
+    id: int
+    created_at: float
+    depth: int
+    title: str
+    export_count: int
+
+
+class MindmapListResponse(BaseModel):
+    mindmaps: list[MindmapListItem]
+
+
+class MindmapExportResponse(BaseModel):
+    export_count: int
+    newly_earned_achievements: list[str] = []

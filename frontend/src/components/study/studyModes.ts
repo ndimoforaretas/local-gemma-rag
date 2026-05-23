@@ -58,6 +58,6 @@ export const STUDY_MODES: StudyModeDef[] = [
     label: "Mindmaps",
     description: "Visual concept maps with PDF, PNG and Markdown export.",
     icon: Network,
-    available: false,
+    available: true,
   },
 ];

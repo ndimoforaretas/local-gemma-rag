@@ -146,6 +146,20 @@ def _init_schema(conn: sqlite3.Connection) -> None:
 
         CREATE INDEX IF NOT EXISTS idx_decks_created
             ON flashcard_decks(created_at);
+
+        -- Mindmaps (Mode 4) -----------------------------------------------
+        CREATE TABLE IF NOT EXISTS mindmaps (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at    REAL    NOT NULL,
+            scope_json    TEXT    NOT NULL,
+            depth         INTEGER NOT NULL,
+            title         TEXT    NOT NULL,
+            tree_json     TEXT    NOT NULL,   -- full hierarchical structure
+            export_count  INTEGER NOT NULL DEFAULT 0
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_mindmaps_created
+            ON mindmaps(created_at);
         """
     )
     conn.commit()
@@ -556,6 +570,112 @@ def delete_flashcard_deck(deck_id: int) -> bool:
             conn.close()
 
 
+def create_mindmap(
+    scope: list[str],
+    depth: int,
+    title: str,
+    tree: dict,
+    created_at: Optional[float] = None,
+) -> int:
+    """Persist a generated mindmap. `tree` is stored as JSON verbatim."""
+    import json as _json
+
+    ts = created_at if created_at is not None else _dt.datetime.now().timestamp()
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO mindmaps "
+                "(created_at, scope_json, depth, title, tree_json) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (ts, _json.dumps(scope), depth, title, _json.dumps(tree)),
+            )
+            conn.commit()
+            return cur.lastrowid or 0
+        finally:
+            conn.close()
+
+
+def get_mindmap(mindmap_id: int) -> Optional[dict]:
+    """Return a single mindmap row with the parsed tree, or None if missing."""
+    import json as _json
+
+    conn = _connect()
+    try:
+        _init_schema(conn)
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM mindmaps WHERE id = ?", (mindmap_id,))
+        row = cur.fetchone()
+        if not row:
+            return None
+        return {
+            "id": row["id"],
+            "created_at": row["created_at"],
+            "scope": _json.loads(row["scope_json"]),
+            "depth": row["depth"],
+            "title": row["title"],
+            "tree": _json.loads(row["tree_json"]),
+            "export_count": int(row["export_count"] or 0),
+        }
+    finally:
+        conn.close()
+
+
+def list_mindmaps() -> list[dict]:
+    """All mindmaps, newest first, with summary fields only (no full tree)."""
+    conn = _connect()
+    try:
+        _init_schema(conn)
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id, created_at, depth, title, export_count "
+            "FROM mindmaps ORDER BY created_at DESC"
+        )
+        return [
+            {
+                "id": r["id"],
+                "created_at": r["created_at"],
+                "depth": r["depth"],
+                "title": r["title"],
+                "export_count": int(r["export_count"] or 0),
+            }
+            for r in cur.fetchall()
+        ]
+    finally:
+        conn.close()
+
+
+def increment_mindmap_export(mindmap_id: int) -> None:
+    """Bump export_count — powers the Cartographer badge."""
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            conn.execute(
+                "UPDATE mindmaps SET export_count = export_count + 1 WHERE id = ?",
+                (mindmap_id,),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+
+def delete_mindmap(mindmap_id: int) -> bool:
+    """Hard-delete a mindmap. Returns True if a row was deleted."""
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute("DELETE FROM mindmaps WHERE id = ?", (mindmap_id,))
+            conn.commit()
+            return cur.rowcount > 0
+        finally:
+            conn.close()
+
+
 def record_quiz_attempt(
     difficulty: str,
     num_questions: int,
@@ -822,6 +942,13 @@ def stats_for_eval(now_ts: Optional[float] = None) -> dict:
         )
         decks_mastered = int(cur.fetchone()["n"] or 0)
 
+        # ── Mindmap stats ─────────────────────────────────────────────────
+        cur.execute("SELECT COUNT(*) AS n FROM mindmaps")
+        total_mindmaps = int(cur.fetchone()["n"] or 0)
+
+        cur.execute("SELECT COALESCE(SUM(export_count), 0) AS n FROM mindmaps")
+        total_mindmap_exports = int(cur.fetchone()["n"] or 0)
+
         return {
             "total_seconds": total_seconds,
             "total_messages": total_messages,
@@ -839,6 +966,8 @@ def stats_for_eval(now_ts: Optional[float] = None) -> dict:
             "total_decks_created": total_decks_created,
             "total_card_flips": total_card_flips,
             "decks_mastered": decks_mastered,
+            "total_mindmaps": total_mindmaps,
+            "total_mindmap_exports": total_mindmap_exports,
         }
     finally:
         conn.close()

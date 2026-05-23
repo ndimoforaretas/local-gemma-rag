@@ -367,6 +367,41 @@ export const api = {
     return handleJsonResponse<{ status: string }>(resp);
   },
 
+  // ── Mindmaps ─────────────────────────────────────────────────────────
+  listMindmaps: async () => {
+    const resp = await fetch(`${API_BASE}/api/study/mindmaps`);
+    return handleJsonResponse<import("../types/api").MindmapListResponse>(resp);
+  },
+
+  getMindmap: async (id: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/mindmaps/mindmap/${id}`);
+    return handleJsonResponse<import("../types/api").Mindmap>(resp);
+  },
+
+  createMindmap: async (req: { document_filter: string[]; depth?: number }) => {
+    const resp = await fetch(`${API_BASE}/api/study/mindmaps/mindmap`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ depth: 2, ...req }),
+    });
+    return handleJsonResponse<import("../types/api").Mindmap>(resp);
+  },
+
+  recordMindmapExport: async (id: number) => {
+    const resp = await fetch(
+      `${API_BASE}/api/study/mindmaps/mindmap/${id}/export`,
+      { method: "POST" },
+    );
+    return handleJsonResponse<import("../types/api").MindmapExportResponse>(resp);
+  },
+
+  deleteMindmap: async (id: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/mindmaps/mindmap/${id}`, {
+      method: "DELETE",
+    });
+    return handleJsonResponse<{ status: string }>(resp);
+  },
+
   submitQuiz: async (req: {
     difficulty: "beginner" | "intermediate" | "advanced";
     num_questions: number;

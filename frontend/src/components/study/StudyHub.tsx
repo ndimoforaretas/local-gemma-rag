@@ -8,6 +8,7 @@
 
 import { GraduationCap } from "lucide-react";
 import { FlashcardsMode } from "./FlashcardsMode";
+import { MindmapsMode } from "./MindmapsMode";
 import { ModeCard } from "./ModeCard";
 import { QuizMode } from "./QuizMode";
 import { WorkshopMode } from "./WorkshopMode";
@@ -34,6 +35,9 @@ export function StudyHub({
   }
   if (mode === "flashcards") {
     return <FlashcardsMode onExit={() => onChangeMode("hub")} />;
+  }
+  if (mode === "mindmaps") {
+    return <MindmapsMode onExit={() => onChangeMode("hub")} />;
   }
 
   return (
