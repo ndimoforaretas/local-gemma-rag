@@ -8,6 +8,7 @@
  *               (same trick we use for quiz export).
  */
 
+import { saveBlob } from "../../../lib/saveBlob";
 import type { Mindmap, MindmapNode } from "./types";
 
 function dateStamp(): string {
@@ -149,66 +150,6 @@ export async function printAsPdf(mm: Mindmap, svgId: string): Promise<void> {
 }
 
 // ── Shared helpers ─────────────────────────────────────────────────────────
-
-/**
- * Save a Blob to disk. Tries the native File System Access API first so the
- * user gets a real "Save As…" dialog (renamable, location-pickable). Falls
- * back to the classic anchor-download for browsers that don't support it
- * (Firefox / Safari). A user cancellation in the picker is silently swallowed.
- */
-async function saveBlob(
-  blob: Blob,
-  suggestedName: string,
-  opts: { description: string; mimeType: string; extension: string },
-): Promise<void> {
-  const w = window as unknown as {
-    showSaveFilePicker?: (options: {
-      suggestedName?: string;
-      types?: {
-        description?: string;
-        accept: Record<string, string[]>;
-      }[];
-    }) => Promise<{
-      createWritable: () => Promise<{
-        write: (data: Blob) => Promise<void>;
-        close: () => Promise<void>;
-      }>;
-    }>;
-  };
-
-  if (typeof w.showSaveFilePicker === "function") {
-    try {
-      const handle = await w.showSaveFilePicker({
-        suggestedName,
-        types: [
-          {
-            description: opts.description,
-            accept: { [opts.mimeType]: [`.${opts.extension}`] },
-          },
-        ],
-      });
-      const writable = await handle.createWritable();
-      await writable.write(blob);
-      await writable.close();
-      return;
-    } catch (err) {
-      // User cancelled the dialog — bail silently. Real errors fall through
-      // to the legacy download so the file isn't lost.
-      if ((err as DOMException).name === "AbortError") return;
-      // Any other error: fall back below.
-    }
-  }
-
-  // Legacy fallback: classic anchor download (goes to default Downloads folder).
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = suggestedName;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
 
 function escape(s: string): string {
   return s.replace(/[&<>"']/g, (c) =>

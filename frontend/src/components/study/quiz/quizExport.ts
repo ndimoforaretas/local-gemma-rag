@@ -13,6 +13,7 @@
  * same question-shape helpers so adding a fourth level later is a one-liner.
  */
 
+import { saveBlob } from "../../../lib/saveBlob";
 import type { QuizQuestion } from "./types";
 
 export type ExportContent = "questions" | "answers" | "explanations";
@@ -68,20 +69,17 @@ export function buildMarkdown(
   return lines.join("\n");
 }
 
-export function downloadMarkdown(
+export async function downloadMarkdown(
   questions: QuizQuestion[],
   content: ExportContent,
-): void {
+): Promise<void> {
   const md = buildMarkdown(questions, content);
   const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `quiz-${dateStamp()}.md`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  await saveBlob(blob, `quiz-${dateStamp()}.md`, {
+    description: "Markdown file",
+    mimeType: "text/markdown",
+    extension: "md",
+  });
 }
 
 // ── PDF (via browser print) ────────────────────────────────────────────────

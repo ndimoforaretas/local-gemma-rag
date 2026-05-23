@@ -43,21 +43,21 @@ export function MindmapExportMenu({
         onClick={() => run("md")}
         busy={busy === "md"}
         icon={<FileText size={14} />}
-        label=".md"
-        tooltip="Download as Markdown — opens a Save As dialog where you can rename and choose a folder"
+        label="Markdown"
+        tooltip="Download as Markdown (.md) — opens a Save As dialog where you can rename and choose a folder"
       />
       <ExportBtn
         onClick={() => run("png")}
         busy={busy === "png"}
         icon={<ImageIcon size={14} />}
-        label=".png"
-        tooltip="Download as PNG image — opens a Save As dialog where you can rename and choose a folder"
+        label="Image"
+        tooltip="Download as PNG image (.png) — opens a Save As dialog where you can rename and choose a folder"
       />
       <ExportBtn
         onClick={() => run("pdf")}
         busy={busy === "pdf"}
         icon={<Printer size={14} />}
-        label=".pdf"
+        label="PDF"
         tooltip="Save as PDF via the browser print dialog"
         primary
       />

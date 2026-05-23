@@ -61,17 +61,24 @@ export function QuizExportMenu({ questions }: { questions: QuizQuestion[] }) {
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={() => downloadMarkdown(questions, content)}
+          onClick={() => {
+            // Fire-and-forget: saveBlob handles its own errors / user cancels.
+            void downloadMarkdown(questions, content);
+          }}
+          title="Download as Markdown (.md) — opens a Save As dialog where you can rename and choose a folder"
+          aria-label="Download as Markdown — opens a Save As dialog"
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#c2c6d6] dark:border-[#424754] hover:border-[#a855f7]/50 text-sm font-medium text-[#191c1e] dark:text-[#e1e2ec] transition-colors"
         >
-          <FileText size={14} /> Download .md
+          <FileText size={14} /> Markdown
         </button>
         <button
           type="button"
           onClick={() => printAsPdf(questions, content)}
+          title="Save as PDF via the browser print dialog"
+          aria-label="Save as PDF via the browser print dialog"
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#a855f7] hover:bg-[#9333ea] text-white text-sm font-medium transition-colors"
         >
-          <Printer size={14} /> Save as PDF
+          <Printer size={14} /> PDF
         </button>
       </div>
     </div>
