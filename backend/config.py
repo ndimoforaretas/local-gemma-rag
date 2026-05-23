@@ -40,12 +40,15 @@ class Settings(BaseSettings):
         "  • Mixed (images + files): cover ALL inputs — describe images first, then address file content. "
         "Never silently ignore an attachment.\n"
         "Do NOT call search_knowledge_base when attachments are present.\n"
-        "Format code with triple backticks (e.g., ```python)."
+        "Format code with triple backticks (e.g., ```python).\n"
+        "IMPORTANT: Do NOT output <think> or </think> tags in your response. "
+        "Output your answer directly without any XML-style reasoning tags."
     )
 
     # --- Vector Store ---
     index_file: str = "vector_store.faiss"
     metadata_file: str = "vector_store.json"
+    categories_file: str = "categories.json"
     docs_dir: str = "docs"
     chunk_size: int = 1000
     chunk_overlap: int = 100
@@ -53,6 +56,11 @@ class Settings(BaseSettings):
 
     # --- Database (DBOS) ---
     db_url: str = "postgresql://postgres:password@localhost:5432/dbos"
+
+    # --- Learning Progress Tracker ---
+    progress_db_file: str = "progress.db"
+    # Idle gap (seconds) after which a new study session begins.
+    study_session_idle_gap_seconds: int = 15 * 60
 
     # --- Server ---
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:8000"]

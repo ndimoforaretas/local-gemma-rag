@@ -228,7 +228,7 @@ class VectorDB:
     def list_documents(self) -> List[Dict]:
         """Return metadata for every non-deleted indexed document.
 
-        Each entry: ``{"name": str, "type": str, "chunk_count": int}``.
+        Each entry: ``{"name": str, "type": str, "chunk_count": int, "category": str}``.
         Sorted alphabetically by name.
         """
         docs: Dict[str, Dict] = {}
@@ -243,6 +243,7 @@ class VectorDB:
                     "name": source,
                     "type": chunk.get("type", "unknown"),
                     "chunk_count": 0,
+                    "category": chunk.get("category", "General"),
                 }
             docs[source]["chunk_count"] += 1
         return sorted(docs.values(), key=lambda d: d["name"])

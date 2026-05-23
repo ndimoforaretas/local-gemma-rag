@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Tooltip } from "./Tooltip";
 import { ConfirmationModal } from "./ConfirmationModal";
+import { CategoryModal } from "./CategoryModal";
 import { VaultAudit } from "./VaultAudit";
 import { api } from "../lib/api";
 import type { KBFile, KBFolder, WorkflowStatusResponse } from "../types/api";
@@ -41,6 +42,8 @@ export function KnowledgeSync() {
   );
   const [isDragActive, setIsDragActive] = useState(false);
   const [largeFileWarning, setLargeFileWarning] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragDepthRef = useRef(0);
   const dropZoneHintId = useId();
@@ -62,6 +65,12 @@ export function KnowledgeSync() {
       }
     },
   });
+
+  const { data: categoriesData } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => api.getCategories(),
+  });
+  const existingCategories = categoriesData?.categories ?? ["General"];
 
   const { data: workflowStatus } = useQuery<WorkflowStatusResponse | null>({
     queryKey: ["workflow", workflowId],
@@ -176,7 +185,8 @@ export function KnowledgeSync() {
   });
 
   const uploadMutation = useMutation({
-    mutationFn: (formData: FormData) => api.upload(formData),
+    mutationFn: ({ formData, category }: { formData: FormData; category: string }) =>
+      api.upload(formData, category),
     onSuccess: () => {
       setSyncNotice("Upload complete. Preparing ingestion...");
       setSyncError(null);
@@ -190,11 +200,13 @@ export function KnowledgeSync() {
     },
   });
 
+  const _ALLOWED_EXTS = [".pdf", ".txt", ".md", ".csv", ".docx", ".pptx", ".xlsx", ".html", ".htm"];
+
+  // Stage valid files and open the category modal — actual upload fires on confirm.
   const uploadFiles = (files: FileList | File[]) => {
     const selectedFiles = Array.from(files);
     if (selectedFiles.length === 0) return;
 
-    const _ALLOWED_EXTS = [".pdf", ".txt", ".md", ".csv", ".docx", ".pptx", ".xlsx", ".html", ".htm"];
     const validFiles = selectedFiles.filter((file) => {
       const name = file.name.toLowerCase();
       return _ALLOWED_EXTS.some((ext) => name.endsWith(ext));
@@ -207,19 +219,32 @@ export function KnowledgeSync() {
       return;
     }
 
+    setPendingFiles(validFiles);
+    setIsCategoryModalOpen(true);
+  };
+
+  // Called when the user confirms a category in the modal.
+  const handleCategoryConfirm = (category: string) => {
+    setIsCategoryModalOpen(false);
+
     setSyncStatus("UPLOADING");
     setSyncNotice(null);
     setSyncError(null);
-    // Flag if any file exceeds 50 MB so we can warn during ingestion.
-    const maxBytes = Math.max(...validFiles.map((f) => f.size));
+    const maxBytes = Math.max(...pendingFiles.map((f) => f.size));
     setLargeFileWarning(maxBytes > 50 * 1024 * 1024);
 
     const formData = new FormData();
-    for (const file of validFiles) {
+    for (const file of pendingFiles) {
       formData.append("files", file);
     }
 
-    uploadMutation.mutate(formData);
+    uploadMutation.mutate({ formData, category });
+    setPendingFiles([]);
+  };
+
+  const handleCategoryCancel = () => {
+    setIsCategoryModalOpen(false);
+    setPendingFiles([]);
   };
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -766,6 +791,14 @@ export function KnowledgeSync() {
           setIsDeleteModalOpen(false);
           setFileToDelete(null);
         }}
+      />
+
+      <CategoryModal
+        isOpen={isCategoryModalOpen}
+        files={pendingFiles}
+        existingCategories={existingCategories}
+        onConfirm={handleCategoryConfirm}
+        onCancel={handleCategoryCancel}
       />
     </div>
   );

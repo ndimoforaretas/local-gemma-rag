@@ -16,6 +16,7 @@ docs/*
 vector_store.faiss
 vector_store.json
 chat_history.json
+progress.db
 
 # IDE & OS
 .gemini/

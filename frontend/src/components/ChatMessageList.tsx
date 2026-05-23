@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { User, Copy, Check, Download, FileText, ChevronDown, Pencil, RefreshCw, X as XIcon, CornerDownLeft } from "lucide-react";
+import { User, Copy, Check, Download, FileText, ChevronDown, Pencil, RefreshCw, X as XIcon, CornerDownLeft, Filter } from "lucide-react";
 import { marked } from "marked";
 import { Tooltip } from "./Tooltip";
 import { SuggestionCards } from "./SuggestionCards";
@@ -88,7 +88,7 @@ interface ChatMessageListProps {
   onCopy: (content: string, id: string) => void;
   onExport: (content: string, id: string) => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
-  onSuggestionSelect: (prompt: string) => void;
+  onSuggestionSelect: (prompt: string, scope?: string[]) => void;
   /** Called when the user submits an edited version of a user message. */
   onEdit?: (messageIndex: number, newContent: string) => void;
   /** Called when the user clicks Regenerate on an AI message. */
@@ -157,6 +157,20 @@ function ThinkingPanel({ thinking, isStreaming = false }: ThinkingPanelProps) {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function ScopeFilterBadge({ scopeFilter, scopeLabel }: { scopeFilter: string[]; scopeLabel?: string }) {
+  const label =
+    scopeLabel ??
+    (scopeFilter.length === 1 ? scopeFilter[0] : `${scopeFilter.length} documents`);
+  return (
+    <div className="flex items-center justify-end">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#a855f7]/15 border border-[#a855f7]/30 text-[#a855f7] dark:text-[#ddb7ff]">
+        <Filter size={9} />
+        {label}
+      </span>
     </div>
   );
 }
@@ -284,6 +298,11 @@ export function ChatMessageList({
                         </span>
                       )}
                     </div>
+
+                    {/* Scope filter badge — shown on user messages that were sent with an active filter */}
+                    {msg.role === "user" && msg.scopeFilter && msg.scopeFilter.length > 0 && (
+                      <ScopeFilterBadge scopeFilter={msg.scopeFilter} scopeLabel={msg.scopeLabel} />
+                    )}
 
                     {/* Thinking panel — only for AI messages that have reasoning data */}
                     {msg.role === "ai" && msg.thinking && (

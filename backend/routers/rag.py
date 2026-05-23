@@ -16,6 +16,8 @@ from backend.models.schemas import (
     SuggestionItem,
     SuggestionsResponse,
 )
+from backend.services import achievements as ach_service
+from backend.services import progress_tracker
 from backend.services.rag_agent import run_rag_stream
 from backend.services.vector_db import vector_db
 
@@ -71,6 +73,17 @@ async def rag_endpoint(request: RagRequest):
                     "Use the Knowledge Base to index larger document sets."
                 ),
             )
+
+        # Record learning-progress event (best-effort; never blocks the chat).
+        try:
+            progress_tracker.record_message(
+                chat_session_id=request.session_id,
+                had_scope_filter=bool(request.document_filter),
+                had_attachments=bool(request.attachments),
+            )
+            ach_service.evaluate_and_persist()
+        except Exception:
+            logger.exception("Progress tracker failed (non-fatal)")
 
         return StreamingResponse(
             run_rag_stream(

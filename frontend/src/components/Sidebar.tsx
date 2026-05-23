@@ -1,9 +1,18 @@
-import { MessageSquare, Database, Sun, Moon } from "lucide-react";
+import {
+  MessageSquare,
+  Database,
+  GraduationCap,
+  BarChart3,
+  Sun,
+  Moon,
+} from "lucide-react";
 import { motion } from "framer-motion";
 
+export type AppView = "chat" | "sync" | "study" | "dashboard";
+
 interface SidebarProps {
-  activeView: "chat" | "sync";
-  setActiveView: (view: "chat" | "sync") => void;
+  activeView: AppView;
+  setActiveView: (view: AppView) => void;
   isDark: boolean;
   onToggleDark: () => void;
 }
@@ -12,6 +21,8 @@ export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: Sid
   const navItems = [
     { id: "chat", label: "Chat", icon: MessageSquare },
     { id: "sync", label: "Knowledge Base", icon: Database },
+    { id: "study", label: "Study Hub", icon: GraduationCap },
+    { id: "dashboard", label: "Dashboard", icon: BarChart3 },
   ] as const;
 
   return (
@@ -40,27 +51,27 @@ export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: Sid
         {navItems.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
-            onClick={() => setActiveView(id as "chat" | "sync")}
+            onClick={() => setActiveView(id as AppView)}
             aria-current={activeView === id ? "page" : undefined}
             className={`
-              relative flex items-center gap-3 px-3 py-3 rounded-xl text-base font-medium transition-all duration-200
+              relative flex items-center gap-3 px-3 py-3 rounded-xl text-base transition-all duration-200
               ${
                 activeView === id
-                  ? "text-[#191c1e] dark:text-[#e1e2ec]"
-                  : "text-[#424754] dark:text-[#c2c6d6] hover:text-[#191c1e] dark:hover:text-[#e1e2ec] hover:bg-[#e0e3e5] dark:hover:bg-[#272a31]"
+                  ? "text-[#a855f7] dark:text-[#ddb7ff] font-semibold"
+                  : "text-[#424754] dark:text-[#c2c6d6] font-medium hover:text-[#191c1e] dark:hover:text-[#e1e2ec] hover:bg-[#e0e3e5] dark:hover:bg-[#272a31]"
               }
             `}>
             {activeView === id && (
               <motion.div
                 layoutId="activeNavBackground"
-                /* Active bg: surface-container-high with purple left-border feel */
-                className="absolute inset-0 bg-[#e0e3e5] dark:bg-[#272a31] border border-[#c2c6d6] dark:border-[#424754] rounded-xl -z-10"
+                /* Purple-tinted pill: signals active section at a glance. */
+                className="absolute inset-0 bg-[#a855f7]/15 border border-[#a855f7]/40 rounded-xl -z-10"
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
               />
             )}
             <Icon
               size={18}
-              className={activeView === id ? "text-[#a855f7]" : ""}
+              className={activeView === id ? "text-[#a855f7] dark:text-[#ddb7ff]" : ""}
             />
             {label}
           </button>

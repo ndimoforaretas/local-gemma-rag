@@ -18,12 +18,11 @@ from backend.config import get_settings, logger
 from backend.services.vector_db import vector_db
 
 # Per-request citation accumulator.
-# Stores every unique source document found by search_knowledge_base during
-# a request so the frontend sidebar can display all of them.  Always
-# initialised to a fresh list via _last_doc_ctx.set([]) at request start —
-# never relies on the mutable default across requests.
-_last_doc_ctx: contextvars.ContextVar[list[dict]] = contextvars.ContextVar(
-    "last_doc", default=[]
+# Always initialised to a fresh list via _last_doc_ctx.set([]) at request
+# start.  Default is None (not []) to prevent multiple callers from silently
+# sharing and mutating a single default list object.
+_last_doc_ctx: contextvars.ContextVar[list[dict] | None] = contextvars.ContextVar(
+    "last_doc", default=None
 )
 
 # Per-request document scope filter.
@@ -104,7 +103,12 @@ def search_knowledge_base(query: str) -> str:
 
     formatted_results: list[str] = []
     # Accumulate unique sources so every citation shows in the sidebar.
+    # Guard against callers that skipped _last_doc_ctx.set([]) (e.g. tests,
+    # Study Hub) by initialising a fresh list on first use.
     docs = _last_doc_ctx.get()
+    if docs is None:
+        docs = []
+        _last_doc_ctx.set(docs)
     seen_sources = {d.get("source") for d in docs}
     for res in results:
         page_info = f" (Page {res['page']})" if res.get("page") else ""

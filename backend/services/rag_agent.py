@@ -49,17 +49,24 @@ from backend.tools.agent_tools import (
 
 settings = get_settings()
 
-ollama_model = OllamaModel(
-    host=settings.ollama_host,
-    model_id=settings.llm_model,
-    # Disable Ollama-level thinking in Phase 2 (Strands agent call).
-    # Phase 1 already streams thinking via a direct ollama.AsyncClient call
-    # with options={"thinking": True}.  Without this flag, Gemma 4's default
-    # modelfile may still emit <think>…</think> tokens inside message.content,
-    # which causes responses to appear truncated (text before the closing tag
-    # is swallowed by the markdown renderer on the frontend).
-    options={"thinking": False},
-)
+def _make_ollama_model() -> OllamaModel:
+    """Create a fresh OllamaModel for a single request.
+
+    Constructing per-request (rather than sharing a module-level singleton)
+    ensures no per-call state on the model object is shared across concurrent
+    sessions.  OllamaModel holds only configuration so construction is cheap.
+    """
+    return OllamaModel(
+        host=settings.ollama_host,
+        model_id=settings.llm_model,
+        # Disable Ollama-level thinking in Phase 2 (Strands agent call).
+        # Phase 1 already streams thinking via a direct ollama.AsyncClient call
+        # with options={"thinking": True}.  Without this flag, Gemma 4's default
+        # modelfile may still emit <think>…</think> tokens inside message.content,
+        # which causes responses to appear truncated (text before the closing tag
+        # is swallowed by the markdown renderer on the frontend).
+        options={"thinking": False},
+    )
 
 # ── Session isolation ─────────────────────────────────────────────────────────
 
@@ -140,6 +147,7 @@ def _trim_history(history: list) -> list:
 async def _stream_thinking(
     text_query: str,
     image_bytes_list: Optional[list[bytes]] = None,
+    system_prompt: Optional[str] = None,
 ) -> AsyncGenerator[str, None]:
     """
     Phase 1: stream Gemma 4's internal reasoning chain.
@@ -162,7 +170,7 @@ async def _stream_thinking(
         stream = await client.chat(
             model=settings.llm_model,
             messages=[
-                {"role": "system", "content": settings.agent_system_prompt},
+                {"role": "system", "content": system_prompt or settings.agent_system_prompt},
                 user_msg,
             ],
             options={"thinking": True},
@@ -284,9 +292,72 @@ async def run_rag_stream(
     # Apply document-scope filter for this request (ContextVar is Task-local).
     _source_filter_ctx.set(document_filter if document_filter else None)
 
+    # Build a dynamic system prompt that tells the agent about the active scope.
+    try:
+        if document_filter:
+            cats: set[str] = set()
+            filter_set = set(document_filter)
+            for chunk in vector_db.metadata:
+                if not chunk.get("deleted") and chunk.get("source") in filter_set:
+                    cat = chunk.get("category", "General")
+                    if cat:
+                        cats.add(cat)
+            scope_desc = (
+                f"category '{', '.join(sorted(cats))}'"
+                if cats
+                else f"document(s): {', '.join(list(document_filter)[:5])}"
+            )
+            scope_note = (
+                f"\n\nSEARCH SCOPE ACTIVE — MANDATORY OVERRIDE: The user has pinned the search "
+                f"to {scope_desc}. This overrides all other search rules, including the 'skip "
+                f"search for general questions' rule. You MUST call search_knowledge_base FIRST "
+                f"for every question when a scope is active — no exceptions, even for questions "
+                f"you think you know the answer to. "
+                f"search_knowledge_base will ONLY return results from the selected document(s). "
+                f"Begin your response with 'Based on [{scope_desc}]:'. "
+                f"If the scoped document(s) do not contain enough information, state: "
+                f"'The selected document(s) do not contain sufficient information on this topic.'"
+            )
+            effective_system_prompt = settings.agent_system_prompt + scope_note
+        else:
+            effective_system_prompt = settings.agent_system_prompt
+    except Exception:
+        logger.exception("Failed to build scope-aware system prompt; falling back to default")
+        effective_system_prompt = settings.agent_system_prompt
+
     # ── Build prompt ──────────────────────────────────────────────────────────
-    user_input: object = query
-    combined_text: str = query or ""
+    # When a scope filter is active, prepend an explicit scope header to the
+    # user query.  This is far more reliable than only mentioning it in the
+    # system prompt because (1) it appears in the user message the model is
+    # reasoning about, (2) both Phase 1 thinking and Phase 2 agent see it,
+    # (3) the model can't "decide" to ignore it because it's part of the
+    # question itself.
+    effective_query: str = query or ""
+    if document_filter:
+        try:
+            cat_list = sorted(cats) if "cats" in locals() and cats else []
+        except Exception:
+            cat_list = []
+        if cat_list:
+            files_preview = ", ".join(list(document_filter)[:5])
+            scope_header = (
+                f"[SEARCH SCOPE: category '{', '.join(cat_list)}' — "
+                f"{len(document_filter)} file(s): {files_preview}]"
+            )
+        else:
+            scope_header = (
+                f"[SEARCH SCOPE: {len(document_filter)} file(s): "
+                f"{', '.join(list(document_filter)[:5])}]"
+            )
+        effective_query = (
+            f"{scope_header}\n"
+            f"You MUST call search_knowledge_base to look inside the scoped "
+            f"file(s) above before answering. Do not skip the search.\n\n"
+            f"Question: {query}"
+        )
+
+    user_input: object = effective_query
+    combined_text: str = effective_query
     raw_image_bytes: list[bytes] = []       # collected for Phase 1 thinking call
 
     if attachments:
@@ -313,7 +384,7 @@ async def run_rag_stream(
                     logger.warning("Failed to decode attachment '%s'", getattr(att, "name", "?"))
 
         if text_files:
-            parts = [query, ""]
+            parts = [effective_query, ""]
             if image_blocks:
                 parts.append(
                     f"[{len(image_blocks)} image(s) + {len(text_files)} file(s) attached — "
@@ -329,7 +400,7 @@ async def run_rag_stream(
                 parts.append("")
             combined_text = "\n".join(parts)
         else:
-            combined_text = query or ""
+            combined_text = effective_query
 
         if image_blocks:
             # Images first (Gemma 4 best practice: modalities before text)
@@ -341,7 +412,7 @@ async def run_rag_stream(
     # Only run if we have something non-trivial to reason about.
     if combined_text.strip() or raw_image_bytes:
         async for thinking_event in _stream_thinking(
-            combined_text, raw_image_bytes or None
+            combined_text, raw_image_bytes or None, effective_system_prompt
         ):
             yield thinking_event
 
@@ -362,7 +433,7 @@ async def run_rag_stream(
 
         # Create a fresh Agent for this request (no shared mutable state).
         agent = Agent(
-            model=ollama_model,
+            model=_make_ollama_model(),
             tools=[
                 search_knowledge_base,
                 list_documents,
@@ -371,7 +442,7 @@ async def run_rag_stream(
                 calculator,
                 current_time,
             ],
-            system_prompt=settings.agent_system_prompt,
+            system_prompt=effective_system_prompt,
         )
 
         # Restore session history into the new agent.
@@ -404,7 +475,7 @@ async def run_rag_stream(
                     # since the last text chunk.  Emitting here (rather than at
                     # tool-call start) guarantees the tool has already run and
                     # _last_doc_ctx is fully populated.
-                    all_docs = _last_doc_ctx.get()
+                    all_docs = _last_doc_ctx.get() or []
                     while emitted_docs < len(all_docs):
                         yield f'{json.dumps({"type": "metadata", "data": all_docs[emitted_docs]})}\n'
                         emitted_docs += 1

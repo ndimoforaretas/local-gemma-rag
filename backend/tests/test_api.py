@@ -158,18 +158,17 @@ class TestDeleteEndpoint:
     def test_kb_endpoint_excludes_deleted_documents(self, client, tmp_path, monkeypatch):
         """Verify that /kb endpoint does not list deleted documents."""
         monkeypatch.setattr("backend.routers.knowledge.settings.docs_dir", str(tmp_path))
-        monkeypatch.setattr("backend.routers.knowledge.settings.metadata_file", str(tmp_path / "meta.json"))
 
         # Create metadata with deleted and active documents
         meta = [
             {"source": "deleted.pdf", "content": "old", "deleted": True},
             {"source": "active.pdf", "content": "new", "deleted": False},
         ]
-        metadata_file = tmp_path / "meta.json"
-        with open(metadata_file, "w") as f:
-            json.dump(meta, f)
 
-        # Create physical files
+        # The /kb endpoint reads from vector_db.metadata (in-memory); patch it directly.
+        monkeypatch.setattr("backend.routers.knowledge.vector_db.metadata", meta)
+
+        # Create physical files so stat() calls succeed
         (tmp_path / "deleted.pdf").write_text("fake")
         (tmp_path / "active.pdf").write_text("fake")
 
