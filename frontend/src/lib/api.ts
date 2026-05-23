@@ -253,6 +253,22 @@ export const api = {
     return handleJsonResponse(resp);
   },
 
+  // ── Progress Dashboard ───────────────────────────────────────────────
+  getProgressSummary: async () => {
+    const resp = await fetch(`${API_BASE}/api/progress/summary`);
+    return handleJsonResponse<import("../types/api").ProgressSummary>(resp);
+  },
+
+  getProgressDaily: async (days = 30) => {
+    const resp = await fetch(`${API_BASE}/api/progress/daily?days=${days}`);
+    return handleJsonResponse<import("../types/api").DailyActivityResponse>(resp);
+  },
+
+  getProgressAchievements: async () => {
+    const resp = await fetch(`${API_BASE}/api/progress/achievements`);
+    return handleJsonResponse<import("../types/api").AchievementsResponse>(resp);
+  },
+
   submitQuiz: async (req: {
     difficulty: "beginner" | "intermediate" | "advanced";
     num_questions: number;

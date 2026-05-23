@@ -1,7 +1,14 @@
-import { MessageSquare, Database, GraduationCap, Sun, Moon } from "lucide-react";
+import {
+  MessageSquare,
+  Database,
+  GraduationCap,
+  BarChart3,
+  Sun,
+  Moon,
+} from "lucide-react";
 import { motion } from "framer-motion";
 
-export type AppView = "chat" | "sync" | "study";
+export type AppView = "chat" | "sync" | "study" | "dashboard";
 
 interface SidebarProps {
   activeView: AppView;
@@ -15,6 +22,7 @@ export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: Sid
     { id: "chat", label: "Chat", icon: MessageSquare },
     { id: "sync", label: "Knowledge Base", icon: Database },
     { id: "study", label: "Study Hub", icon: GraduationCap },
+    { id: "dashboard", label: "Dashboard", icon: BarChart3 },
   ] as const;
 
   return (

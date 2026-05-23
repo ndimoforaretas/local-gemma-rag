@@ -14,6 +14,11 @@ const KnowledgeSync = lazy(() =>
 const StudyHub = lazy(() =>
   import("./components/study/StudyHub").then((m) => ({ default: m.StudyHub })),
 );
+const ProgressDashboard = lazy(() =>
+  import("./components/dashboard/ProgressDashboard").then((m) => ({
+    default: m.ProgressDashboard,
+  })),
+);
 
 function ViewLoader() {
   return (
@@ -31,7 +36,13 @@ function readSavedView(): AppView {
   if (typeof window === "undefined" || !window.localStorage) return "chat";
   try {
     const saved = localStorage.getItem(VIEW_STORAGE_KEY);
-    if (saved === "chat" || saved === "sync" || saved === "study") return saved;
+    if (
+      saved === "chat" ||
+      saved === "sync" ||
+      saved === "study" ||
+      saved === "dashboard"
+    )
+      return saved;
   } catch {
     // ignore
   }
@@ -76,6 +87,7 @@ function App() {
               {activeView === "chat" && <KnowledgeBase />}
               {activeView === "sync" && <KnowledgeSync />}
               {activeView === "study" && <StudyHub />}
+              {activeView === "dashboard" && <ProgressDashboard />}
             </Suspense>
           </div>
         </main>

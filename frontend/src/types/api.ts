@@ -173,3 +173,36 @@ export interface HealthResponse {
   vector_db_loaded: boolean;
   indexed_chunks: number;
 }
+
+// ── Progress Dashboard ──────────────────────────────────────────────
+
+export interface ProgressSummary {
+  total_seconds: number;
+  total_sessions: number;
+  total_messages: number;
+  current_streak_days: number;
+}
+
+export interface DailyActivityEntry {
+  date: string; // YYYY-MM-DD
+  seconds: number;
+  message_count: number;
+  session_count: number;
+}
+
+export interface DailyActivityResponse {
+  days: DailyActivityEntry[];
+}
+
+export interface AchievementItem {
+  code: string;
+  name: string;
+  description: string;
+  icon: string;
+  earned_at: number | null;
+  is_earned: boolean;
+}
+
+export interface AchievementsResponse {
+  achievements: AchievementItem[];
+}
