@@ -21,7 +21,9 @@
 
 ## Demo Video
 
-[![Gemma CogniVault Demo](https://youtu.be/rw5Rse_TP2o)](https://youtu.be/rw5Rse_TP2o)
+Watch a walkthrough of some of the main features of Gemma CogniVault On Youtube: **[https://youtu.be/rw5Rse_TP2o?si=y7mT3v9VgtM_eDDE](https://youtu.be/rw5Rse_TP2o?si=y7mT3v9VgtM_eDDE)**
+
+[![Watch the demo](frontend/public/gemma-cognivault-thumbnail.png)](https://youtu.be/rw5Rse_TP2o?si=y7mT3v9VgtM_eDDE)
 
 ---
 
