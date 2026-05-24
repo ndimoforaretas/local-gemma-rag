@@ -19,6 +19,12 @@
 
 ---
 
+## Demo Video
+
+[![Gemma CogniVault Demo](https://youtu.be/rw5Rse_TP2o)](https://youtu.be/rw5Rse_TP2o)
+
+---
+
 ## Table of Contents
 
 1. [Why CogniVault](#-why-cognivault)
