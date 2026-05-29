@@ -48,21 +48,17 @@ function StatCard({
   accent: string;
 }) {
   return (
-    <div className="p-5 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23]">
+    <div className="p-6 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23]">
       <div className="flex items-center gap-2 mb-3">
         <Icon size={18} className={accent} />
-        <span className="text-xs font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
+        <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
           {label}
         </span>
       </div>
-      <div className="text-3xl font-bold text-[#191c1e] dark:text-white tabular-nums">
+      <div className="text-3xl font-bold text-ink-strong tabular-nums">
         {value}
       </div>
-      {sublabel && (
-        <p className="text-xs text-[#727785] dark:text-[#8c909f] mt-1">
-          {sublabel}
-        </p>
-      )}
+      {sublabel && <p className="text-sm text-ink-muted mt-1.5">{sublabel}</p>}
     </div>
   );
 }

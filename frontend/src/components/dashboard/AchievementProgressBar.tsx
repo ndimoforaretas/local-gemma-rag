@@ -8,10 +8,10 @@ export function AchievementProgressBar({ item }: { item: AchievementItem }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
+        <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
           {earned ? "Complete" : "Progress"}
         </span>
-        <span className="text-xs font-medium tabular-nums text-[#424754] dark:text-[#c2c6d6]">
+        <span className="text-xs font-semibold tabular-nums text-ink">
           {progressText(item)}
         </span>
       </div>

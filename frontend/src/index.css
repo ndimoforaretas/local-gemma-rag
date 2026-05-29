@@ -80,7 +80,39 @@ body {
   padding: 0;
   height: 100vh;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
+
+/* ============================================================
+   SEMANTIC TEXT ROLES — accessibility-first (see DESIGN_RULES.md)
+   ------------------------------------------------------------
+   Use these classes for ALL UI text instead of inline hex grays
+   (e.g. text-[#727785] dark:text-[#8c909f]). They are the single
+   lever for contrast — change a value here, every screen updates.
+
+   Contrast targets (WCAG): strong/body/muted ≥ 7:1 (AAA),
+   faint ≥ 4.5:1 (AA). Pair with a minimum size of 12px; never
+   use `faint` below 12px or for essential information.
+
+   Roles:
+     text-ink-strong  titles, headline numbers, key labels
+     text-ink         default reading text
+     text-ink-muted   secondary text that must stay clearly legible
+     text-ink-faint   tertiary only (timestamps, legends, hints)
+   ============================================================ */
+
+/* Dark mode is the default theme (matches @theme above). */
+.text-ink-strong { color: #f4f6fb; }
+.text-ink        { color: #dfe3ec; }
+.text-ink-muted  { color: #bcc2d2; }
+.text-ink-faint  { color: #9aa1b2; }
+
+.light .text-ink-strong { color: #14171a; }
+.light .text-ink        { color: #22262c; }
+.light .text-ink-muted  { color: #3d4651; }
+.light .text-ink-faint  { color: #586271; }
 
 /* Scrollbar */
 ::-webkit-scrollbar {

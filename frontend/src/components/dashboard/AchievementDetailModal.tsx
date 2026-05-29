@@ -66,8 +66,8 @@ export function AchievementDetailModal({
               )}
             </div>
             <div className="min-w-0">
-              <h2 className="text-lg font-bold text-[#191c1e] dark:text-white truncate">{item.name}</h2>
-              <p className={`text-xs font-medium ${earned ? "text-emerald-600 dark:text-emerald-400" : "text-[#727785] dark:text-[#8c909f]"}`}>
+              <h2 className="text-xl font-bold text-ink-strong truncate">{item.name}</h2>
+              <p className={`text-sm font-medium ${earned ? "text-emerald-600 dark:text-emerald-400" : "text-ink-muted"}`}>
                 {earned ? (item.earned_at ? `Earned ${earnedDate(item.earned_at)}` : "Earned") : "Locked"}
               </p>
             </div>
@@ -76,18 +76,18 @@ export function AchievementDetailModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="p-1.5 rounded-lg hover:bg-[#f2f4f6] dark:hover:bg-[#272a31] text-[#727785] dark:text-[#8c909f] shrink-0"
+            className="p-1.5 rounded-lg hover:bg-[#f2f4f6] dark:hover:bg-[#272a31] text-ink-muted shrink-0"
           >
             <X size={16} />
           </button>
         </header>
 
-        <div className="p-5 space-y-5">
+        <div className="p-6 space-y-5">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f] mb-1">
+            <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">
               How to earn it
             </div>
-            <p className="text-sm text-[#191c1e] dark:text-[#e1e2ec]">{item.description}</p>
+            <p className="text-sm text-ink">{item.description}</p>
           </div>
 
           {hasProgress(item) && <AchievementProgressBar item={item} />}

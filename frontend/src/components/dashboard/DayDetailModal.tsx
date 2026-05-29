@@ -48,11 +48,11 @@ export function DayDetailModal({
       >
         <header className="flex items-start justify-between px-5 py-4 border-b border-[#c2c6d6] dark:border-[#424754]">
           <div>
-            <h2 className="text-lg font-bold text-[#191c1e] dark:text-white">
+            <h2 className="text-xl font-bold text-ink-strong">
               {formatLongDate(entry.date)}
             </h2>
             {!empty && (
-              <p className="text-xs text-[#727785] dark:text-[#8c909f] mt-0.5">
+              <p className="text-sm text-ink-muted mt-0.5">
                 {formatDuration(entry.seconds)} of study activity
               </p>
             )}
@@ -61,15 +61,15 @@ export function DayDetailModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="p-1.5 rounded-lg hover:bg-[#f2f4f6] dark:hover:bg-[#272a31] text-[#727785] dark:text-[#8c909f]"
+            className="p-1.5 rounded-lg hover:bg-[#f2f4f6] dark:hover:bg-[#272a31] text-ink-muted"
           >
             <X size={16} />
           </button>
         </header>
 
-        <div className="p-5 space-y-4">
+        <div className="p-6 space-y-4">
           {empty ? (
-            <p className="text-sm text-[#727785] dark:text-[#8c909f] text-center py-4">
+            <p className="text-sm text-ink-muted text-center py-4">
               No study activity recorded for this day.
             </p>
           ) : (
@@ -82,7 +82,7 @@ export function DayDetailModal({
 
           {earnedThisDay.length > 0 && (
             <div>
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f] mb-2">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-ink-muted mb-2">
                 <Award size={12} />
                 Achievements earned
               </div>
@@ -90,7 +90,7 @@ export function DayDetailModal({
                 {earnedThisDay.map((a) => (
                   <li key={a.code} className="text-sm flex items-center gap-2">
                     <span className="text-lg">{a.icon}</span>
-                    <span className="font-medium text-[#191c1e] dark:text-white">
+                    <span className="font-semibold text-ink-strong">
                       {a.name}
                     </span>
                   </li>
@@ -116,10 +116,10 @@ function StatBlock({
   return (
     <div className="p-3 rounded-xl border border-[#c2c6d6] dark:border-[#424754] text-center">
       <Icon size={14} className="text-[#a855f7] mx-auto mb-1" />
-      <div className="text-lg font-bold text-[#191c1e] dark:text-white tabular-nums">
+      <div className="text-lg font-bold text-ink-strong tabular-nums">
         {value}
       </div>
-      <div className="text-[10px] uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
+      <div className="text-xs uppercase tracking-wider text-ink-muted">
         {label}
       </div>
     </div>

@@ -44,7 +44,7 @@ const STEPS = [
 export function DashboardEmptyState() {
   return (
     <div className="flex flex-col items-center text-center py-4">
-      <p className="text-base text-[#424754] dark:text-[#c2c6d6] max-w-xl mb-10">
+      <p className="text-base text-ink-muted max-w-xl mb-10">
         Nothing here yet — your stats, charts, and badges will appear once you
         start studying. Here's how to get going:
       </p>
@@ -53,15 +53,15 @@ export function DashboardEmptyState() {
         {STEPS.map(({ icon: Icon, title, description, color, bg, border }) => (
           <div
             key={title}
-            className={`p-5 rounded-2xl border ${border} bg-white dark:bg-[#191b23] text-left`}
+            className={`p-6 rounded-2xl border ${border} bg-white dark:bg-[#191b23] text-left`}
           >
             <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl ${bg} ${color} mb-3`}>
               <Icon size={20} />
             </div>
-            <h3 className="text-sm font-semibold text-[#191c1e] dark:text-white mb-1.5">
+            <h3 className="text-base font-bold text-ink-strong mb-1.5">
               {title}
             </h3>
-            <p className="text-xs text-[#727785] dark:text-[#8c909f] leading-relaxed">
+            <p className="text-sm text-ink-muted leading-relaxed">
               {description}
             </p>
           </div>

@@ -12,6 +12,7 @@ import type { DailyActivityEntry } from "../../types/api";
 import { DayCell } from "./DayCell";
 import { MonthLabels } from "./MonthLabels";
 import { HeatmapLegend } from "./HeatmapLegend";
+import { SectionHeading } from "./SectionHeading";
 import {
   busyWeekday,
   computeMonthLabels,
@@ -35,23 +36,17 @@ export function ActivityHeatmap({
 
   return (
     <section>
-      <header className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <Calendar size={18} className="text-[#a855f7]" />
-          <h2 className="text-base font-semibold text-[#191c1e] dark:text-white">
-            Activity heatmap
-          </h2>
-          <span className="text-xs text-[#727785] dark:text-[#8c909f]">
-            (last {days.length} days · click any day for details)
-          </span>
-        </div>
-        <HeatmapLegend />
-      </header>
+      <SectionHeading
+        icon={Calendar}
+        title="Activity heatmap"
+        hint={`last ${days.length} days · click any day for details`}
+        right={<HeatmapLegend />}
+      />
 
       <div className="p-5 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23]">
         <div className="flex gap-2">
           {/* Weekday labels (Mon, Wed, Fri shown; others blank for breathing room) */}
-          <div className="grid grid-rows-7 gap-1 text-[10px] text-[#727785] dark:text-[#8c909f]">
+          <div className="grid grid-rows-7 gap-1 text-xs text-ink-faint">
             {/* Spacer to align weekday labels below the month-label row */}
             <div className="h-5 mb-1" />
             {WEEKDAY_LABELS.map((label, i) => (
@@ -79,8 +74,9 @@ export function ActivityHeatmap({
         </div>
 
         {bestDay && (
-          <p className="mt-3 text-[11px] text-[#727785] dark:text-[#8c909f]">
-            📅 Your most active day: <span className="font-semibold text-[#424754] dark:text-[#c2c6d6]">{bestDay}</span>
+          <p className="mt-4 text-sm text-ink-muted">
+            📅 Your most active day:{" "}
+            <span className="font-semibold text-ink-strong">{bestDay}</span>
           </p>
         )}
       </div>

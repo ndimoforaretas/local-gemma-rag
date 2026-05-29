@@ -12,6 +12,7 @@
 import { Trophy } from "lucide-react";
 import type { AchievementItem } from "../../types/api";
 import { AchievementBadge } from "./AchievementBadge";
+import { SectionHeading } from "./SectionHeading";
 
 export function AchievementGrid({
   items,
@@ -31,20 +32,18 @@ export function AchievementGrid({
 
   return (
     <section>
-      <header className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Trophy size={18} className="text-[#a855f7]" />
-          <h2 className="text-base font-semibold text-[#191c1e] dark:text-white">
-            Achievements
-          </h2>
-        </div>
-        <span className="text-xs font-medium text-[#727785] dark:text-[#8c909f]">
-          {earnedCount} / {items.length} earned
-        </span>
-      </header>
+      <SectionHeading
+        icon={Trophy}
+        title="Achievements"
+        right={
+          <span className="text-sm font-semibold text-ink-muted">
+            {earnedCount} / {items.length} earned
+          </span>
+        }
+      />
 
       <div
-        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-[28rem] overflow-y-auto pr-1 -mr-1"
+        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[46rem] overflow-y-auto pr-1 -mr-1"
         style={{ scrollbarWidth: "thin" }}
       >
         {sorted.map((item) => (

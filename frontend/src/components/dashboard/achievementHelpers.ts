@@ -65,6 +65,20 @@ export function progressFraction(item: AchievementItem): number {
   return Math.min((item.current ?? 0) / target, 1);
 }
 
+/**
+ * The unearned, metric-backed badges the user is partially through, sorted by
+ * closeness (most complete first). Shared by the "Almost there" section and the
+ * dashboard so the band only renders when there's something to show.
+ */
+export function inProgressBadges(items: AchievementItem[]): AchievementItem[] {
+  return items
+    .filter((i) => !i.is_earned && hasProgress(i))
+    .map((i) => ({ item: i, fraction: progressFraction(i) }))
+    .filter((x) => x.fraction > 0 && x.fraction < 1)
+    .sort((a, b) => b.fraction - a.fraction)
+    .map((x) => x.item);
+}
+
 /** Resolve the next badge up the ladder from the full list, or null. */
 export function findNext(
   item: AchievementItem,

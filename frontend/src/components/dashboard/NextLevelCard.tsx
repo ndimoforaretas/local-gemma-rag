@@ -17,14 +17,14 @@ export function NextLevelCard({
     >
       <span className="text-2xl shrink-0">{next.icon}</span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[10px] uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
+        <span className="block text-xs uppercase tracking-wider text-ink-muted">
           Next level
         </span>
-        <span className="block text-sm font-semibold text-[#191c1e] dark:text-white truncate">
+        <span className="block text-sm font-semibold text-ink-strong truncate">
           {next.name}
         </span>
       </span>
-      <ChevronRight size={16} className="text-[#727785] dark:text-[#8c909f] shrink-0" />
+      <ChevronRight size={16} className="text-ink-muted shrink-0" />
     </button>
   );
 }

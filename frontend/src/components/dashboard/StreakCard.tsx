@@ -29,27 +29,27 @@ export function StreakCard({
   }
 
   return (
-    <div className="p-5 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23]">
+    <div className="p-6 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23]">
       <div className="flex items-center gap-2 mb-3">
         <Flame
           size={18}
           className={`text-amber-500 ${active ? "animate-pulse" : "opacity-60"}`}
         />
-        <span className="text-xs font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
+        <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
           Current streak
         </span>
       </div>
       <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-bold text-[#191c1e] dark:text-white tabular-nums">
+        <span className="text-3xl font-bold text-ink-strong tabular-nums">
           {active ? dayLabel(current) : "—"}
         </span>
         {isRecord && (
-          <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
+          <span className="text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
             Best
           </span>
         )}
       </div>
-      <p className="text-xs text-[#727785] dark:text-[#8c909f] mt-1">{sublabel}</p>
+      <p className="text-sm text-ink-muted mt-1.5">{sublabel}</p>
     </div>
   );
 }

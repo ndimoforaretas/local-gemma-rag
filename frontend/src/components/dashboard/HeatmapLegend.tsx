@@ -2,7 +2,7 @@ import { INTENSITY_COLORS, INTENSITY_LEGEND } from "./dashboardHelpers";
 
 export function HeatmapLegend() {
   return (
-    <div className="flex items-center gap-2 text-[11px] text-[#727785] dark:text-[#8c909f]">
+    <div className="flex items-center gap-2 text-xs text-ink-faint">
       <span>Less</span>
       {INTENSITY_LEGEND.map((b) => (
         <span

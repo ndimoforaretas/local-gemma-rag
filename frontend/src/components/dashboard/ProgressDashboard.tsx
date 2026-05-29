@@ -24,6 +24,8 @@ import { ModeBreakdown } from "./ModeBreakdown";
 import { StudyTrendChart } from "./StudyTrendChart";
 import { SummaryCards } from "./SummaryCards";
 import { DashboardEmptyState } from "./DashboardEmptyState";
+import { SectionBand } from "./SectionBand";
+import { inProgressBadges } from "./achievementHelpers";
 import { useDashboardData } from "./useDashboardData";
 
 export function ProgressDashboard() {
@@ -36,9 +38,19 @@ export function ProgressDashboard() {
   const selectedBadgeItem = badges.find((b) => b.code === selectedBadge) ?? null;
   const isEmpty = !isLoading && !isError && (summary.data?.total_messages ?? 0) === 0;
 
+  // Each section hides itself when empty; mirror that here so we don't render an
+  // empty shaded band around a section that rendered nothing.
+  const days = daily.data?.days ?? [];
+  const showTrend = days.some((d) => d.seconds > 0);
+  const bd = breakdown.data;
+  const showBreakdown =
+    !!bd &&
+    bd.quizzes.count + bd.workshops.created + bd.flashcards.decks + bd.mindmaps.created > 0;
+  const showAlmostThere = inProgressBadges(badges).length > 0;
+
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-5xl mx-auto w-full px-6 sm:px-8 py-8 space-y-8">
+      <div className="max-w-5xl mx-auto w-full px-6 sm:px-8 py-10 space-y-16">
         <Hero />
 
         {isLoading && <LoadingState />}
@@ -48,20 +60,35 @@ export function ProgressDashboard() {
 
         {!isLoading && !isError && !isEmpty && (
           <>
-            {summary.data && <SummaryCards data={summary.data} />}
-            {daily.data && <StudyTrendChart days={daily.data.days} />}
-            {breakdown.data && <ModeBreakdown data={breakdown.data} />}
-            {achievements.data && (
-              <>
+            {summary.data && (
+              <SectionBand tone="a">
+                <SummaryCards data={summary.data} />
+              </SectionBand>
+            )}
+            {showTrend && (
+              <SectionBand tone="b">
+                <StudyTrendChart days={days} />
+              </SectionBand>
+            )}
+            {showBreakdown && bd && (
+              <SectionBand tone="a">
+                <ModeBreakdown data={bd} />
+              </SectionBand>
+            )}
+            {showAlmostThere && (
+              <SectionBand tone="b">
                 <AlmostThere items={badges} onSelect={setSelectedBadge} />
+              </SectionBand>
+            )}
+            {achievements.data && (
+              <SectionBand tone="a">
                 <AchievementGrid items={badges} onSelect={setSelectedBadge} />
-              </>
+              </SectionBand>
             )}
             {daily.data && (
-              <ActivityHeatmap
-                days={daily.data.days}
-                onSelectDay={setSelectedDay}
-              />
+              <SectionBand tone="b">
+                <ActivityHeatmap days={days} onSelectDay={setSelectedDay} />
+              </SectionBand>
             )}
           </>
         )}
@@ -93,10 +120,10 @@ function Hero() {
       <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#a855f7]/15 text-[#a855f7] mb-5 shadow-lg shadow-[#a855f7]/10">
         <BarChart3 size={36} strokeWidth={2.2} />
       </div>
-      <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-[#191c1e] dark:text-white mb-3">
+      <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-ink-strong mb-3">
         Your Progress
       </h1>
-      <p className="text-base sm:text-lg text-[#424754] dark:text-[#c2c6d6] max-w-2xl mx-auto">
+      <p className="text-base sm:text-lg text-ink-muted max-w-2xl mx-auto">
         Total study time, daily activity, and the achievements you've unlocked.
       </p>
     </div>
@@ -105,7 +132,7 @@ function Hero() {
 
 function LoadingState() {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-[#727785] dark:text-[#8c909f]">
+    <div className="flex flex-col items-center justify-center py-16 text-ink-muted">
       <Loader2 size={28} className="animate-spin mb-3" />
       <p className="text-sm">Loading your progress…</p>
     </div>

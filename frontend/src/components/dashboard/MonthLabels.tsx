@@ -23,7 +23,7 @@ export function MonthLabels({ labels }: { labels: MonthLabel[] }) {
       {labels.map(({ label, colIndex }) => (
         <span
           key={`${label}-${colIndex}`}
-          className="absolute text-[10px] text-[#727785] dark:text-[#8c909f]"
+          className="absolute text-xs text-ink-faint"
           style={{ left: columnOffset(colIndex) }}
         >
           {label}

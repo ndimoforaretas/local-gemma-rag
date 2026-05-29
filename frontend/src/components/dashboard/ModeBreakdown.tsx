@@ -8,6 +8,7 @@
 
 import { Layers } from "lucide-react";
 import type { ModeBreakdown as ModeBreakdownData } from "../../types/api";
+import { SectionHeading } from "./SectionHeading";
 
 export function ModeBreakdown({ data }: { data: ModeBreakdownData }) {
   const cards = [
@@ -46,31 +47,24 @@ export function ModeBreakdown({ data }: { data: ModeBreakdownData }) {
 
   return (
     <section>
-      <header className="flex items-center gap-2 mb-3">
-        <Layers size={18} className="text-[#a855f7]" />
-        <h2 className="text-base font-semibold text-[#191c1e] dark:text-white">
-          Study Hub activity
-        </h2>
-      </header>
+      <SectionHeading icon={Layers} title="Study Hub activity" />
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {cards.map((c) => (
           <div
             key={c.label}
-            className="p-4 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23]"
+            className="p-5 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23]"
           >
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xl">{c.icon}</span>
-              <span className="text-xs font-medium text-[#727785] dark:text-[#8c909f]">
+              <span className="text-sm font-medium text-ink-muted">
                 {c.label}
               </span>
             </div>
-            <div className="text-2xl font-bold text-[#191c1e] dark:text-white tabular-nums">
+            <div className="text-2xl font-bold text-ink-strong tabular-nums">
               {c.primary}
             </div>
-            <div className="text-[11px] text-[#727785] dark:text-[#8c909f] mt-0.5">
-              {c.detail}
-            </div>
+            <div className="text-xs text-ink-faint mt-1">{c.detail}</div>
           </div>
         ))}
       </div>
