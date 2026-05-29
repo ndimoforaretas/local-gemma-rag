@@ -23,6 +23,7 @@ import { DayDetailModal } from "./DayDetailModal";
 import { ModeBreakdown } from "./ModeBreakdown";
 import { StudyTrendChart } from "./StudyTrendChart";
 import { SummaryCards } from "./SummaryCards";
+import { DashboardEmptyState } from "./DashboardEmptyState";
 import { useDashboardData } from "./useDashboardData";
 
 export function ProgressDashboard() {
@@ -33,6 +34,7 @@ export function ProgressDashboard() {
 
   const badges = achievements.data?.achievements ?? [];
   const selectedBadgeItem = badges.find((b) => b.code === selectedBadge) ?? null;
+  const isEmpty = !isLoading && !isError && (summary.data?.total_messages ?? 0) === 0;
 
   return (
     <div className="h-full overflow-y-auto">
@@ -42,7 +44,9 @@ export function ProgressDashboard() {
         {isLoading && <LoadingState />}
         {isError && <ErrorState />}
 
-        {!isLoading && !isError && (
+        {!isLoading && !isError && isEmpty && <DashboardEmptyState />}
+
+        {!isLoading && !isError && !isEmpty && (
           <>
             {summary.data && <SummaryCards data={summary.data} />}
             {daily.data && <StudyTrendChart days={daily.data.days} />}
