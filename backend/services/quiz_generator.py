@@ -198,34 +198,40 @@ def _build_prompt(
     types_csv = ", ".join(t for t in question_types)
 
     return (
-        "You generate quizzes from study material. Output ONLY a JSON array. "
-        "Do not include any commentary, markdown fences, or explanation text outside the JSON.\n\n"
+        "You generate quizzes from study material. Output ONLY a single JSON "
+        "object — no prose, no markdown fences, no text outside the JSON.\n\n"
         f"DIFFICULTY: {difficulty}. {diff_note}\n"
         f"NUMBER OF QUESTIONS: EXACTLY {num_questions}. This is a hard requirement — "
-        f"the array MUST contain exactly {num_questions} elements, no more, no fewer. "
+        f"the questions array MUST contain exactly {num_questions} elements, no more, no fewer. "
         f"If the material seems thin, re-read it and find more angles to question — "
         f"definitions, applications, comparisons, edge cases — but produce all "
         f"{num_questions} questions.\n"
         f"ALLOWED QUESTION TYPES: {types_csv}.\n\n"
         "QUESTION TYPE SHAPES:\n- "
         + "\n- ".join(type_descriptions) + "\n\n"
-        "OUTPUT SCHEMA — every element of the array MUST be an object with:\n"
-        '  "type": one of [' + types_csv + ']\n'
-        '  "question": the question text (string, no leading numbering)\n'
-        '  "options": array of strings (length 4 for mcq, length 2 for true_false)\n'
-        '  "correct_index": integer index into options (0-based)\n'
-        '  "explanation": 1-2 sentence explanation of the correct answer (string)\n\n'
+        "OUTPUT SCHEMA:\n"
+        "{\n"
+        '  "questions": [\n'
+        "    {\n"
+        '      "type": one of [' + types_csv + '],\n'
+        '      "question": the question text (string, no leading numbering),\n'
+        '      "options": array of strings (length 4 for mcq, length 2 for true_false),\n'
+        '      "correct_index": integer index into options (0-based),\n'
+        '      "explanation": 1-2 sentence explanation of the correct answer (string)\n'
+        "    },\n"
+        f"    ... exactly {num_questions} entries\n"
+        "  ]\n"
+        "}\n\n"
         "RULES:\n"
         "- Base every question on the source material below — do not invent facts.\n"
         "- Make incorrect MCQ options plausible but clearly wrong on close reading.\n"
         "- Vary the position of the correct answer across questions.\n"
-        "- Do not number the questions; just emit the array.\n"
+        "- Do not number the questions.\n"
         "- Output MUST be parseable by JSON.parse with no preprocessing.\n"
-        f"- Before emitting, COUNT your questions. If fewer than {num_questions}, "
-        "add more until you have the exact count.\n\n"
+        f"- The questions array MUST contain exactly {num_questions} entries.\n\n"
         "SOURCE MATERIAL:\n"
         f"{context_section}\n\n"
-        f"Now emit the JSON array of EXACTLY {num_questions} questions."
+        f"Now emit the JSON object with EXACTLY {num_questions} questions."
     )
 
 
@@ -236,19 +242,16 @@ def _parse_questions(
     raw: str,
     allowed_types: list[QuestionType],
 ) -> list[QuizQuestion]:
-    """Extract and validate the JSON array. Skip malformed items, never crash."""
-    array_text = _extract_json_array(raw)
-    if array_text is None:
-        logger.warning("Quiz parse failed: no JSON array found in model output.")
-        return []
+    """
+    Extract and validate the question list. Skip malformed items, never crash.
 
-    try:
-        items = json.loads(array_text)
-    except json.JSONDecodeError as exc:
-        logger.warning("Quiz parse failed: invalid JSON (%s).", exc)
-        return []
-
-    if not isinstance(items, list):
+    Robust to both response shapes:
+      - object:  {"questions": [ ... ]}   (what `format="json"` + Gemma emits)
+      - array:   [ ... ]                  (legacy bare-array, kept as fallback)
+    """
+    items = _extract_question_items(raw)
+    if items is None:
+        logger.warning("Quiz parse failed: no question list found in model output.")
         return []
 
     allowed = set(allowed_types)
@@ -258,6 +261,70 @@ def _parse_questions(
         if q is not None:
             questions.append(q)
     return questions
+
+
+def _load_json_lenient(text: str) -> Optional[object]:
+    """json.loads with a single trailing-comma repair pass before giving up."""
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        repaired = re.sub(r",(\s*[\]}])", r"\1", text)
+        try:
+            return json.loads(repaired)
+        except json.JSONDecodeError as exc:
+            logger.warning("Quiz parse failed: invalid JSON (%s).", exc)
+            return None
+
+
+def _extract_question_items(raw: str) -> Optional[list]:
+    """
+    Pull the list of question objects out of the model response, tolerating
+    object-wrapped output, bare arrays, and markdown fences.
+
+    Strategy (cheapest, most reliable first):
+      1. Parse the whole response as JSON (clean path with `format="json"`).
+      2. Fall back to fenced/braced object substring extraction.
+      3. Fall back to fenced/bracketed array substring extraction.
+    """
+    for candidate in (raw, _extract_json_object(raw), _extract_json_array(raw)):
+        if candidate is None:
+            continue
+        items = _items_from_json(_load_json_lenient(candidate))
+        if items is not None:
+            return items
+    return None
+
+
+def _items_from_json(data: object) -> Optional[list]:
+    """
+    Coerce a parsed JSON value into the list of question items, or None.
+
+    Accepts a bare list, or an object with a "questions" list. As a last
+    resort it takes the first value that is a *list of objects* — this avoids
+    mistaking a question's own ``options`` string-array for the item list.
+    """
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        items = data.get("questions")
+        if isinstance(items, list):
+            return items
+        for value in data.values():
+            if isinstance(value, list) and any(isinstance(v, dict) for v in value):
+                return value
+    return None
+
+
+def _extract_json_object(text: str) -> Optional[str]:
+    """Find the outermost JSON object, tolerating markdown fences."""
+    fence = re.search(r"```(?:json)?\s*(\{[\s\S]*?\})\s*```", text)
+    if fence:
+        return fence.group(1)
+    first = text.find("{")
+    last = text.rfind("}")
+    if first != -1 and last != -1 and last > first:
+        return text[first : last + 1]
+    return None
 
 
 def _extract_json_array(text: str) -> Optional[str]:

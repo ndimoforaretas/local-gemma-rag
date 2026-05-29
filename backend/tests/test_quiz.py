@@ -103,6 +103,47 @@ def test_parse_returns_empty_when_no_array():
     assert quiz_generator._parse_questions("no json here", allowed_types=["mcq"]) == []
 
 
+def test_parse_accepts_object_wrapped_questions():
+    """`format="json"` + Gemma returns {"questions": [...]}, not a bare array."""
+    raw = json.dumps({"questions": [VALID_MCQ, VALID_TF]})
+    out = quiz_generator._parse_questions(raw, allowed_types=["mcq", "true_false"])
+    assert len(out) == 2
+
+
+def test_parse_object_wrapped_with_fence_and_trailing_comma():
+    """Object shape inside a markdown fence with a trailing comma still parses."""
+    raw = '```json\n{"questions": [' + json.dumps(VALID_MCQ) + ",]}\n```"
+    out = quiz_generator._parse_questions(raw, allowed_types=["mcq"])
+    assert len(out) == 1
+
+
+def test_parse_object_wrapped_alternate_key():
+    """Defensive: model uses a different key but still a list of question objects."""
+    raw = json.dumps({"quiz": [VALID_MCQ]})
+    out = quiz_generator._parse_questions(raw, allowed_types=["mcq"])
+    assert len(out) == 1
+
+
+def test_generate_endpoint_happy_path_object_shape(client):
+    """End-to-end: model returns object-wrapped questions → 200 + parsed."""
+    payload = {"questions": [VALID_MCQ, VALID_TF]}
+    with patch.object(quiz_generator, "ollama") as mock_oll, patch.object(
+        quiz_generator.vector_db, "search"
+    ) as mock_search:
+        mock_search.return_value = [{"source": "g.md", "content": "Paris is the capital."}]
+        mock_oll.chat.return_value = {"message": {"content": json.dumps(payload)}}
+        resp = client.post(
+            "/api/study/quiz/generate",
+            json={
+                "difficulty": "advanced",
+                "num_questions": 5,
+                "question_types": ["mcq", "true_false"],
+            },
+        )
+    assert resp.status_code == 200
+    assert len(resp.json()["questions"]) == 2
+
+
 def test_parse_rejects_tf_with_non_truefalse_options():
     bad = dict(VALID_TF, options=["Yes", "No"])
     out = quiz_generator._parse_questions(

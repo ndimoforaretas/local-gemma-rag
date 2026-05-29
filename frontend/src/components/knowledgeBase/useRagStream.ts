@@ -1,12 +1,11 @@
 /**
- * useRagStream — owns the entire "send a chat message and consume the
- * NDJSON streaming response" flow. Extracted from KnowledgeBase.tsx so the
- * page component can stay focused on layout and high-level state.
+ * useRagStream — owns the "send a chat message and consume the /rag stream"
+ * flow. Extracted from KnowledgeBase.tsx so the page stays focused on layout.
  *
  * Responsibilities:
  *  - Resolve the active session (create one on first send).
  *  - Persist user + AI messages into the React-Query history cache.
- *  - Stream-parse the NDJSON / SSE / plain-text response from /rag.
+ *  - Delegate stream consumption to `consumeRagStream` in ragStream.ts.
  *  - Surface live citation metadata into the caller's `setContextItems`.
  *  - Time out gracefully and replace the empty bubble with a useful error.
  */
@@ -17,15 +16,9 @@ import { api } from "../../lib/api";
 import { generateThumbnail } from "../../lib/imageThumbnail";
 import { computeScopeLabel } from "./scopeLabel";
 import {
-  FIRST_CHUNK_TIMEOUT_MS,
-  MAX_TIMEOUT_RETRIES,
-  STREAM_IDLE_TIMEOUT_MS,
   cleanAssistantText,
-  normalizeSseText,
-  parseNdjsonLine,
-  readChunkWithTimeout,
+  consumeRagStream,
   type MetadataPayload,
-  type StreamMode,
 } from "./ragStream";
 import type {
   Attachment,
@@ -55,44 +48,24 @@ export interface UseRagStreamArgs {
   saveHistory: (sessions: ChatSession[]) => void;
 }
 
-export interface SendOptions {
-  attachments?: Attachment[];
-  directQuery?: string;
-  trimHistoryToTurns?: number;
-  /**
-   * Optional one-shot scope (e.g. from a starter-suggestion click). When set,
-   * it is used **instead of** the user's current `documentFilter` and the
-   * filter pill is left untouched.
-   */
-  scopeOverride?: string[];
-}
-
 export function useRagStream(args: UseRagStreamArgs) {
   const queryClient = useQueryClient();
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
   const buildAttachmentPreviews = async (
     attachments: Attachment[],
-  ): Promise<{
-    previews: MessageAttachment[];
-    textFilesForKB: SaveToKBFile[];
-  }> => {
+  ): Promise<{ previews: MessageAttachment[]; textFilesForKB: SaveToKBFile[] }> => {
     const previews: MessageAttachment[] = [];
     const textFilesForKB: SaveToKBFile[] = [];
     for (const att of attachments) {
       if (att.mime_type.startsWith("image/")) {
         const thumb = await generateThumbnail(att.data, att.mime_type);
-        previews.push({
-          mime_type: att.mime_type,
-          thumbnail: thumb,
-          name: att.name,
-        });
+        previews.push({ mime_type: att.mime_type, thumbnail: thumb, name: att.name });
       } else {
-        previews.push({
-          mime_type: att.mime_type,
-          name: att.name || "file.txt",
-        });
+        previews.push({ mime_type: att.mime_type, name: att.name || "file.txt" });
         textFilesForKB.push({
           name: att.name || `file_${Date.now()}.txt`,
           mime_type: att.mime_type,
@@ -108,10 +81,7 @@ export function useRagStream(args: UseRagStreamArgs) {
     const id = Date.now().toString();
     const newSession: ChatSession = {
       id,
-      title:
-        userMessage.length > 25
-          ? userMessage.substring(0, 25) + "..."
-          : userMessage,
+      title: userMessage.length > 25 ? userMessage.substring(0, 25) + "..." : userMessage,
       updatedAt: Date.now(),
       messages: [],
     };
@@ -125,7 +95,7 @@ export function useRagStream(args: UseRagStreamArgs) {
     return id;
   };
 
-  const resolveActiveScope = (
+  const resolveScope = (
     scopeOverride: string[] | undefined,
   ): { filter: string[] | undefined; label: string | undefined } => {
     let filter: string[] | undefined;
@@ -135,11 +105,10 @@ export function useRagStream(args: UseRagStreamArgs) {
       filter = [...args.documentFilter];
       args.setDocumentFilter([]);
     }
-    const label = filter
-      ? computeScopeLabel(filter, args.indexedDocs)
-      : undefined;
-    return { filter, label };
+    return { filter, label: filter ? computeScopeLabel(filter, args.indexedDocs) : undefined };
   };
+
+  // ── Core send ────────────────────────────────────────────────────────────
 
   const send = async (
     attachments: Attachment[] = [],
@@ -155,232 +124,91 @@ export function useRagStream(args: UseRagStreamArgs) {
     setIsLoading(true);
     args.setPendingKBFiles([]);
     args.resetKBSaveStatus();
-    // Every new send starts with a clean citation slate — old citations
-    // from the same session must not bleed into the new response's sidebar.
     args.setContextItems([]);
 
-    const { previews, textFilesForKB } =
-      await buildAttachmentPreviews(attachments);
-    const currentSessionId = ensureSession(userMessage);
-    // Persist the cleared citations now that we have a confirmed session id.
-    args.updateSessionContextItems(currentSessionId, []);
+    const { previews, textFilesForKB } = await buildAttachmentPreviews(attachments);
+    const sessionId = ensureSession(userMessage);
+    args.updateSessionContextItems(sessionId, []);
 
-    const { filter: activeScopeFilter, label: activeScopeLabel } =
-      resolveActiveScope(scopeOverride);
+    const { filter: scopeFilter, label: scopeLabel } = resolveScope(scopeOverride);
 
-    const newMsgId = Date.now().toString();
-    args.updateSessionMessages(currentSessionId, (prev) => [
+    args.updateSessionMessages(sessionId, (prev) => [
       ...prev,
       {
-        id: newMsgId,
+        id: Date.now().toString(),
         role: "user",
         content: userMessage,
         attachments: previews.length > 0 ? previews : undefined,
-        scopeFilter: activeScopeFilter,
-        scopeLabel: activeScopeLabel,
+        scopeFilter,
+        scopeLabel,
       },
     ]);
 
-    // Hoist so the catch block can reference them for targeted error updates.
     const aiMsgId = Date.now().toString() + "-ai";
     let thinkingText = "";
+    let fullText = "";
 
     try {
-      const res = await api.ragStream(
-        userMessage,
-        attachments,
-        currentSessionId,
-        activeScopeFilter,
-        trimHistoryToTurns,
-      );
+      const res = await api.ragStream(userMessage, attachments, sessionId, scopeFilter, trimHistoryToTurns);
       if (!res.body) throw new Error("No response body");
 
-      args.updateSessionMessages(currentSessionId, (prev) => [
+      args.updateSessionMessages(sessionId, (prev) => [
         ...prev,
         { id: aiMsgId, role: "ai", content: "" },
       ]);
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let fullText = "";
-      let buffer = "";
-      let streamMode: StreamMode = "unknown";
-      let hasReceivedChunk = false;
-      let timeoutRetries = 0;
-
-      const appendThinking = (text: string) => {
-        if (!text) return;
-        thinkingText += text;
-        args.updateSessionMessages(currentSessionId, (prev) =>
-          prev.map((m) =>
-            m.id === aiMsgId ? { ...m, thinking: thinkingText } : m,
-          ),
-        );
-      };
-
-      const appendText = (text: string) => {
-        if (!text) return;
-        fullText += text;
-        const cleanText = cleanAssistantText(fullText);
-        args.updateSessionMessages(currentSessionId, (prev) =>
-          prev.map((m) =>
-            m.id === aiMsgId ? { ...m, content: cleanText } : m,
-          ),
-        );
-      };
-
-      const handleMetadataEvent = (meta: MetadataPayload) => {
-        const path = meta.source.includes(" > ")
-          ? meta.source.split(" > ").slice(0, 2).join(" > ")
-          : "Documents > Uploads";
-        const title = meta.source.includes(" > ")
-          ? (meta.source.split(" > ").pop() as string)
-          : meta.source;
-
-        args.setContextItems((prev) => {
-          if (prev.some((item) => item.title === title)) return prev;
-          const next = [
-            ...prev,
-            {
-              title,
-              type: meta.type,
-              path,
-              text: meta.content ?? meta.text ?? undefined,
-              page: meta.page ?? undefined,
-            },
-          ];
-          args.updateSessionContextItems(currentSessionId, next);
-          return next;
-        });
-      };
-
-      const processNdjsonLine = (line: string): boolean => {
-        const event = parseNdjsonLine(line);
-        if (!event) return false;
-        if (event.type === "thinking" && event.data) {
-          appendThinking(String(event.data));
-        } else if (event.type === "text" && event.data) {
-          appendText(String(event.data));
-        } else if (event.type === "metadata" && event.data) {
-          handleMetadataEvent(event.data as MetadataPayload);
-        } else if (event.type === "error") {
-          console.error("RAG error:", event.data);
-        }
-        return true;
-      };
-
-      while (true) {
-        let done = false;
-        let value: Uint8Array | undefined;
-
-        try {
-          const result = await readChunkWithTimeout(
-            reader,
-            hasReceivedChunk ? STREAM_IDLE_TIMEOUT_MS : FIRST_CHUNK_TIMEOUT_MS,
+      await consumeRagStream(res.body.getReader(), {
+        onThinking: (text) => {
+          thinkingText += text;
+          args.updateSessionMessages(sessionId, (prev) =>
+            prev.map((m) => (m.id === aiMsgId ? { ...m, thinking: thinkingText } : m)),
           );
-          done = result.done;
-          value = result.value;
-          timeoutRetries = 0;
-        } catch (err) {
-          const isTimeoutError =
-            err instanceof Error && err.message.includes("Stream read timeout");
-          if (isTimeoutError && timeoutRetries < MAX_TIMEOUT_RETRIES) {
-            timeoutRetries += 1;
-            continue;
-          }
-          if (fullText.trim()) {
-            await reader.cancel().catch(() => undefined);
-            break;
-          }
-          throw err;
-        }
-
-        if (done) {
-          const tail = buffer.trim();
-          if (tail) {
-            if (streamMode === "ndjson") {
-              if (!processNdjsonLine(tail)) appendText(normalizeSseText(tail));
-            } else {
-              appendText(normalizeSseText(buffer));
-            }
-          }
-          break;
-        }
-
-        hasReceivedChunk = true;
-        const chunk = decoder.decode(value, { stream: true });
-
-        if (streamMode === "plain") {
-          appendText(normalizeSseText(chunk));
-          continue;
-        }
-
-        buffer += chunk;
-
-        if (streamMode === "unknown") {
-          const probe = buffer.trimStart();
-          if (probe && !probe.startsWith("{")) {
-            streamMode = "plain";
-            appendText(normalizeSseText(buffer));
-            buffer = "";
-            continue;
-          }
-        }
-
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed) continue;
-
-          if (processNdjsonLine(trimmed)) {
-            streamMode = "ndjson";
-            continue;
-          }
-
-          if (streamMode === "unknown" || streamMode === "plain") {
-            streamMode = "plain";
-            appendText(normalizeSseText(trimmed + "\n"));
-          } else {
-            console.error("Failed to parse NDJSON line:", line);
-          }
-        }
-      }
+        },
+        onText: (text) => {
+          fullText += text;
+          const clean = cleanAssistantText(fullText);
+          args.updateSessionMessages(sessionId, (prev) =>
+            prev.map((m) => (m.id === aiMsgId ? { ...m, content: clean } : m)),
+          );
+        },
+        onMetadata: (meta: MetadataPayload) => {
+          const path = meta.source.includes(" > ")
+            ? meta.source.split(" > ").slice(0, 2).join(" > ")
+            : "Documents > Uploads";
+          const title = meta.source.includes(" > ")
+            ? (meta.source.split(" > ").pop() as string)
+            : meta.source;
+          args.setContextItems((prev) => {
+            if (prev.some((item) => item.title === title)) return prev;
+            const next = [
+              ...prev,
+              { title, type: meta.type, path, text: meta.content ?? meta.text, page: meta.page },
+            ];
+            args.updateSessionContextItems(sessionId, next);
+            return next;
+          });
+        },
+      });
     } catch (e) {
       console.error(e);
       const errorContent = thinkingText
         ? "The response took too long to arrive. This can happen with large or complex attachments — please try again."
         : "Error communicating with the knowledge base.";
-      args.updateSessionMessages(currentSessionId, (prev) =>
-        prev.map((m) =>
-          m.id === aiMsgId ? { ...m, content: errorContent } : m,
-        ),
+      args.updateSessionMessages(sessionId, (prev) =>
+        prev.map((m) => (m.id === aiMsgId ? { ...m, content: errorContent } : m)),
       );
     } finally {
-      // Guard: if the stream ended with no text and no error, show a fallback.
-      args.updateSessionMessages(currentSessionId, (prev) =>
+      args.updateSessionMessages(sessionId, (prev) =>
         prev.map((m) =>
           m.id === aiMsgId && !m.content
-            ? {
-                ...m,
-                content:
-                  "No response received. The server may have encountered an error — please try again.",
-              }
+            ? { ...m, content: "No response received. The server may have encountered an error — please try again." }
             : m,
         ),
       );
       setIsLoading(false);
-      if (textFilesForKB.length > 0) {
-        args.setPendingKBFiles(textFilesForKB);
-      }
+      if (textFilesForKB.length > 0) args.setPendingKBFiles(textFilesForKB);
     }
   };
 
-  return {
-    input,
-    setInput,
-    isLoading,
-    send,
-  };
+  return { input, setInput, isLoading, send };
 }
