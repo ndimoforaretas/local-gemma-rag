@@ -4,10 +4,11 @@
  * Pure presentational — parent owns the data, this just lays out the cards.
  */
 
-import { Clock, Layers, Flame } from "lucide-react";
+import { Clock, Layers } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ProgressSummary } from "../../types/api";
 import { formatDuration } from "./dashboardHelpers";
+import { StreakCard } from "./StreakCard";
 
 export function SummaryCards({ data }: { data: ProgressSummary }) {
   return (
@@ -25,16 +26,9 @@ export function SummaryCards({ data }: { data: ProgressSummary }) {
         sublabel={`${data.total_messages} messages sent`}
         accent="text-emerald-500"
       />
-      <StatCard
-        icon={Flame}
-        label="Current streak"
-        value={
-          data.current_streak_days > 0
-            ? `${data.current_streak_days} day${data.current_streak_days === 1 ? "" : "s"}`
-            : "—"
-        }
-        sublabel={data.current_streak_days > 0 ? "Keep it going!" : "Study today to start a streak"}
-        accent="text-amber-500"
+      <StreakCard
+        current={data.current_streak_days}
+        best={data.longest_streak_days}
       />
     </div>
   );

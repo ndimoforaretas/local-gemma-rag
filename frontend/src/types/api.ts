@@ -181,6 +181,8 @@ export interface ProgressSummary {
   total_sessions: number;
   total_messages: number;
   current_streak_days: number;
+  /** Longest run of consecutive active days ever (personal best). */
+  longest_streak_days: number;
 }
 
 export interface DailyActivityEntry {

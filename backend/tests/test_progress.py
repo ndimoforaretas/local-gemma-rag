@@ -208,7 +208,24 @@ def test_summary_endpoint_returns_zeros_initially(client):
         "total_sessions": 0,
         "total_messages": 0,
         "current_streak_days": 0,
+        "longest_streak_days": 0,
     }
+
+
+def test_longest_streak_tracks_best_run_even_after_a_gap():
+    """Personal-best streak survives a missed day; current streak would reset."""
+    today = _dt.date.today()
+    # Best run: 4 consecutive days, a while back (days 10-13 ago).
+    for i in (13, 12, 11, 10):
+        ts = _dt.datetime.combine(today - _dt.timedelta(days=i), _dt.time(12, 0)).timestamp()
+        progress_tracker.record_message(sent_at=ts)
+    # A shorter recent run: 2 days (days 1-2 ago) — gap in between.
+    for i in (2, 1):
+        ts = _dt.datetime.combine(today - _dt.timedelta(days=i), _dt.time(12, 0)).timestamp()
+        progress_tracker.record_message(sent_at=ts)
+
+    summary = progress_tracker.get_summary()
+    assert summary["longest_streak_days"] == 4
 
 
 def test_daily_endpoint_returns_requested_window(client):

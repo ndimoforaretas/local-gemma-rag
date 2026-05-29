@@ -754,11 +754,13 @@ def get_summary() -> dict:
         total_messages = int(row["total_messages"] or 0)
 
         streak = _current_streak_days(conn)
+        longest = _longest_streak_days(conn)
         return {
             "total_seconds": total_seconds,
             "total_sessions": total_sessions,
             "total_messages": total_messages,
             "current_streak_days": streak,
+            "longest_streak_days": longest,
         }
     finally:
         conn.close()
@@ -862,6 +864,28 @@ def _current_streak_days(conn: sqlite3.Connection) -> int:
         streak += 1
         cursor_day -= _dt.timedelta(days=1)
     return streak
+
+
+def _longest_streak_days(conn: sqlite3.Connection) -> int:
+    """
+    The longest run of consecutive active days ever (the user's personal best).
+
+    Independent of today — unlike the current streak, this never resets when a
+    day is missed; it records the best run the user has achieved.
+    """
+    cur = conn.cursor()
+    cur.execute("SELECT started_at FROM study_sessions")
+    rows = cur.fetchall()
+    if not rows:
+        return 0
+
+    days = sorted({_dt.date.fromtimestamp(r["started_at"]) for r in rows})
+    longest = 1
+    run = 1
+    for prev, current in zip(days, days[1:]):
+        run = run + 1 if (current - prev).days == 1 else 1
+        longest = max(longest, run)
+    return longest
 
 
 def get_daily(days: int = 30) -> list[dict]:
