@@ -25,10 +25,10 @@ export function SyncProgressPanel({ syncStatus, steps, largeFileWarning }: SyncP
           <Database size={24} />
         </div>
         <div>
-          <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-[#191c1e] dark:text-[#e1e2ec]">
+          <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-ink-strong">
             {syncStatus === "SUCCESS" ? "Knowledge Sync Complete" : "Processing Engine Active..."}
           </h3>
-          <p className="text-[#424754] dark:text-[#8c909f] text-sm sm:text-base">
+          <p className="text-ink-muted text-sm sm:text-base">
             DBOS Durable Workflow is safely processing your documents.
           </p>
         </div>
@@ -66,16 +66,16 @@ export function SyncProgressPanel({ syncStatus, steps, largeFileWarning }: SyncP
                   ? <CheckCircle2 size={24} className="text-emerald-500" />
                   : isActive
                     ? <Loader2 size={24} className="text-[#0058be] dark:text-[#adc6ff] animate-spin" />
-                    : <Circle size={24} className="text-[#727785] dark:text-[#424754]" />
+                    : <Circle size={24} className="text-ink-faint" />
                 }
               </div>
               <div>
                 <h4 className={`text-base sm:text-lg lg:text-xl font-semibold ${
-                  isComp ? "text-[#191c1e] dark:text-[#e1e2ec]"
+                  isComp ? "text-ink-strong"
                     : isActive ? "text-[#0058be] dark:text-[#adc6ff]"
-                    : "text-[#727785] dark:text-[#8c909f]"
+                    : "text-ink-muted"
                 }`}>{label}</h4>
-                <p className="text-sm sm:text-base text-[#424754] dark:text-[#8c909f]">{subtext}</p>
+                <p className="text-sm sm:text-base text-ink-muted">{subtext}</p>
               </div>
             </div>
           );

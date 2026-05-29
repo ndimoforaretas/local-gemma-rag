@@ -28,7 +28,7 @@ export function WorkshopList({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h2 className="text-2xl sm:text-3xl font-bold text-[#191c1e] dark:text-white">
+        <h2 className="text-2xl sm:text-3xl font-bold text-ink-strong">
           {items.length === 0 ? "Your workshops" : `Your workshops (${items.length})`}
         </h2>
         <button
@@ -41,7 +41,7 @@ export function WorkshopList({
       </div>
 
       {isLoading && (
-        <div className="flex items-center justify-center py-16 text-[#727785]">
+        <div className="flex items-center justify-center py-16 text-ink-muted">
           <Loader2 size={20} className="animate-spin" />
         </div>
       )}
@@ -51,14 +51,14 @@ export function WorkshopList({
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#a855f7]/15 text-[#a855f7] mb-5">
             <BookOpen size={36} strokeWidth={2.2} />
           </div>
-          <h3 className="text-2xl font-bold text-[#191c1e] dark:text-white mb-3">
+          <h3 className="text-2xl font-bold text-ink-strong mb-3">
             Build your first workshop
           </h3>
-          <p className="text-base sm:text-lg text-[#424754] dark:text-[#e1e2ec] max-w-xl mx-auto mb-2 leading-relaxed">
+          <p className="text-base sm:text-lg text-ink max-w-xl mx-auto mb-2 leading-relaxed">
             Workshops turn your scoped documents into a structured,
             multi-lesson learning path you can work through at your own pace.
           </p>
-          <p className="text-sm text-[#727785] dark:text-[#c2c6d6]">
+          <p className="text-sm text-ink-muted">
             Click <span className="font-semibold text-[#a855f7] dark:text-[#ddb7ff]">New Workshop</span> above to get started.
           </p>
         </div>

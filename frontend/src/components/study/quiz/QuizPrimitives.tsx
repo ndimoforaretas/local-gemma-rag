@@ -19,12 +19,12 @@ export function Section({
 }) {
   return (
     <div>
-      <div className="text-sm font-semibold mb-3 text-[#191c1e] dark:text-[#e1e2ec]">
+      <div className="text-sm font-semibold mb-3 text-ink-strong">
         {label}
       </div>
       {children}
       {hint && (
-        <p className="text-xs text-[#727785] dark:text-[#8c909f] mt-2">
+        <p className="text-xs text-ink-muted mt-2">
           {hint}
         </p>
       )}
@@ -51,7 +51,7 @@ export function PillButton({
         ${
           active
             ? "bg-[#a855f7]/20 border-[#a855f7] text-[#a855f7] dark:text-[#ddb7ff] shadow-sm shadow-[#a855f7]/20"
-            : "bg-transparent border-[#c2c6d6] dark:border-[#424754] text-[#424754] dark:text-[#c2c6d6] hover:border-[#a855f7]/50 hover:text-[#a855f7] dark:hover:text-[#ddb7ff]"
+            : "bg-transparent border-[#c2c6d6] dark:border-[#424754] text-ink-muted hover:border-[#a855f7]/50 hover:text-[#a855f7] dark:hover:text-[#ddb7ff]"
         }
       `}
     >

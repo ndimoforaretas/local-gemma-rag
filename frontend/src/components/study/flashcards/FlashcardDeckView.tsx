@@ -46,17 +46,17 @@ export function FlashcardDeckView({
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-sm text-[#424754] dark:text-[#c2c6d6] hover:text-[#191c1e] dark:hover:text-white"
+        className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink-strong"
       >
         <ArrowLeft size={14} />
         Back to decks
       </button>
 
       <header>
-        <div className="text-[10px] uppercase tracking-wider font-semibold inline-block px-2 py-0.5 rounded-full bg-[#a855f7]/15 text-[#a855f7] dark:text-[#ddb7ff] mb-3">
+        <div className="text-xs uppercase tracking-wider font-semibold inline-block px-2 py-0.5 rounded-full bg-[#a855f7]/15 text-[#a855f7] dark:text-[#ddb7ff] mb-3">
           {deck.difficulty} · {deck.card_count} cards · {mastered} mastered
         </div>
-        <h1 className="text-3xl font-bold text-[#191c1e] dark:text-white mb-3">
+        <h1 className="text-3xl font-bold text-ink-strong mb-3">
           {deck.title}
         </h1>
         <div className="h-1.5 max-w-md bg-[#c2c6d6]/40 dark:bg-[#424754]/40 rounded-full overflow-hidden">
@@ -76,7 +76,7 @@ export function FlashcardDeckView({
               className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-colors ${
                 active
                   ? "bg-[#a855f7]/15 border-[#a855f7] text-[#a855f7] dark:text-[#ddb7ff]"
-                  : "bg-transparent border-[#c2c6d6] dark:border-[#424754] text-[#424754] dark:text-[#c2c6d6] hover:border-[#a855f7]/50"
+                  : "bg-transparent border-[#c2c6d6] dark:border-[#424754] text-ink-muted hover:border-[#a855f7]/50"
               }`}
             >
               {f.label} <span className="opacity-70">({count})</span>
@@ -86,7 +86,7 @@ export function FlashcardDeckView({
       </div>
 
       {visible.length === 0 ? (
-        <div className="p-10 rounded-2xl border border-dashed border-[#c2c6d6] dark:border-[#424754] text-center text-sm text-[#727785] dark:text-[#c2c6d6]">
+        <div className="p-10 rounded-2xl border border-dashed border-[#c2c6d6] dark:border-[#424754] text-center text-sm text-ink-muted">
           No cards match this filter.
         </div>
       ) : (

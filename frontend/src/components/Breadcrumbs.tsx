@@ -27,7 +27,7 @@ export function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
           {i > 0 && (
             <ChevronRight
               size={14}
-              className="text-[#727785] dark:text-[#8c909f] shrink-0"
+              className="text-ink-muted shrink-0"
               aria-hidden="true"
             />
           )}
@@ -35,14 +35,14 @@ export function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
             <button
               type="button"
               onClick={crumb.onClick}
-              className="text-[#424754] dark:text-[#c2c6d6] hover:text-[#a855f7] dark:hover:text-[#ddb7ff] transition-colors truncate max-w-xs"
+              className="text-ink-muted hover:text-[#a855f7] dark:hover:text-[#ddb7ff] transition-colors truncate max-w-xs"
               title={crumb.label}
             >
               {crumb.label}
             </button>
           ) : (
             <span
-              className="text-[#191c1e] dark:text-white font-semibold truncate max-w-xs"
+              className="text-ink-strong font-semibold truncate max-w-xs"
               aria-current="page"
               title={crumb.label}
             >

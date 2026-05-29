@@ -29,11 +29,11 @@ export function QuizExportMenu({ questions }: { questions: QuizQuestion[] }) {
     <div className="p-4 sm:p-5 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23]">
       <div className="flex items-center gap-2 mb-1">
         <Download size={16} className="text-[#a855f7]" />
-        <h3 className="text-sm font-semibold text-[#191c1e] dark:text-[#e1e2ec]">
+        <h3 className="text-sm font-semibold text-ink-strong">
           Export this quiz
         </h3>
       </div>
-      <p className="text-xs text-[#727785] dark:text-[#8c909f] mb-3">
+      <p className="text-xs text-ink-muted mb-3">
         Pick what to include, then choose a format.
       </p>
 
@@ -49,7 +49,7 @@ export function QuizExportMenu({ questions }: { questions: QuizQuestion[] }) {
               className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-colors ${
                 active
                   ? "bg-[#a855f7]/15 border-[#a855f7] text-[#a855f7] dark:text-[#ddb7ff]"
-                  : "bg-transparent border-[#c2c6d6] dark:border-[#424754] text-[#424754] dark:text-[#c2c6d6] hover:border-[#a855f7]/50"
+                  : "bg-transparent border-[#c2c6d6] dark:border-[#424754] text-ink-muted hover:border-[#a855f7]/50"
               }`}
             >
               {l.label}
@@ -67,7 +67,7 @@ export function QuizExportMenu({ questions }: { questions: QuizQuestion[] }) {
           }}
           title="Download as Markdown (.md) — opens a Save As dialog where you can rename and choose a folder"
           aria-label="Download as Markdown — opens a Save As dialog"
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#c2c6d6] dark:border-[#424754] hover:border-[#a855f7]/50 text-sm font-medium text-[#191c1e] dark:text-[#e1e2ec] transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#c2c6d6] dark:border-[#424754] hover:border-[#a855f7]/50 text-sm font-medium text-ink-strong transition-colors"
         >
           <FileText size={14} /> Markdown
         </button>

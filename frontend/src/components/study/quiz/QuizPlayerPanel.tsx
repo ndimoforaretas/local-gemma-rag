@@ -43,7 +43,7 @@ export function QuizPlayerPanel({
           transition={{ duration: 0.18 }}
           className="p-5 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23]"
         >
-          <h2 className="text-lg font-semibold mb-4 text-[#191c1e] dark:text-[#e1e2ec]">
+          <h2 className="text-lg font-semibold mb-4 text-ink-strong">
             {question.question}
           </h2>
 
@@ -64,7 +64,7 @@ export function QuizPlayerPanel({
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
-              className="mt-4 p-3 rounded-xl bg-[#a855f7]/5 border border-[#a855f7]/20 text-sm text-[#424754] dark:text-[#c2c6d6]"
+              className="mt-4 p-3 rounded-xl bg-[#a855f7]/5 border border-[#a855f7]/20 text-sm text-ink-muted"
             >
               <span className="font-semibold text-[#a855f7]">Why: </span>
               {question.explanation}
@@ -108,7 +108,7 @@ function ProgressBar({
 }) {
   return (
     <div>
-      <div className="flex items-center justify-between text-xs mb-1 text-[#727785] dark:text-[#8c909f]">
+      <div className="flex items-center justify-between text-xs mb-1 text-ink-muted">
         <span>
           Question {current} of {total}
         </span>

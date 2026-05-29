@@ -21,10 +21,10 @@ export function MindmapsConfigPanel(p: MindmapsConfigPanelProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-[#191c1e] dark:text-white mb-1">
+        <h2 className="text-2xl font-bold text-ink-strong mb-1">
           New Mindmap
         </h2>
-        <p className="text-sm text-[#424754] dark:text-[#c2c6d6]">
+        <p className="text-sm text-ink-muted">
           Pick the documents you want mapped. The mindmap will render the main
           themes and sub-topics it finds.
         </p>

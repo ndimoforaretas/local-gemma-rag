@@ -60,14 +60,14 @@ export function LessonView({
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-sm text-[#424754] dark:text-[#c2c6d6] hover:text-[#191c1e] dark:hover:text-white"
+        className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink-strong"
       >
         <ArrowLeft size={14} />
         Back to lessons
       </button>
 
       {isLoading && (
-        <div className="flex items-center gap-2 p-8 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23] text-[#727785]">
+        <div className="flex items-center gap-2 p-8 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23] text-ink-muted">
           <Loader2 size={18} className="animate-spin" />
           <span>Loading lesson…</span>
         </div>
@@ -79,7 +79,7 @@ export function LessonView({
             ref={setArticleEl}
             className="p-6 sm:p-8 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23]"
           >
-            <h1 className="text-3xl font-bold tracking-tight text-[#191c1e] dark:text-white mb-6">
+            <h1 className="text-3xl font-bold tracking-tight text-ink-strong mb-6">
               {lesson.title}
             </h1>
             <div

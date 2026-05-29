@@ -112,7 +112,7 @@ export function CategoryModal({
             {/* Close button */}
             <button
               onClick={onCancel}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-[#727785] hover:text-[#191c1e] dark:text-[#8c909f] dark:hover:text-[#e1e2ec] hover:bg-[#eceef0] dark:hover:bg-[#272a31] transition-colors"
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-ink-muted hover:text-ink-strong hover:bg-[#eceef0] dark:hover:bg-[#272a31] transition-colors"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
@@ -127,11 +127,11 @@ export function CategoryModal({
                 <div>
                   <h3
                     id="cat-modal-title"
-                    className="text-lg font-bold text-[#191c1e] dark:text-[#e1e2ec] tracking-tight"
+                    className="text-lg font-bold text-ink-strong tracking-tight"
                   >
                     Categorize Files
                   </h3>
-                  <p className="mt-1 text-sm text-[#424754] dark:text-[#8c909f] leading-relaxed">
+                  <p className="mt-1 text-sm text-ink-muted leading-relaxed">
                     Group these files so you can filter the AI's attention by
                     topic during chat.
                   </p>
@@ -141,7 +141,7 @@ export function CategoryModal({
               {/* File list */}
               <div className="rounded-xl border border-[#c2c6d6] dark:border-[#424754] bg-[#f2f4f6] dark:bg-[#272a31] overflow-hidden">
                 <div className="px-3 py-2 border-b border-[#c2c6d6] dark:border-[#424754]">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
                     {files.length} file{files.length !== 1 ? "s" : ""} selected
                   </span>
                 </div>
@@ -154,7 +154,7 @@ export function CategoryModal({
                       <span className="text-base leading-none shrink-0">
                         {fileIcon(f.name)}
                       </span>
-                      <span className="text-sm text-[#191c1e] dark:text-[#c2c6d6] truncate">
+                      <span className="text-sm text-ink truncate">
                         {f.name}
                       </span>
                     </li>
@@ -164,7 +164,7 @@ export function CategoryModal({
 
               {/* Category selector */}
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-[#191c1e] dark:text-[#e1e2ec]">
+                <label className="text-sm font-semibold text-ink-strong">
                   Category
                 </label>
 
@@ -172,7 +172,7 @@ export function CategoryModal({
                   <select
                     value={selected}
                     onChange={handleSelectChange}
-                    className="w-full rounded-xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#272a31] px-3 py-2.5 text-sm text-[#191c1e] dark:text-[#e1e2ec] focus:outline-none focus:ring-2 focus:ring-[#0058be]/30 dark:focus:ring-[#adc6ff]/20 transition-colors"
+                    className="w-full rounded-xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#272a31] px-3 py-2.5 text-sm text-ink-strong focus:outline-none focus:ring-2 focus:ring-[#0058be]/30 dark:focus:ring-[#adc6ff]/20 transition-colors"
                   >
                     {categories.map((cat) => (
                       <option key={cat} value={cat}>
@@ -191,12 +191,12 @@ export function CategoryModal({
                       onKeyDown={(e) => { if (e.key === "Enter") handleConfirm(); }}
                       placeholder="e.g. Health, Finance, Research…"
                       maxLength={64}
-                      className="flex-1 rounded-xl border border-[#0058be]/50 dark:border-[#adc6ff]/40 bg-white dark:bg-[#272a31] px-3 py-2.5 text-sm text-[#191c1e] dark:text-[#e1e2ec] placeholder:text-[#727785] dark:placeholder:text-[#8c909f] focus:outline-none focus:ring-2 focus:ring-[#0058be]/30 dark:focus:ring-[#adc6ff]/20 transition-colors"
+                      className="flex-1 rounded-xl border border-[#0058be]/50 dark:border-[#adc6ff]/40 bg-white dark:bg-[#272a31] px-3 py-2.5 text-sm text-ink-strong placeholder:text-[#727785] dark:placeholder:text-[#8c909f] focus:outline-none focus:ring-2 focus:ring-[#0058be]/30 dark:focus:ring-[#adc6ff]/20 transition-colors"
                     />
                     <button
                       type="button"
                       onClick={() => { setCreatingNew(false); setNewName(""); }}
-                      className="p-2.5 rounded-xl text-[#727785] hover:text-[#191c1e] dark:text-[#8c909f] dark:hover:text-[#e1e2ec] hover:bg-[#eceef0] dark:hover:bg-[#32353c] transition-colors"
+                      className="p-2.5 rounded-xl text-ink-muted hover:text-ink-strong hover:bg-[#eceef0] dark:hover:bg-[#32353c] transition-colors"
                       aria-label="Back to category list"
                     >
                       <X className="w-4 h-4" />
@@ -205,7 +205,7 @@ export function CategoryModal({
                 )}
 
                 {/* Preview of effective category */}
-                <p className="text-xs text-[#727785] dark:text-[#8c909f]">
+                <p className="text-xs text-ink-muted">
                   Files will be stored under{" "}
                   <span className="font-semibold text-[#0058be] dark:text-[#adc6ff]">
                     {effectiveCategory}
@@ -218,7 +218,7 @@ export function CategoryModal({
                 <button
                   type="button"
                   onClick={onCancel}
-                  className="px-4 py-2 rounded-xl bg-[#e0e3e5] hover:bg-[#c2c6d6] dark:bg-[#272a31] dark:hover:bg-[#32353c] text-[#191c1e] dark:text-[#c2c6d6] text-sm font-medium transition-colors"
+                  className="px-4 py-2 rounded-xl bg-[#e0e3e5] hover:bg-[#c2c6d6] dark:bg-[#272a31] dark:hover:bg-[#32353c] text-ink text-sm font-medium transition-colors"
                 >
                   Cancel
                 </button>

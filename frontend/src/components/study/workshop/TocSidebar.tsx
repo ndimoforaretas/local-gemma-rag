@@ -62,7 +62,7 @@ export function TocSidebar({
 
   return (
     <aside className="hidden lg:block w-48 shrink-0 sticky top-6 self-start">
-      <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f] mb-3">
+      <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-ink-muted mb-3">
         <ListOrdered size={12} />
         On this page
       </div>
@@ -81,7 +81,7 @@ export function TocSidebar({
                     ${
                       active
                         ? "border-[#a855f7] text-[#a855f7] dark:text-[#ddb7ff] font-semibold"
-                        : "border-transparent text-[#424754] dark:text-[#c2c6d6] hover:text-[#a855f7] dark:hover:text-[#ddb7ff]"
+                        : "border-transparent text-ink-muted hover:text-[#a855f7] dark:hover:text-[#ddb7ff]"
                     }
                   `}
                 >

@@ -31,17 +31,17 @@ export function WorkshopConfigPanel(p: WorkshopConfigPanelProps) {
       <button
         type="button"
         onClick={p.onCancel}
-        className="inline-flex items-center gap-1.5 text-sm text-[#424754] dark:text-[#c2c6d6] hover:text-[#191c1e] dark:hover:text-white"
+        className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink-strong"
       >
         <ArrowLeft size={14} />
         Back to workshops
       </button>
 
       <div>
-        <h2 className="text-2xl font-bold text-[#191c1e] dark:text-white mb-1">
+        <h2 className="text-2xl font-bold text-ink-strong mb-1">
           New Workshop
         </h2>
-        <p className="text-sm text-[#424754] dark:text-[#c2c6d6]">
+        <p className="text-sm text-ink-muted">
           Choose your scope, difficulty, and how many lessons to generate.
         </p>
       </div>

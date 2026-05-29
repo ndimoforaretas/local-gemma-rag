@@ -19,7 +19,7 @@ export function KBFileCard({ file, isDeleting, onDelete }: KBFileCardProps) {
           <span className="text-[#0058be] dark:text-[#adc6ff] bg-[#d0e1fb] dark:bg-[#32353c] p-1.5 rounded-md shrink-0">
             📄
           </span>
-          <span className="text-sm sm:text-base text-[#191c1e] dark:text-[#c2c6d6] break-words">
+          <span className="text-sm sm:text-base text-ink break-words">
             {file.name}
           </span>
         </div>
@@ -27,14 +27,14 @@ export function KBFileCard({ file, isDeleting, onDelete }: KBFileCardProps) {
           <button
             onClick={(e) => onDelete(e, file.name)}
             disabled={isDeleting}
-            className="text-[#8c909f] hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors p-1 shrink-0"
+            className="text-ink-muted hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors p-1 shrink-0"
             aria-label={`Delete ${file.name}`}
           >
             <Trash2 size={16} />
           </button>
         </Tooltip>
       </div>
-      <div className="flex items-center justify-between text-xs text-[#727785] dark:text-[#8c909f]">
+      <div className="flex items-center justify-between text-xs text-ink-muted">
         <span>{isDeleting ? "Removing..." : file.size}</span>
         <span>{file.modified}</span>
       </div>

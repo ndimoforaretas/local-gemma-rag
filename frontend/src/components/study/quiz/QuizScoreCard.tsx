@@ -21,10 +21,10 @@ export function QuizScoreCard({
   return (
     <div className="p-6 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23] text-center">
       <Trophy className="mx-auto text-[#a855f7] mb-2" size={36} />
-      <div className="text-4xl font-bold text-[#191c1e] dark:text-[#e1e2ec]">
+      <div className="text-4xl font-bold text-ink-strong">
         {pct}%
       </div>
-      <p className="text-sm text-[#727785] dark:text-[#8c909f] mt-1">
+      <p className="text-sm text-ink-muted mt-1">
         {correctCount} of {total} correct
       </p>
 

@@ -27,20 +27,20 @@ export function WorkshopOutlineView({
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-sm text-[#424754] dark:text-[#c2c6d6] hover:text-[#191c1e] dark:hover:text-white"
+        className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink-strong"
       >
         <ArrowLeft size={14} />
         Back to workshops
       </button>
 
       <header>
-        <div className="text-[10px] uppercase tracking-wider font-semibold inline-block px-2 py-0.5 rounded-full bg-[#a855f7]/15 text-[#a855f7] dark:text-[#ddb7ff] mb-3">
+        <div className="text-xs uppercase tracking-wider font-semibold inline-block px-2 py-0.5 rounded-full bg-[#a855f7]/15 text-[#a855f7] dark:text-[#ddb7ff] mb-3">
           {workshop.difficulty} · {workshop.lessons.length} lessons · {doneCount} done
         </div>
-        <h1 className="text-3xl font-bold text-[#191c1e] dark:text-white mb-2">
+        <h1 className="text-3xl font-bold text-ink-strong mb-2">
           {workshop.title}
         </h1>
-        <p className="text-base text-[#424754] dark:text-[#c2c6d6]">
+        <p className="text-base text-ink-muted">
           {workshop.summary}
         </p>
       </header>
@@ -51,7 +51,7 @@ export function WorkshopOutlineView({
       </div>
 
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f] mb-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-muted mb-3">
           Lessons
         </h2>
         <div className="space-y-2">
@@ -70,10 +70,10 @@ export function WorkshopOutlineView({
           <div className="flex items-center gap-3 min-w-0">
             <Trophy className="text-emerald-500 shrink-0" size={22} />
             <div>
-              <div className="font-semibold text-[#191c1e] dark:text-white">
+              <div className="font-semibold text-ink-strong">
                 Workshop complete!
               </div>
-              <div className="text-sm text-[#424754] dark:text-[#c2c6d6]">
+              <div className="text-sm text-ink-muted">
                 Test what you learned with a 5-question recap quiz.
               </div>
             </div>
@@ -104,11 +104,11 @@ function PointsCard({
     <div className="p-4 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23]">
       <div className="flex items-center gap-2 mb-2">
         <Icon size={14} className="text-[#a855f7]" />
-        <span className="text-xs font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
+        <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
           {label}
         </span>
       </div>
-      <ul className="space-y-1 text-sm text-[#191c1e] dark:text-[#e1e2ec]">
+      <ul className="space-y-1 text-sm text-ink-strong">
         {items.map((item, i) => (
           <li key={i} className="flex items-start gap-2">
             <span className="text-[#a855f7] mt-1">•</span>

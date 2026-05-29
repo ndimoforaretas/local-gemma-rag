@@ -26,7 +26,7 @@ export function FlashcardsList({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h2 className="text-2xl sm:text-3xl font-bold text-[#191c1e] dark:text-white">
+        <h2 className="text-2xl sm:text-3xl font-bold text-ink-strong">
           {items.length === 0 ? "Your flashcard decks" : `Your decks (${items.length})`}
         </h2>
         <button
@@ -39,7 +39,7 @@ export function FlashcardsList({
       </div>
 
       {isLoading && (
-        <div className="flex items-center justify-center py-16 text-[#727785]">
+        <div className="flex items-center justify-center py-16 text-ink-muted">
           <Loader2 size={20} className="animate-spin" />
         </div>
       )}
@@ -49,14 +49,14 @@ export function FlashcardsList({
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#a855f7]/15 text-[#a855f7] mb-5">
             <Layers size={36} strokeWidth={2.2} />
           </div>
-          <h3 className="text-2xl font-bold text-[#191c1e] dark:text-white mb-3">
+          <h3 className="text-2xl font-bold text-ink-strong mb-3">
             Build your first deck
           </h3>
-          <p className="text-base sm:text-lg text-[#424754] dark:text-[#e1e2ec] max-w-xl mx-auto mb-2 leading-relaxed">
+          <p className="text-base sm:text-lg text-ink max-w-xl mx-auto mb-2 leading-relaxed">
             Flashcards turn your scoped documents into a deck of flip cards
             you can review whenever you want a quick recall workout.
           </p>
-          <p className="text-sm text-[#727785] dark:text-[#c2c6d6]">
+          <p className="text-sm text-ink-muted">
             Click <span className="font-semibold text-[#a855f7] dark:text-[#ddb7ff]">New Deck</span> above to get started.
           </p>
         </div>

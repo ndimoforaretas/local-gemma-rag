@@ -90,7 +90,7 @@ export function SuggestionCards({ onSelect }: SuggestionCardsProps) {
           <div className="w-10 h-10 rounded-lg bg-[#a855f7]/10 text-[#a855f7] dark:text-[#ddb7ff] flex items-center justify-center group-hover:bg-[#a855f7]/20 transition-colors">
             <Icon size={18} />
           </div>
-          <span className="text-sm font-semibold text-[#191c1e] dark:text-[#e1e2ec] leading-tight">
+          <span className="text-sm font-semibold text-ink-strong leading-tight">
             {label}
           </span>
         </motion.button>

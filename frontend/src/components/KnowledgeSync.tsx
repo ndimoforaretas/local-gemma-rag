@@ -105,17 +105,17 @@ export function KnowledgeSync() {
       {showLibrary && (
         <div className="max-w-5xl mx-auto mt-8 flex flex-col gap-4 sm:gap-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h3 className="text-xl sm:text-2xl font-semibold text-[#191c1e] dark:text-[#e1e2ec]">
+            <h3 className="text-xl sm:text-2xl font-semibold text-ink-strong">
               Current Libraries
             </h3>
-            <label className="inline-flex items-center gap-2 text-sm font-medium text-[#424754] dark:text-[#8c909f]">
+            <label className="inline-flex items-center gap-2 text-sm font-medium text-ink-muted">
               <span id={sortSelectLabelId}>Sort files</span>
               <select
                 value={sortOption}
                 onChange={(e) => setSortOption(e.target.value as SortOption)}
                 aria-labelledby={sortSelectLabelId}
                 aria-describedby={sortStatusId}
-                className="min-w-[220px] rounded-lg border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#272a31] px-3 py-2 text-sm text-[#191c1e] dark:text-[#e1e2ec] focus:outline-none focus:ring-2 focus:ring-[#0058be]/20 dark:focus:ring-[#a855f7]/30"
+                className="min-w-[220px] rounded-lg border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#272a31] px-3 py-2 text-sm text-ink-strong focus:outline-none focus:ring-2 focus:ring-[#0058be]/20 dark:focus:ring-[#a855f7]/30"
               >
                 <option value="name-asc">Name A-Z</option>
                 <option value="name-desc">Name Z-A</option>
@@ -145,8 +145,8 @@ export function KnowledgeSync() {
       {showEmpty && (
         <div className="max-w-5xl mx-auto mt-8">
           <div className="rounded-2xl border border-dashed border-[#c2c6d6] dark:border-[#424754] bg-[#ffffff] dark:bg-[#1d2027] p-6 sm:p-8 text-center">
-            <h4 className="text-lg sm:text-xl font-semibold text-[#191c1e] dark:text-[#e1e2ec]">No documents yet</h4>
-            <p className="mt-2 text-sm sm:text-base text-[#424754] dark:text-[#8c909f]">
+            <h4 className="text-lg sm:text-xl font-semibold text-ink-strong">No documents yet</h4>
+            <p className="mt-2 text-sm sm:text-base text-ink-muted">
               Upload documents to build your knowledge base and enable document-grounded answers.
             </p>
           </div>

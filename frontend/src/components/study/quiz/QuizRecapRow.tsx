@@ -27,7 +27,7 @@ export function QuizRecapRow({
         }
       `}
     >
-      <div className="flex items-start gap-2 text-[#191c1e] dark:text-[#e1e2ec]">
+      <div className="flex items-start gap-2 text-ink-strong">
         {correct ? (
           <Check size={16} className="mt-0.5 text-emerald-500 shrink-0" />
         ) : (
@@ -36,7 +36,7 @@ export function QuizRecapRow({
         <div className="flex-1 min-w-0">
           <p className="font-medium">{question.question}</p>
           {!correct && (
-            <p className="text-xs mt-1 text-[#727785] dark:text-[#8c909f]">
+            <p className="text-xs mt-1 text-ink-muted">
               Correct answer:{" "}
               <strong>{question.options[question.correct_index]}</strong>
             </p>

@@ -43,10 +43,10 @@ export function FlashcardsGeneratingCard() {
       >
         <Layers size={32} />
       </motion.div>
-      <h2 className="text-xl font-bold text-[#191c1e] dark:text-white mb-1">
+      <h2 className="text-xl font-bold text-ink-strong mb-1">
         Building your deck
       </h2>
-      <p className="text-sm text-[#727785] dark:text-[#8c909f] mb-6">
+      <p className="text-sm text-ink-muted mb-6">
         Gemma is reading your selected documents and writing flip cards.
         This usually takes 10–40 seconds.
       </p>
@@ -69,7 +69,7 @@ export function FlashcardsGeneratingCard() {
       >
         {status}
       </motion.div>
-      <div className="text-xs text-[#727785] dark:text-[#8c909f] tabular-nums">
+      <div className="text-xs text-ink-muted tabular-nums">
         {timer} elapsed
       </div>
     </div>

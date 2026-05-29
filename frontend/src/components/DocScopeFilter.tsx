@@ -159,7 +159,7 @@ export function DocScopeFilter({ selected, onChange }: DocScopeFilterProps) {
         className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
           hasFilter
             ? "bg-[#a855f7]/10 border-[#a855f7]/40 text-[#a855f7] dark:text-[#ddb7ff]"
-            : "bg-[#f2f4f6] dark:bg-[#272a31] border-[#c2c6d6] dark:border-[#424754] text-[#727785] dark:text-[#8c909f] hover:border-[#a855f7]/40 hover:text-[#a855f7] dark:hover:text-[#ddb7ff]"
+            : "bg-[#f2f4f6] dark:bg-[#272a31] border-[#c2c6d6] dark:border-[#424754] text-ink-muted hover:border-[#a855f7]/40 hover:text-[#a855f7] dark:hover:text-[#ddb7ff]"
         }`}
         aria-label={hasFilter ? `Searching ${selected.length} document(s)` : "Filter by category or document"}
         aria-expanded={open}
@@ -196,7 +196,7 @@ export function DocScopeFilter({ selected, onChange }: DocScopeFilterProps) {
           aria-label="Select categories or documents to search"
         >
           <div className="px-3 py-2 border-b border-[#c2c6d6] dark:border-[#424754] flex items-center justify-between">
-            <span className="text-xs font-semibold text-[#191c1e] dark:text-[#e1e2ec]">
+            <span className="text-xs font-semibold text-ink-strong">
               Search scope
             </span>
             {hasFilter && (
@@ -210,7 +210,7 @@ export function DocScopeFilter({ selected, onChange }: DocScopeFilterProps) {
             )}
           </div>
 
-          <p className="px-3 pt-2 pb-1 text-[11px] text-[#727785] dark:text-[#8c909f]">
+          <p className="px-3 pt-2 pb-1 text-xs text-ink-muted">
             {hasFilter
               ? "Agent searches only the selected documents."
               : "Select a category or individual documents to restrict the search scope."}
@@ -239,15 +239,15 @@ export function DocScopeFilter({ selected, onChange }: DocScopeFilterProps) {
                       aria-expanded={isExp}
                     >
                       {isExp ? (
-                        <ChevronDown size={12} className="text-[#727785] dark:text-[#8c909f] shrink-0" />
+                        <ChevronDown size={12} className="text-ink-muted shrink-0" />
                       ) : (
-                        <ChevronRight size={12} className="text-[#727785] dark:text-[#8c909f] shrink-0" />
+                        <ChevronRight size={12} className="text-ink-muted shrink-0" />
                       )}
                       <Folder size={12} className="text-[#a855f7] dark:text-[#ddb7ff] shrink-0" />
-                      <span className="text-xs font-semibold text-[#191c1e] dark:text-[#e1e2ec] truncate">
+                      <span className="text-xs font-semibold text-ink-strong truncate">
                         {cat}
                       </span>
-                      <span className="text-[10px] text-[#727785] dark:text-[#8c909f] ml-auto shrink-0">
+                      <span className="text-xs text-ink-muted ml-auto shrink-0">
                         {catDocs.length} file{catDocs.length !== 1 ? "s" : ""}
                       </span>
                     </button>
@@ -269,12 +269,12 @@ export function DocScopeFilter({ selected, onChange }: DocScopeFilterProps) {
                               />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5">
-                                  <FileText size={11} className="text-[#727785] dark:text-[#8c909f] shrink-0" />
-                                  <span className="text-xs text-[#191c1e] dark:text-[#e1e2ec] truncate">
+                                  <FileText size={11} className="text-ink-muted shrink-0" />
+                                  <span className="text-xs text-ink-strong truncate">
                                     {doc.name}
                                   </span>
                                 </div>
-                                <span className="text-[10px] text-[#727785] dark:text-[#8c909f]">
+                                <span className="text-xs text-ink-muted">
                                   {doc.chunk_count} chunk{doc.chunk_count !== 1 ? "s" : ""}
                                 </span>
                               </div>

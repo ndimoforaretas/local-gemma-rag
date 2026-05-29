@@ -48,15 +48,15 @@ export function HistorySidebar({
           <div className="p-6 border-b border-[#c2c6d6] dark:border-[#424754] flex items-center gap-2">
             <History size={16} className="text-[#0058be] dark:text-[#adc6ff]" />
             <div className="flex items-center justify-between w-full gap-2">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-ink-muted">
                 Chat History
               </h3>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#e0e3e5] dark:bg-[#272a31] text-[#424754] dark:text-[#c2c6d6]">
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#e0e3e5] dark:bg-[#272a31] text-ink-muted">
                 {sessions.length}
               </span>
             </div>
           </div>
-          <div className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
+          <div className="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-ink-muted">
             Recent Sessions
           </div>
           <div className="flex-1 overflow-y-auto px-4 pb-4 flex flex-col gap-2">
@@ -75,10 +75,10 @@ export function HistorySidebar({
                     aria-current={
                       activeSessionId === s.id ? "true" : undefined
                     }>
-                    <h4 className="font-medium text-[#191c1e] dark:text-[#e1e2ec] truncate">
+                    <h4 className="font-medium text-ink-strong truncate">
                       {s.title}
                     </h4>
-                    <div className="mt-1.5 flex items-center justify-between gap-3 text-xs text-[#727785] dark:text-[#8c909f]">
+                    <div className="mt-1.5 flex items-center justify-between gap-3 text-xs text-ink-muted">
                       <p className="truncate">{formatRecency(s.updatedAt)}</p>
                       <span className="shrink-0">{s.messages.length} msgs</span>
                     </div>
@@ -89,7 +89,7 @@ export function HistorySidebar({
                     disabled={deletingSessionId === s.id}
                     aria-label={`Delete session ${s.title}`}
                     title="Delete session"
-                    className="absolute right-2 top-2 p-2 rounded-lg text-[#727785] hover:text-[#8b1d2c] hover:bg-[#f3d9dd] dark:text-[#8c909f] dark:hover:text-[#ffb4ab] dark:hover:bg-[#3b2129] transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                    className="absolute right-2 top-2 p-2 rounded-lg text-ink-muted hover:text-[#8b1d2c] hover:bg-[#f3d9dd] dark:hover:text-[#ffb4ab] dark:hover:bg-[#3b2129] transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
                     {deletingSessionId === s.id ? (
                       <Loader2 size={16} className="animate-spin" />
                     ) : (
@@ -101,8 +101,8 @@ export function HistorySidebar({
             ))}
             {sessions.length === 0 && (
               <div className="flex flex-col items-center justify-center h-40 opacity-50">
-                <History size={24} className="mb-2 text-[#8c909f]" />
-                <p className="text-sm text-center text-[#8c909f]">
+                <History size={24} className="mb-2 text-ink-muted" />
+                <p className="text-sm text-center text-ink-muted">
                   No past sessions
                 </p>
               </div>

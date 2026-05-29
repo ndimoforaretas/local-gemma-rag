@@ -35,7 +35,7 @@ export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: Sid
           alt="CogniVault mark"
           className="w-9 h-9 drop-shadow-[0_2px_8px_rgba(167,139,250,0.35)]"
         />
-        <h1 className="text-xl font-bold tracking-tight text-[#191c1e] dark:text-[#e1e2ec]">
+        <h1 className="text-xl font-bold tracking-tight text-ink-strong">
           Gemma CogniVault
         </h1>
       </div>
@@ -44,7 +44,7 @@ export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: Sid
       <nav
         className="flex flex-col gap-1 flex-1"
         aria-label="Primary navigation">
-        <div className="text-xs uppercase tracking-wider text-[#727785] dark:text-[#8c909f] font-semibold mb-2 px-3">
+        <div className="text-xs uppercase tracking-wider text-ink-muted font-semibold mb-2 px-3">
           Menu
         </div>
 
@@ -58,7 +58,7 @@ export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: Sid
               ${
                 activeView === id
                   ? "text-[#a855f7] dark:text-[#ddb7ff] font-semibold"
-                  : "text-[#424754] dark:text-[#c2c6d6] font-medium hover:text-[#191c1e] dark:hover:text-[#e1e2ec] hover:bg-[#e0e3e5] dark:hover:bg-[#272a31]"
+                  : "text-ink-muted font-medium hover:text-ink-strong hover:bg-[#e0e3e5] dark:hover:bg-[#272a31]"
               }
             `}>
             {activeView === id && (
@@ -89,10 +89,10 @@ export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: Sid
 
           {/* Name + status */}
           <div className="flex flex-col flex-1 min-w-0">
-            <span className="text-sm font-medium text-[#191c1e] dark:text-[#e1e2ec] truncate leading-tight">
+            <span className="text-sm font-medium text-ink-strong truncate leading-tight">
               Local User
             </span>
-            <div className="flex items-center gap-1 text-[10px] text-emerald-500 dark:text-emerald-400">
+            <div className="flex items-center gap-1 text-xs text-emerald-500 dark:text-emerald-400">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shrink-0" />
               Online
             </div>
@@ -102,7 +102,7 @@ export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: Sid
           <button
             onClick={onToggleDark}
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            className="p-1.5 rounded-lg border transition-colors shrink-0 bg-[#e0e3e5] border-[#c2c6d6] text-[#424754] hover:text-[#191c1e] dark:bg-[#272a31] dark:border-[#424754] dark:text-[#c2c6d6] dark:hover:text-[#e1e2ec]">
+            className="p-1.5 rounded-lg border transition-colors shrink-0 bg-[#e0e3e5] border-[#c2c6d6] text-ink-muted hover:text-ink-strong dark:bg-[#272a31] dark:border-[#424754]">
             {isDark ? <Sun size={15} /> : <Moon size={15} />}
           </button>
         </div>

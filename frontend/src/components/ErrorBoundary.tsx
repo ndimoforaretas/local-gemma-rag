@@ -41,11 +41,11 @@ export class ErrorBoundary extends Component<Props, State> {
               <AlertTriangle size={32} className="text-red-500" />
             </div>
 
-            <h2 className="text-2xl font-bold mb-3 text-[#191c1e] dark:text-[#e1e2ec]">
+            <h2 className="text-2xl font-bold mb-3 text-ink-strong">
               Something went wrong
             </h2>
 
-            <p className="text-base text-[#424754] dark:text-[#8c909f] mb-6 leading-relaxed">
+            <p className="text-base text-ink-muted mb-6 leading-relaxed">
               An unexpected error occurred. You can try refreshing the page or
               resetting the application state.
             </p>
@@ -66,7 +66,7 @@ export class ErrorBoundary extends Component<Props, State> {
               </button>
               <button
                 onClick={() => window.location.reload()}
-                className="px-6 py-3 rounded-xl bg-[#e0e3e5] hover:bg-[#c2c6d6] dark:bg-[#272a31] dark:hover:bg-[#32353c] text-[#191c1e] dark:text-[#c2c6d6] font-medium transition-colors"
+                className="px-6 py-3 rounded-xl bg-[#e0e3e5] hover:bg-[#c2c6d6] dark:bg-[#272a31] dark:hover:bg-[#32353c] text-ink font-medium transition-colors"
               >
                 Reload Page
               </button>

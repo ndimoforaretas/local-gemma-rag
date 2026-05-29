@@ -27,14 +27,14 @@ function StatCard({
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-xs font-medium text-[#727785] dark:text-[#8c909f] uppercase tracking-wide">
+        <p className="text-xs font-medium text-ink-muted uppercase tracking-wide">
           {label}
         </p>
-        <p className="text-lg font-bold text-[#191c1e] dark:text-[#e1e2ec] leading-tight">
+        <p className="text-lg font-bold text-ink-strong leading-tight">
           {value}
         </p>
         {sub && (
-          <p className="text-xs text-[#727785] dark:text-[#8c909f] truncate mt-0.5">
+          <p className="text-xs text-ink-muted truncate mt-0.5">
             {sub}
           </p>
         )}
@@ -94,10 +94,10 @@ export function VaultAudit() {
             <Shield size={18} />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-[#191c1e] dark:text-[#e1e2ec]">
+            <h3 className="text-base font-semibold text-ink-strong">
               Privacy Vault Audit
             </h3>
-            <p className="text-xs text-[#727785] dark:text-[#8c909f]">
+            <p className="text-xs text-ink-muted">
               All inference runs on your hardware
             </p>
           </div>

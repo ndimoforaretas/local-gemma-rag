@@ -65,7 +65,7 @@ export function QuizResultsPanel({
         <button
           type="button"
           onClick={onExit}
-          className="flex-1 py-2.5 rounded-xl border border-[#c2c6d6] dark:border-[#424754] hover:border-[#a855f7]/50 text-[#191c1e] dark:text-[#e1e2ec] font-medium transition-colors"
+          className="flex-1 py-2.5 rounded-xl border border-[#c2c6d6] dark:border-[#424754] hover:border-[#a855f7]/50 text-ink-strong font-medium transition-colors"
         >
           Back to Study Hub
         </button>

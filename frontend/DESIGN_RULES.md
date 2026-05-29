@@ -83,6 +83,8 @@ Never render essential text below **12px**. Body copy is **14px** minimum.
 - ✅ Foundation (semantic classes) — `src/index.css`
 - ✅ Dashboard (`components/dashboard/`) — reference implementation
 - ✅ Chat (`KnowledgeBase`, `components/chat/`, `components/knowledgeBase/`)
-- ⬜ Knowledge Base (`KnowledgeSync`, `components/knowledgeSync/`)
-- ⬜ Study Hub (`components/study/`)
-- ⬜ Shared (Sidebar, modals, Tooltip, SuggestionCards)
+- ✅ Knowledge Base (`KnowledgeSync`, `components/knowledgeSync/`, `VaultAudit`, `CategoryModal`)
+- ✅ Study Hub (`components/study/`) — incl. ModeCard redesign (icon-left + bigger title)
+- ✅ Shared (Sidebar, ConfirmationModal, ContextSidebar, HistorySidebar, DocScopeFilter, Breadcrumbs, SuggestionCards, ErrorBoundary, Tooltip)
+
+**Rollout complete** — every surface uses the semantic `text-ink-*` system. Only legitimate `placeholder:`/`disabled:` states retain literal grays. Keep new components on the system from the start.

@@ -84,7 +84,7 @@ function ExportBtn({
     "inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50";
   const variant = primary
     ? "bg-[#a855f7] hover:bg-[#9333ea] text-white"
-    : "border border-[#c2c6d6] dark:border-[#424754] hover:border-[#a855f7]/50 text-[#191c1e] dark:text-[#e1e2ec]";
+    : "border border-[#c2c6d6] dark:border-[#424754] hover:border-[#a855f7]/50 text-ink-strong";
   return (
     <button
       type="button"

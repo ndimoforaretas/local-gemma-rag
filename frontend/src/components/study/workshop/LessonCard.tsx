@@ -26,7 +26,7 @@ export function LessonCard({
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
-          <h3 className="text-sm font-semibold text-[#191c1e] dark:text-white truncate">
+          <h3 className="text-sm font-semibold text-ink-strong truncate">
             {lesson.title}
           </h3>
           {done && (
@@ -36,14 +36,14 @@ export function LessonCard({
             <Circle size={12} className="shrink-0 text-amber-500 fill-current" />
           )}
         </div>
-        <div className="flex items-center gap-1 text-xs text-[#727785] dark:text-[#8c909f]">
+        <div className="flex items-center gap-1 text-xs text-ink-muted">
           <Clock size={11} />
           <span>{lesson.est_minutes} min read</span>
           {done && <span>· Completed</span>}
           {started && <span>· In progress</span>}
         </div>
       </div>
-      <ChevronRight size={16} className="shrink-0 text-[#727785] dark:text-[#8c909f]" />
+      <ChevronRight size={16} className="shrink-0 text-ink-muted" />
     </button>
   );
 }

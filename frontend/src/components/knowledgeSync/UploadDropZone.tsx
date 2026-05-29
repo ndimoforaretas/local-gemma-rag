@@ -23,10 +23,10 @@ export function UploadDropZone(p: UploadDropZoneProps) {
   return (
     <div className="bg-[#eceef0] dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-4 sm:p-6 lg:p-8 flex flex-col gap-5 transition-colors duration-300">
       <div className="min-w-0">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-1.5 sm:mb-2 text-[#191c1e] dark:text-[#e1e2ec]">
+        <h3 className="text-xl sm:text-2xl font-semibold mb-1.5 sm:mb-2 text-ink-strong">
           Knowledge Base Management
         </h3>
-        <p className="text-sm sm:text-base text-[#424754] dark:text-[#8c909f]">
+        <p className="text-sm sm:text-base text-ink-muted">
           Upload documents and sync them into your local vector store.
         </p>
         <div className="mt-3 inline-flex items-center text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#d0e1fb] dark:bg-[#32353c] text-[#0058be] dark:text-[#adc6ff]">
@@ -61,12 +61,12 @@ export function UploadDropZone(p: UploadDropZoneProps) {
         <div className="mx-auto max-w-md flex flex-col items-center gap-3 sm:gap-4">
           {p.syncStatus === "UPLOADING"
             ? <Loader2 className="animate-spin text-[#0058be] dark:text-[#adc6ff]" size={46} />
-            : <UploadCloud className="text-[#727785] dark:text-[#8c909f]" size={46} />
+            : <UploadCloud className="text-ink-muted" size={46} />
           }
-          <p className="text-2xl sm:text-3xl font-semibold text-[#727785] dark:text-[#8c909f] tracking-tight">
+          <p className="text-2xl sm:text-3xl font-semibold text-ink-muted tracking-tight">
             {p.isDragActive ? "Drop Files to Upload" : "Drag & Drop Files Here"}
           </p>
-          <p className="text-sm sm:text-base text-[#727785] dark:text-[#8c909f]">or</p>
+          <p className="text-sm sm:text-base text-ink-muted">or</p>
           <Tooltip content="Select files to add to your knowledge base" position="top">
             <button
               onClick={() => p.fileInputRef.current?.click()}
@@ -77,7 +77,7 @@ export function UploadDropZone(p: UploadDropZoneProps) {
               {p.syncStatus === "UPLOADING" ? "Uploading..." : "Browse Files"}
             </button>
           </Tooltip>
-          <p id={dropZoneHintId} className="text-xs sm:text-sm text-[#727785] dark:text-[#8c909f]">
+          <p id={dropZoneHintId} className="text-xs sm:text-sm text-ink-muted">
             PDF · DOCX · MD · TXT · CSV · PPTX · XLSX · HTML — up to 500 MB
           </p>
         </div>

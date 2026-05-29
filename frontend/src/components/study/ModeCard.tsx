@@ -32,7 +32,7 @@ export function ModeCard({
       disabled={!available}
       aria-disabled={!available}
       className={`
-        text-left p-5 rounded-2xl border transition-colors
+        text-left p-6 rounded-2xl border transition-colors
         ${
           available
             ? "bg-white dark:bg-[#191b23] border-[#c2c6d6] dark:border-[#424754] hover:border-[#a855f7]/50 cursor-pointer"
@@ -40,29 +40,29 @@ export function ModeCard({
         }
       `}
     >
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex items-center gap-3.5 mb-3">
         <div
           className={`
-            w-10 h-10 rounded-xl flex items-center justify-center
+            w-12 h-12 rounded-xl flex items-center justify-center shrink-0
             ${
               available
                 ? "bg-[#a855f7]/15 text-[#a855f7]"
-                : "bg-[#c2c6d6]/40 dark:bg-[#424754]/40 text-[#727785] dark:text-[#8c909f]"
+                : "bg-[#c2c6d6]/40 dark:bg-[#424754]/40 text-ink-faint"
             }
           `}
         >
-          <Icon size={20} />
+          <Icon size={24} />
         </div>
+        <h2 className="text-lg sm:text-xl font-bold text-ink-strong leading-tight">
+          {label}
+        </h2>
         {!available && (
-          <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-[#c2c6d6]/40 dark:bg-[#424754]/40 text-[#727785] dark:text-[#8c909f]">
+          <span className="ml-auto text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-[#c2c6d6]/40 dark:bg-[#424754]/40 text-ink-muted">
             Coming Soon
           </span>
         )}
       </div>
-      <h2 className="text-base font-semibold mb-1 text-[#191c1e] dark:text-[#e1e2ec]">
-        {label}
-      </h2>
-      <p className="text-sm text-[#424754] dark:text-[#c2c6d6] leading-snug">
+      <p className="text-sm text-ink-muted leading-relaxed">
         {description}
       </p>
     </motion.button>

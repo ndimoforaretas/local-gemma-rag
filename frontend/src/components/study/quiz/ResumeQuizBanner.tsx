@@ -36,10 +36,10 @@ export function ResumeQuizBanner({
   return (
     <div className="mb-6 p-4 rounded-2xl border border-[#a855f7]/40 bg-[#a855f7]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div className="min-w-0">
-        <p className="font-semibold text-[#191c1e] dark:text-[#e1e2ec]">
+        <p className="font-semibold text-ink-strong">
           Resume your in-progress quiz?
         </p>
-        <p className="text-sm text-[#424754] dark:text-[#c2c6d6] mt-0.5">
+        <p className="text-sm text-ink-muted mt-0.5">
           {diffLabel} · {progressText} · saved {ago}
         </p>
       </div>
@@ -55,7 +55,7 @@ export function ResumeQuizBanner({
         <button
           type="button"
           onClick={onDiscard}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#c2c6d6] dark:border-[#424754] hover:border-rose-500/50 hover:text-rose-500 text-sm font-medium text-[#424754] dark:text-[#c2c6d6] transition-colors"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#c2c6d6] dark:border-[#424754] hover:border-rose-500/50 hover:text-rose-500 text-sm font-medium text-ink-muted transition-colors"
         >
           <Trash2 size={14} />
           Discard

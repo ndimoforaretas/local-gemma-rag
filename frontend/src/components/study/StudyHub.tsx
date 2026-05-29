@@ -53,10 +53,10 @@ export function StudyHub({
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#a855f7]/15 text-[#a855f7] mb-5 shadow-lg shadow-[#a855f7]/10">
               <GraduationCap size={36} strokeWidth={2.2} />
             </div>
-            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-[#191c1e] dark:text-white mb-3">
+            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-ink-strong mb-3">
               Study Hub
             </h1>
-            <p className="text-base sm:text-lg text-[#424754] dark:text-[#c2c6d6] max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg text-ink-muted max-w-2xl mx-auto">
               Turn your knowledge base into an active learning experience. Pick
               a mode to get started.
             </p>

@@ -66,7 +66,7 @@ export function Flashcard({
             <StatusBadge status={card.status} />
           </div>
           <div className="flex-1 flex items-center justify-center text-center px-1">
-            <p className="text-lg font-semibold text-[#191c1e] dark:text-white leading-snug">
+            <p className="text-lg font-semibold text-ink-strong leading-snug">
               {card.front}
             </p>
           </div>
@@ -83,12 +83,12 @@ export function Flashcard({
             <div className="text-xs uppercase tracking-wider font-extrabold text-[#a855f7] dark:text-[#ddb7ff]">
               Answer
             </div>
-            <span className="text-xs font-medium text-[#727785] dark:text-[#8c909f] tabular-nums">
+            <span className="text-xs font-medium text-ink-muted tabular-nums">
               #{card.card_idx + 1}
             </span>
           </div>
           <div className="flex-1 flex items-center justify-center text-center overflow-y-auto px-1">
-            <p className="text-sm text-[#191c1e] dark:text-[#e1e2ec] leading-relaxed">
+            <p className="text-sm text-ink-strong leading-relaxed">
               {card.back}
             </p>
           </div>

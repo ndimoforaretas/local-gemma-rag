@@ -50,7 +50,7 @@ export function StatusButton({
       className={`flex-1 px-3 py-2 rounded-lg text-sm font-semibold inline-flex items-center justify-center gap-1.5 border transition-colors ${
         active
           ? activeCls
-          : `border-[#c2c6d6] dark:border-[#424754] ${hoverCls} text-[#424754] dark:text-[#c2c6d6]`
+          : `border-[#c2c6d6] dark:border-[#424754] ${hoverCls} text-ink-muted`
       }`}
     >
       {icon} {label}
