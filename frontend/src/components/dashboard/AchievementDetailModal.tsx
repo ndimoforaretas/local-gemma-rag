@@ -7,9 +7,11 @@
  */
 
 import { useEffect } from "react";
-import { ChevronRight, Lock, X } from "lucide-react";
+import { Lock, X } from "lucide-react";
 import type { AchievementItem } from "../../types/api";
-import { findNext, hasProgress, progressFraction, progressText } from "./achievementHelpers";
+import { findNext, hasProgress } from "./achievementHelpers";
+import { AchievementProgressBar } from "./AchievementProgressBar";
+import { NextLevelCard } from "./NextLevelCard";
 
 function earnedDate(ts: number): string {
   return new Date(ts * 1000).toLocaleDateString(undefined, {
@@ -43,8 +45,6 @@ export function AchievementDetailModal({
 
   const earned = item.is_earned;
   const next = findNext(item, allItems);
-  const pct = Math.round(progressFraction(item) * 100);
-  const progress = progressText(item);
 
   return (
     <div
@@ -90,43 +90,9 @@ export function AchievementDetailModal({
             <p className="text-sm text-[#191c1e] dark:text-[#e1e2ec]">{item.description}</p>
           </div>
 
-          {hasProgress(item) && (
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
-                  {earned ? "Complete" : "Progress"}
-                </span>
-                <span className="text-xs font-medium tabular-nums text-[#424754] dark:text-[#c2c6d6]">
-                  {progress}
-                </span>
-              </div>
-              <div className="h-2.5 rounded-full bg-[#eceef0] dark:bg-[#272a31] overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${earned ? "bg-emerald-500" : "bg-[#a855f7]"}`}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            </div>
-          )}
+          {hasProgress(item) && <AchievementProgressBar item={item} />}
 
-          {next && (
-            <button
-              type="button"
-              onClick={() => onNavigate(next.code)}
-              className="w-full flex items-center gap-3 p-3 rounded-xl border border-[#c2c6d6] dark:border-[#424754] hover:border-[#a855f7] dark:hover:border-[#a855f7] transition-colors text-left"
-            >
-              <span className="text-2xl shrink-0">{next.icon}</span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[10px] uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
-                  Next level
-                </span>
-                <span className="block text-sm font-semibold text-[#191c1e] dark:text-white truncate">
-                  {next.name}
-                </span>
-              </span>
-              <ChevronRight size={16} className="text-[#727785] dark:text-[#8c909f] shrink-0" />
-            </button>
-          )}
+          {next && <NextLevelCard next={next} onNavigate={onNavigate} />}
         </div>
       </div>
     </div>

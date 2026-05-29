@@ -5,14 +5,17 @@
  * Sections (top to bottom):
  *   1. Hero
  *   2. SummaryCards   (total time, sessions, streak)
- *   3. AchievementGrid
- *   4. ActivityHeatmap (GitHub-style; click cell → DayDetailModal)
+ *   3. AlmostThere     (closest in-progress badges)
+ *   4. AchievementGrid (click badge → AchievementDetailModal)
+ *   5. ActivityHeatmap (GitHub-style; click cell → DayDetailModal)
  */
 
 import { useState } from "react";
 import { BarChart3, Loader2, AlertCircle } from "lucide-react";
 import type { DailyActivityEntry } from "../../types/api";
 import { AchievementGrid } from "./AchievementGrid";
+import { AchievementDetailModal } from "./AchievementDetailModal";
+import { AlmostThere } from "./AlmostThere";
 import { ActivityHeatmap } from "./ActivityHeatmap";
 import { DayDetailModal } from "./DayDetailModal";
 import { SummaryCards } from "./SummaryCards";
@@ -21,6 +24,10 @@ import { useDashboardData } from "./useDashboardData";
 export function ProgressDashboard() {
   const { summary, daily, achievements, isLoading, isError } = useDashboardData(90);
   const [selectedDay, setSelectedDay] = useState<DailyActivityEntry | null>(null);
+  const [selectedBadge, setSelectedBadge] = useState<string | null>(null);
+
+  const badges = achievements.data?.achievements ?? [];
+  const selectedBadgeItem = badges.find((b) => b.code === selectedBadge) ?? null;
 
   return (
     <div className="h-full overflow-y-auto">
@@ -34,7 +41,10 @@ export function ProgressDashboard() {
           <>
             {summary.data && <SummaryCards data={summary.data} />}
             {achievements.data && (
-              <AchievementGrid items={achievements.data.achievements} />
+              <>
+                <AlmostThere items={badges} onSelect={setSelectedBadge} />
+                <AchievementGrid items={badges} onSelect={setSelectedBadge} />
+              </>
             )}
             {daily.data && (
               <ActivityHeatmap
@@ -49,8 +59,17 @@ export function ProgressDashboard() {
       {selectedDay && (
         <DayDetailModal
           entry={selectedDay}
-          achievements={achievements.data?.achievements ?? []}
+          achievements={badges}
           onClose={() => setSelectedDay(null)}
+        />
+      )}
+
+      {selectedBadgeItem && (
+        <AchievementDetailModal
+          item={selectedBadgeItem}
+          allItems={badges}
+          onClose={() => setSelectedBadge(null)}
+          onNavigate={setSelectedBadge}
         />
       )}
     </div>
