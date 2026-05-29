@@ -246,3 +246,58 @@ def test_achievements_endpoint_reflects_earned_state(client):
     earned = [a for a in body["achievements"] if a["is_earned"]]
     earned_codes = {a["code"] for a in earned}
     assert "first_question" in earned_codes
+
+
+# ── Step 2: progress metadata (detail modal) ───────────────────────────────
+
+
+def test_achievements_endpoint_exposes_progress_metadata(client):
+    """Each badge carries metric/target/group/next_code/current fields."""
+    body = client.get("/api/progress/achievements").json()
+    by_code = {a["code"]: a for a in body["achievements"]}
+
+    # A metric-backed badge has all progress fields populated.
+    quiz = by_code["first_quiz"]
+    assert quiz["metric"] == "total_quizzes"
+    assert quiz["target"] == 1
+    assert quiz["group"] == "quiz_count"
+    assert quiz["current"] == 0  # no quizzes taken yet
+
+    # Every badge has the keys present (None is fine for binary badges).
+    for a in body["achievements"]:
+        assert {"metric", "target", "group", "next_code", "current"} <= set(a)
+
+
+def test_binary_badge_has_no_progress(client):
+    """Time-of-day badges have no metric/target/current (no progress bar)."""
+    by_code = {a["code"]: a for a in client.get("/api/progress/achievements").json()["achievements"]}
+    owl = by_code["night_owl"]
+    assert owl["metric"] is None
+    assert owl["target"] is None
+    assert owl["current"] is None
+    assert owl["next_code"] is None
+
+
+def test_next_code_forms_ascending_ladder():
+    """Within a group, next_code points up the ladder; the top rung is None."""
+    defs = {d["code"]: d for d in ach_service.get_definitions()}
+    # streak_3 → streak_7 → (top)
+    assert defs["streak_3"]["next_code"] == "streak_7"
+    assert defs["streak_7"]["next_code"] is None
+    # first_quiz → quiz_marathon → (top)
+    assert defs["first_quiz"]["next_code"] == "quiz_marathon"
+    assert defs["quiz_marathon"]["next_code"] is None
+
+
+def test_current_is_capped_at_target(client):
+    """`current` never overshoots `target` (keeps the progress bar ≤ 100%)."""
+    # Two quizzes recorded; first_quiz target is 1 → current caps at 1.
+    progress_tracker.record_quiz_attempt(
+        difficulty="beginner", num_questions=5, correct_count=5, score_pct=100
+    )
+    progress_tracker.record_quiz_attempt(
+        difficulty="beginner", num_questions=5, correct_count=4, score_pct=80
+    )
+    by_code = {a["code"]: a for a in client.get("/api/progress/achievements").json()["achievements"]}
+    assert by_code["first_quiz"]["current"] == 1  # capped at target=1
+    assert by_code["quiz_marathon"]["current"] == 2  # target=10, raw 2, uncapped

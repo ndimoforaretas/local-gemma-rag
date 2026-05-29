@@ -51,13 +51,24 @@ def get_achievements() -> dict:
     so it needs the full list — not just the earned ones.
     """
     earned = progress_tracker.get_earned_codes()
+    stats = progress_tracker.stats_for_eval()
     items = []
     for defn in ach_service.get_definitions():
+        metric = defn.get("metric")
+        # `current` is the user's live value toward the badge's target — only
+        # meaningful for metric-backed badges (binary ones stay None). Capped at
+        # the target so a finished progress bar never overshoots 100%.
+        current = None
+        if metric is not None:
+            raw = stats.get(metric, 0)
+            target = defn.get("target")
+            current = min(raw, target) if target is not None else raw
         items.append(
             {
                 **defn,
                 "earned_at": earned.get(defn["code"]),
                 "is_earned": defn["code"] in earned,
+                "current": current,
             }
         )
     return {"achievements": items}
