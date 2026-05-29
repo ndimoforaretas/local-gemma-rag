@@ -14,7 +14,7 @@ export function TypingIndicator() {
           transition={{ repeat: Infinity, duration: 0.6, delay }}
         />
       ))}
-      <span className="text-sm text-[#727785] dark:text-[#8c909f]">
+      <span className="text-sm text-ink-muted">
         Generating answer...
       </span>
     </div>

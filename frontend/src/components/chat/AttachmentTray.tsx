@@ -38,7 +38,7 @@ export function AttachmentTray({ attachments, onRemove }: AttachmentTrayProps) {
           </div>
         );
       })}
-      <div className="flex items-center text-xs text-[#727785] dark:text-[#8c909f] self-center">
+      <div className="flex items-center text-xs text-ink-faint self-center">
         {attachments.length}/{MAX_ATTACHMENTS} files
       </div>
     </div>

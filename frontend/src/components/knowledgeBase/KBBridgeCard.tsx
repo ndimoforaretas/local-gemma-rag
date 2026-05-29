@@ -46,7 +46,7 @@ export function KBBridgeCard({
           size={20}
           className="text-emerald-600 dark:text-emerald-400 shrink-0"
         />
-        <span className="text-sm text-[#191c1e] dark:text-[#e1e2ec] font-medium truncate">
+        <span className="text-sm text-ink font-medium truncate">
           {statusMessage(status, firstFile)}
         </span>
       </div>
@@ -61,7 +61,7 @@ export function KBBridgeCard({
           </button>
           <button
             onClick={onDismiss}
-            className="p-1.5 rounded-lg text-[#727785] hover:text-[#191c1e] dark:hover:text-[#e1e2ec] hover:bg-[#e0e3e5] dark:hover:bg-[#32353c] transition-colors"
+            className="p-1.5 rounded-lg text-ink-muted hover:text-ink-strong hover:bg-[#e0e3e5] dark:hover:bg-[#32353c] transition-colors"
           >
             <X size={16} />
           </button>
@@ -82,7 +82,7 @@ export function KBBridgeCard({
       {status === "error" && (
         <button
           onClick={onDismiss}
-          className="p-1.5 rounded-lg text-[#727785] hover:text-[#191c1e] dark:hover:text-[#e1e2ec] hover:bg-[#e0e3e5] dark:hover:bg-[#32353c] transition-colors shrink-0"
+          className="p-1.5 rounded-lg text-ink-muted hover:text-ink-strong hover:bg-[#e0e3e5] dark:hover:bg-[#32353c] transition-colors shrink-0"
         >
           <X size={16} />
         </button>

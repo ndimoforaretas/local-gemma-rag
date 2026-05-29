@@ -13,12 +13,12 @@ export function EmptyState({ onSuggestionSelect }: EmptyStateProps) {
           alt="CogniVault"
           className="w-20 h-20 mb-6 drop-shadow-[0_4px_20px_rgba(167,139,250,0.4)] opacity-90"
         />
-        <h3 className="text-2xl font-semibold mb-3 text-[#191c1e] dark:text-[#e1e2ec]">
+        <h3 className="text-2xl font-bold mb-3 text-ink-strong">
           Welcome to Gemma CogniVault
         </h3>
-        <p className="text-base text-[#424754] dark:text-[#8c909f] text-center max-w-sm leading-relaxed">
+        <p className="text-base text-ink-muted text-center max-w-sm leading-relaxed">
           Upload documents to your{" "}
-          <span className="font-medium text-[#191c1e] dark:text-[#e1e2ec]">
+          <span className="font-semibold text-ink-strong">
             Knowledge Base
           </span>{" "}
           and ask questions about them — or tap a card below to explore what the app can do.

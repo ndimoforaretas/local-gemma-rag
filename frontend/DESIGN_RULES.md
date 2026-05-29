@@ -82,7 +82,7 @@ Never render essential text below **12px**. Body copy is **14px** minimum.
 
 - ✅ Foundation (semantic classes) — `src/index.css`
 - ✅ Dashboard (`components/dashboard/`) — reference implementation
-- ⬜ Chat (`KnowledgeBase`, `components/chat/`)
+- ✅ Chat (`KnowledgeBase`, `components/chat/`, `components/knowledgeBase/`)
 - ⬜ Knowledge Base (`KnowledgeSync`, `components/knowledgeSync/`)
 - ⬜ Study Hub (`components/study/`)
 - ⬜ Shared (Sidebar, modals, Tooltip, SuggestionCards)

@@ -17,7 +17,7 @@ export function ThinkingPanel({ thinking, isStreaming = false }: ThinkingPanelPr
       <button
         onClick={() => setIsOpen((p) => !p)}
         aria-expanded={isOpen}
-        className="flex items-center gap-1.5 text-xs font-medium text-[#727785] dark:text-[#8c909f] hover:text-[#191c1e] dark:hover:text-[#e1e2ec] transition-colors select-none group"
+        className="flex items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-ink-strong transition-colors select-none group"
       >
         <span className="text-[13px]">🧠</span>
         <span>Reasoning</span>
@@ -26,7 +26,7 @@ export function ThinkingPanel({ thinking, isStreaming = false }: ThinkingPanelPr
         )}
         <ChevronDown
           size={13}
-          className={`transition-transform duration-200 ${isOpen ? "rotate-180" : "rotate-0"} text-[#727785] dark:text-[#8c909f]`}
+          className={`transition-transform duration-200 ${isOpen ? "rotate-180" : "rotate-0"} text-ink-faint`}
         />
       </button>
 

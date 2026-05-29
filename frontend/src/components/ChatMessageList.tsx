@@ -84,7 +84,7 @@ export function ChatMessageList({
 
                   {/* Bubble container */}
                   <div className={`flex flex-col gap-2 ${msg.role === "user" ? "max-w-[82%] items-end" : "w-full max-w-[min(100%,74ch)] items-start"}`}>
-                    <div className={`flex items-center gap-2 text-[11px] font-medium ${msg.role === "user" ? "text-[#6f4ab3] dark:text-[#cba6ff]" : "text-[#727785] dark:text-[#8c909f]"}`}>
+                    <div className={`flex items-center gap-2 text-xs font-medium ${msg.role === "user" ? "text-[#6f4ab3] dark:text-[#cba6ff]" : "text-ink-muted"}`}>
                       <span>{msg.role === "user" ? "You" : "Gemma CogniVault AI"}</span>
                       {formatMessageTime(msg.id) && <span className="opacity-70">{formatMessageTime(msg.id)}</span>}
                     </div>

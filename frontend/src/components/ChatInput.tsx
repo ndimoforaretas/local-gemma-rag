@@ -83,7 +83,7 @@ export function ChatInput({ input, isLoading, onInputChange, onSend }: ChatInput
             onClick={() => { if (!isLoading && !attachmentsAtLimit) files.fileInputRef.current?.click(); }}
             aria-label="Attach files"
             aria-disabled={isLoading || attachmentsAtLimit}
-            className={`w-9 h-9 mb-1 flex items-center justify-center rounded-full transition-all ${isLoading || attachmentsAtLimit ? "opacity-40 cursor-not-allowed text-[#727785] dark:text-[#988d9f]" : "text-[#727785] dark:text-[#988d9f] hover:text-[#0058be] dark:hover:text-[#ddb7ff] hover:bg-[#d0e1fb] dark:hover:bg-[#3d2f4b]"}`}
+            className={`w-9 h-9 mb-1 flex items-center justify-center rounded-full transition-all ${isLoading || attachmentsAtLimit ? "opacity-40 cursor-not-allowed text-ink-muted" : "text-ink-muted hover:text-[#0058be] dark:hover:text-[#ddb7ff] hover:bg-[#d0e1fb] dark:hover:bg-[#3d2f4b]"}`}
           >
             <Paperclip size={18} />
           </button>
@@ -108,7 +108,7 @@ export function ChatInput({ input, isLoading, onInputChange, onSend }: ChatInput
               onClick={voice.isRecording ? voice.stopRecording : voice.startRecording}
               disabled={isLoading || voice.isTranscribing}
               aria-label={voice.isRecording ? "Stop recording" : "Record voice message"}
-              className={`w-9 h-9 mb-1 flex items-center justify-center rounded-full transition-all ${isLoading || voice.isTranscribing ? "opacity-40 cursor-not-allowed text-[#727785] dark:text-[#988d9f]" : voice.isRecording ? "bg-red-500/90 text-white animate-pulse hover:bg-red-600" : "text-[#727785] dark:text-[#988d9f] hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"}`}
+              className={`w-9 h-9 mb-1 flex items-center justify-center rounded-full transition-all ${isLoading || voice.isTranscribing ? "opacity-40 cursor-not-allowed text-ink-muted" : voice.isRecording ? "bg-red-500/90 text-white animate-pulse hover:bg-red-600" : "text-ink-muted hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"}`}
             >
               {voice.isTranscribing ? <Loader2 size={18} className="animate-spin" /> : voice.isRecording ? <Square size={16} className="fill-current" /> : <Mic size={18} />}
             </button>
@@ -125,7 +125,7 @@ export function ChatInput({ input, isLoading, onInputChange, onSend }: ChatInput
           aria-label="Message input"
           aria-describedby={`${helperTextId} ${charCountId}`}
           aria-busy={isLoading}
-          className="flex-1 bg-transparent border-0 outline-none resize-none min-h-[44px] max-h-44 py-2 px-1 text-base leading-6 text-[#191c1e] dark:text-[#e1e2ec] placeholder-[#727785] dark:placeholder-[#8c909f]"
+          className="flex-1 bg-transparent border-0 outline-none resize-none min-h-[44px] max-h-44 py-2 px-1 text-base leading-6 text-ink placeholder-[#586271] dark:placeholder-[#9aa1b2]"
         />
 
         {/* Send button */}
@@ -143,7 +143,7 @@ export function ChatInput({ input, isLoading, onInputChange, onSend }: ChatInput
         </Tooltip>
       </div>
 
-      <div className="flex items-center justify-between px-2 text-xs text-[#727785] dark:text-[#8c909f]">
+      <div className="flex items-center justify-between px-2 text-xs text-ink-faint">
         <span id={helperTextId}>
           {isLoading ? "Generating response..." : "Enter to send · Shift+Enter for new line · attach up to 5 files"}
         </span>

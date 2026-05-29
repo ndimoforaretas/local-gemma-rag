@@ -21,7 +21,7 @@ export function AIMessageBubble({
 
   return (
     <>
-      <div className="w-full bg-white text-[#191c1e] border border-[#c2c6d6] dark:bg-[#1d2027] dark:text-[#e1e2ec] dark:border-[#424754] rounded-2xl rounded-tl-sm p-5 text-base leading-relaxed">
+      <div className="w-full bg-white text-ink border border-[#c2c6d6] dark:bg-[#1d2027] dark:border-[#424754] rounded-2xl rounded-tl-sm p-5 text-base leading-relaxed">
         {!content && isLoading ? (
           <TypingIndicator />
         ) : (
@@ -38,7 +38,7 @@ export function AIMessageBubble({
             <button
               onClick={() => onCopy(content, msgId)}
               aria-label={isCopied ? "Response copied" : "Copy response"}
-              className="flex items-center gap-1.5 text-xs font-medium text-[#727785] dark:text-[#8c909f] hover:text-[#191c1e] dark:hover:text-[#e1e2ec] transition-colors"
+              className="flex items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-ink-strong transition-colors"
             >
               {isCopied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
               {isCopied ? "Copied" : "Copy"}
@@ -48,7 +48,7 @@ export function AIMessageBubble({
             <button
               onClick={() => onExport(content, msgId)}
               aria-label="Export response as markdown"
-              className="flex items-center gap-1.5 text-xs font-medium text-[#727785] dark:text-[#8c909f] hover:text-[#0058be] dark:hover:text-[#adc6ff] transition-colors"
+              className="flex items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-[#0058be] dark:hover:text-[#adc6ff] transition-colors"
             >
               <Download size={14} /> Export
             </button>
@@ -58,7 +58,7 @@ export function AIMessageBubble({
               <button
                 onClick={() => onRegenerate(msgIndex)}
                 aria-label="Regenerate response"
-                className="flex items-center gap-1.5 text-xs font-medium text-[#727785] dark:text-[#8c909f] hover:text-[#a855f7] dark:hover:text-[#ddb7ff] transition-colors"
+                className="flex items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-[#a855f7] dark:hover:text-[#ddb7ff] transition-colors"
               >
                 <RefreshCw size={14} /> Regenerate
               </button>
