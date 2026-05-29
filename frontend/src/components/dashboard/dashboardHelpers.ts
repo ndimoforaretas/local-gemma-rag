@@ -80,3 +80,63 @@ export const INTENSITY_LEGEND: { label: string; level: IntensityLevel }[] = [
   { label: "1–3h", level: 3 },
   { label: "3h+", level: 4 },
 ];
+
+// ── Heatmap helpers ────────────────────────────────────────────────────────
+
+export interface MonthLabel {
+  /** Short month name, e.g. "Jan". */
+  label: string;
+  /** Zero-based grid column index where this month's first day falls. */
+  colIndex: number;
+}
+
+/**
+ * Compute which grid column each month transition falls in, accounting for
+ * the `padBefore` filler cells at the start of the heatmap.
+ *
+ * Returns one entry per month that starts at a different column from the
+ * previous label, so short months at the edge don't produce overlapping text.
+ */
+export function computeMonthLabels(
+  dates: string[],
+  padBefore: number,
+): MonthLabel[] {
+  const labels: MonthLabel[] = [];
+  let lastCol = -2;
+  dates.forEach((iso, i) => {
+    const d = parseISODate(iso);
+    if (d.getDate() === 1 || i === 0) {
+      const col = Math.floor((padBefore + i) / 7);
+      if (col !== lastCol && col - lastCol > 1) {
+        labels.push({
+          label: d.toLocaleDateString(undefined, { month: "short" }),
+          colIndex: col,
+        });
+        lastCol = col;
+      }
+    }
+  });
+  return labels;
+}
+
+const WEEKDAY_NAMES = [
+  "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+];
+
+/**
+ * Return the name of the weekday with the highest total study seconds, or
+ * null when there isn't enough meaningful data (fewer than 2 distinct active
+ * weekdays with at least 10 minutes of activity each).
+ */
+export function busyWeekday(
+  days: { date: string; seconds: number }[],
+): string | null {
+  const totals = new Array<number>(7).fill(0);
+  for (const d of days) {
+    if (d.seconds > 0) totals[getWeekdayIdx(parseISODate(d.date))] += d.seconds;
+  }
+  const active = totals.filter((s) => s >= 600).length;
+  if (active < 2) return null;
+  const best = totals.indexOf(Math.max(...totals));
+  return WEEKDAY_NAMES[best];
+}

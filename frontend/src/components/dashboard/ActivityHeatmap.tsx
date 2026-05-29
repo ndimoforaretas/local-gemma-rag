@@ -10,9 +10,11 @@
 import { Calendar } from "lucide-react";
 import type { DailyActivityEntry } from "../../types/api";
 import { DayCell } from "./DayCell";
+import { MonthLabels } from "./MonthLabels";
+import { HeatmapLegend } from "./HeatmapLegend";
 import {
-  INTENSITY_COLORS,
-  INTENSITY_LEGEND,
+  busyWeekday,
+  computeMonthLabels,
   getWeekdayIdx,
   parseISODate,
 } from "./dashboardHelpers";
@@ -28,6 +30,8 @@ export function ActivityHeatmap({
 }) {
   const todayIso = new Date().toISOString().slice(0, 10);
   const padBefore = days.length > 0 ? getWeekdayIdx(parseISODate(days[0].date)) : 0;
+  const monthLabels = computeMonthLabels(days.map((d) => d.date), padBefore);
+  const bestDay = busyWeekday(days);
 
   return (
     <section>
@@ -41,53 +45,46 @@ export function ActivityHeatmap({
             (last {days.length} days · click any day for details)
           </span>
         </div>
-        <Legend />
+        <HeatmapLegend />
       </header>
 
       <div className="p-5 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23]">
         <div className="flex gap-2">
-          {/* Weekday labels (Mon, Wed, Fri shown — Tue/Thu/Sat/Sun blank for breathing room) */}
-          <div className="grid grid-rows-7 gap-1 text-[10px] text-[#727785] dark:text-[#8c909f] pt-0">
+          {/* Weekday labels (Mon, Wed, Fri shown; others blank for breathing room) */}
+          <div className="grid grid-rows-7 gap-1 text-[10px] text-[#727785] dark:text-[#8c909f]">
+            {/* Spacer to align weekday labels below the month-label row */}
+            <div className="h-5 mb-1" />
             {WEEKDAY_LABELS.map((label, i) => (
-              <div key={i} className="h-[14px] leading-[14px] pr-1">
-                {label}
-              </div>
+              <div key={i} className="h-[14px] leading-[14px] pr-1">{label}</div>
             ))}
           </div>
 
-          {/* The grid itself: column-flow so each column = 1 week */}
-          <div className="grid grid-rows-7 grid-flow-col gap-1">
-            {Array.from({ length: padBefore }).map((_, i) => (
-              <div key={`pad-${i}`} style={{ width: 14, height: 14 }} />
-            ))}
-            {days.map((entry) => (
-              <DayCell
-                key={entry.date}
-                entry={entry}
-                isToday={entry.date === todayIso}
-                onClick={onSelectDay}
-              />
-            ))}
+          {/* Month labels + grid */}
+          <div className="min-w-0">
+            <MonthLabels labels={monthLabels} />
+            <div className="grid grid-rows-7 grid-flow-col gap-1">
+              {Array.from({ length: padBefore }).map((_, i) => (
+                <div key={`pad-${i}`} style={{ width: 14, height: 14 }} />
+              ))}
+              {days.map((entry) => (
+                <DayCell
+                  key={entry.date}
+                  entry={entry}
+                  isToday={entry.date === todayIso}
+                  onClick={onSelectDay}
+                />
+              ))}
+            </div>
           </div>
         </div>
+
+        {bestDay && (
+          <p className="mt-3 text-[11px] text-[#727785] dark:text-[#8c909f]">
+            📅 Your most active day: <span className="font-semibold text-[#424754] dark:text-[#c2c6d6]">{bestDay}</span>
+          </p>
+        )}
       </div>
     </section>
   );
 }
 
-function Legend() {
-  return (
-    <div className="flex items-center gap-2 text-[11px] text-[#727785] dark:text-[#8c909f]">
-      <span>Less</span>
-      {INTENSITY_LEGEND.map((b) => (
-        <span
-          key={b.level}
-          title={b.label}
-          className="w-3 h-3 rounded-[3px] border border-[#c2c6d6]/30 dark:border-[#424754]/40"
-          style={{ backgroundColor: INTENSITY_COLORS[b.level] }}
-        />
-      ))}
-      <span>More</span>
-    </div>
-  );
-}
