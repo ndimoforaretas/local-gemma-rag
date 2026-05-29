@@ -5,6 +5,7 @@ Endpoints
 ---------
 - GET /api/progress/summary       — totals + current streak
 - GET /api/progress/daily         — last N days breakdown (?days=30)
+- GET /api/progress/breakdown     — per-mode Study Hub activity
 - GET /api/progress/achievements  — every badge with earned_at (null if locked)
 
 All endpoints are safe to call frequently; SQLite reads are <1ms.
@@ -40,6 +41,15 @@ def get_daily(days: int = Query(default=30, ge=1, le=365)) -> dict:
     a continuous bar chart.
     """
     return {"days": progress_tracker.get_daily(days=days)}
+
+
+@router.get("/breakdown")
+def get_breakdown() -> dict:
+    """
+    Per-mode Study Hub activity (quizzes, workshops, flashcards, mindmaps) for
+    the dashboard breakdown cards.
+    """
+    return progress_tracker.study_hub_breakdown()
 
 
 @router.get("/achievements")

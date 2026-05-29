@@ -224,6 +224,31 @@ def test_daily_endpoint_validates_range(client):
     assert client.get("/api/progress/daily?days=400").status_code == 422
 
 
+def test_breakdown_endpoint_zero_state(client):
+    res = client.get("/api/progress/breakdown")
+    assert res.status_code == 200
+    body = res.json()
+    assert body == {
+        "quizzes": {"count": 0, "avg_score": 0, "best_score": 0},
+        "workshops": {"created": 0, "completed": 0},
+        "flashcards": {"decks": 0, "mastered": 0},
+        "mindmaps": {"created": 0, "exports": 0},
+    }
+
+
+def test_breakdown_endpoint_aggregates_quiz_scores(client):
+    progress_tracker.record_quiz_attempt(
+        difficulty="beginner", num_questions=5, correct_count=5, score_pct=100
+    )
+    progress_tracker.record_quiz_attempt(
+        difficulty="beginner", num_questions=5, correct_count=4, score_pct=80
+    )
+    body = client.get("/api/progress/breakdown").json()
+    assert body["quizzes"]["count"] == 2
+    assert body["quizzes"]["avg_score"] == 90  # (100 + 80) / 2
+    assert body["quizzes"]["best_score"] == 100
+
+
 def test_achievements_endpoint_lists_all_seeded_badges(client):
     res = client.get("/api/progress/achievements")
     assert res.status_code == 200

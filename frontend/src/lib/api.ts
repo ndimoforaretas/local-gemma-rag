@@ -268,6 +268,11 @@ export const api = {
     return handleJsonResponse<import("../types/api").DailyActivityResponse>(resp);
   },
 
+  getProgressBreakdown: async () => {
+    const resp = await fetch(`${API_BASE}/api/progress/breakdown`);
+    return handleJsonResponse<import("../types/api").ModeBreakdown>(resp);
+  },
+
   getProgressAchievements: async () => {
     const resp = await fetch(`${API_BASE}/api/progress/achievements`);
     return handleJsonResponse<import("../types/api").AchievementsResponse>(resp);

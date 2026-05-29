@@ -217,6 +217,13 @@ export interface AchievementsResponse {
   achievements: AchievementItem[];
 }
 
+export interface ModeBreakdown {
+  quizzes: { count: number; avg_score: number; best_score: number };
+  workshops: { created: number; completed: number };
+  flashcards: { decks: number; mastered: number };
+  mindmaps: { created: number; exports: number };
+}
+
 // ── Workshops ───────────────────────────────────────────────────────────
 
 export type WorkshopDifficulty = "beginner" | "intermediate" | "advanced";

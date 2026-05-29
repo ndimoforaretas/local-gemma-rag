@@ -764,6 +764,81 @@ def get_summary() -> dict:
         conn.close()
 
 
+def study_hub_breakdown() -> dict:
+    """
+    Per-mode Study Hub activity for the dashboard breakdown cards.
+
+    Returns
+    -------
+    {
+        "quizzes":    {"count": int, "avg_score": int, "best_score": int},
+        "workshops":  {"created": int, "completed": int},
+        "flashcards": {"decks": int, "mastered": int},
+        "mindmaps":   {"created": int, "exports": int},
+    }
+
+    ``avg_score`` / ``best_score`` are whole percentages (0 when no quizzes).
+    """
+    conn = _connect()
+    try:
+        _init_schema(conn)
+        cur = conn.cursor()
+
+        cur.execute(
+            "SELECT COUNT(*) AS n, "
+            "       COALESCE(AVG(score_pct), 0) AS avg_score, "
+            "       COALESCE(MAX(score_pct), 0) AS best_score "
+            "FROM quiz_attempts"
+        )
+        q = cur.fetchone()
+
+        cur.execute(
+            "SELECT COUNT(*) AS created, "
+            "       COALESCE(SUM(CASE WHEN completed_at IS NOT NULL THEN 1 ELSE 0 END), 0) AS completed "
+            "FROM workshops"
+        )
+        w = cur.fetchone()
+
+        cur.execute("SELECT COUNT(*) AS decks FROM flashcard_decks")
+        decks = int(cur.fetchone()["decks"] or 0)
+        cur.execute(
+            "SELECT COUNT(*) AS n FROM ("
+            "  SELECT d.id FROM flashcard_decks d "
+            "  LEFT JOIN flashcards c ON c.deck_id = d.id "
+            "  GROUP BY d.id "
+            "  HAVING COUNT(c.card_idx) > 0 "
+            "     AND COUNT(c.card_idx) = SUM(CASE WHEN c.status='mastered' THEN 1 ELSE 0 END)"
+            ")"
+        )
+        mastered = int(cur.fetchone()["n"] or 0)
+
+        cur.execute(
+            "SELECT COUNT(*) AS created, "
+            "       COALESCE(SUM(export_count), 0) AS exports "
+            "FROM mindmaps"
+        )
+        m = cur.fetchone()
+
+        return {
+            "quizzes": {
+                "count": int(q["n"] or 0),
+                "avg_score": round(float(q["avg_score"] or 0)),
+                "best_score": int(q["best_score"] or 0),
+            },
+            "workshops": {
+                "created": int(w["created"] or 0),
+                "completed": int(w["completed"] or 0),
+            },
+            "flashcards": {"decks": decks, "mastered": mastered},
+            "mindmaps": {
+                "created": int(m["created"] or 0),
+                "exports": int(m["exports"] or 0),
+            },
+        }
+    finally:
+        conn.close()
+
+
 def _current_streak_days(conn: sqlite3.Connection) -> int:
     """
     Days of consecutive activity counting backwards from today (local time).

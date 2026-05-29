@@ -6,9 +6,10 @@
  *   1. Hero
  *   2. SummaryCards    (total time, sessions, streak)
  *   3. StudyTrendChart (weekly study-time momentum)
- *   4. AlmostThere     (closest in-progress badges)
- *   5. AchievementGrid (click badge → AchievementDetailModal)
- *   6. ActivityHeatmap (GitHub-style; click cell → DayDetailModal)
+ *   4. ModeBreakdown   (per-mode Study Hub activity)
+ *   5. AlmostThere     (closest in-progress badges)
+ *   6. AchievementGrid (click badge → AchievementDetailModal)
+ *   7. ActivityHeatmap (GitHub-style; click cell → DayDetailModal)
  */
 
 import { useState } from "react";
@@ -19,12 +20,14 @@ import { AchievementDetailModal } from "./AchievementDetailModal";
 import { AlmostThere } from "./AlmostThere";
 import { ActivityHeatmap } from "./ActivityHeatmap";
 import { DayDetailModal } from "./DayDetailModal";
+import { ModeBreakdown } from "./ModeBreakdown";
 import { StudyTrendChart } from "./StudyTrendChart";
 import { SummaryCards } from "./SummaryCards";
 import { useDashboardData } from "./useDashboardData";
 
 export function ProgressDashboard() {
-  const { summary, daily, achievements, isLoading, isError } = useDashboardData(90);
+  const { summary, daily, achievements, breakdown, isLoading, isError } =
+    useDashboardData(90);
   const [selectedDay, setSelectedDay] = useState<DailyActivityEntry | null>(null);
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null);
 
@@ -43,6 +46,7 @@ export function ProgressDashboard() {
           <>
             {summary.data && <SummaryCards data={summary.data} />}
             {daily.data && <StudyTrendChart days={daily.data.days} />}
+            {breakdown.data && <ModeBreakdown data={breakdown.data} />}
             {achievements.data && (
               <>
                 <AlmostThere items={badges} onSelect={setSelectedBadge} />
