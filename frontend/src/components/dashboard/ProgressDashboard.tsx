@@ -4,10 +4,11 @@
  *
  * Sections (top to bottom):
  *   1. Hero
- *   2. SummaryCards   (total time, sessions, streak)
- *   3. AlmostThere     (closest in-progress badges)
- *   4. AchievementGrid (click badge → AchievementDetailModal)
- *   5. ActivityHeatmap (GitHub-style; click cell → DayDetailModal)
+ *   2. SummaryCards    (total time, sessions, streak)
+ *   3. StudyTrendChart (weekly study-time momentum)
+ *   4. AlmostThere     (closest in-progress badges)
+ *   5. AchievementGrid (click badge → AchievementDetailModal)
+ *   6. ActivityHeatmap (GitHub-style; click cell → DayDetailModal)
  */
 
 import { useState } from "react";
@@ -18,6 +19,7 @@ import { AchievementDetailModal } from "./AchievementDetailModal";
 import { AlmostThere } from "./AlmostThere";
 import { ActivityHeatmap } from "./ActivityHeatmap";
 import { DayDetailModal } from "./DayDetailModal";
+import { StudyTrendChart } from "./StudyTrendChart";
 import { SummaryCards } from "./SummaryCards";
 import { useDashboardData } from "./useDashboardData";
 
@@ -40,6 +42,7 @@ export function ProgressDashboard() {
         {!isLoading && !isError && (
           <>
             {summary.data && <SummaryCards data={summary.data} />}
+            {daily.data && <StudyTrendChart days={daily.data.days} />}
             {achievements.data && (
               <>
                 <AlmostThere items={badges} onSelect={setSelectedBadge} />
