@@ -1,16 +1,16 @@
 /**
- * Horizontally scrollable strip of achievement badges.
+ * Responsive, vertically-scrollable grid of achievement badges.
  *
- * Earned badges float to the front; locked ones trail behind so the user
- * always sees their progress first. Scroll bar styled minimally so it
- * doesn't dominate the look.
+ * Replaces the older horizontal strip — a grid reads more naturally and lets
+ * the user scroll downward (the expected direction) to see every badge.
+ * Earned badges float to the front; locked ones trail so progress shows first.
  */
 
 import { Trophy } from "lucide-react";
 import type { AchievementItem } from "../../types/api";
 import { AchievementBadge } from "./AchievementBadge";
 
-export function AchievementStrip({ items }: { items: AchievementItem[] }) {
+export function AchievementGrid({ items }: { items: AchievementItem[] }) {
   const sorted = [...items].sort((a, b) => {
     if (a.is_earned !== b.is_earned) return a.is_earned ? -1 : 1;
     // Within earned, most recent first.
@@ -34,17 +34,13 @@ export function AchievementStrip({ items }: { items: AchievementItem[] }) {
         </span>
       </header>
 
-      <div className="relative">
-        <div
-          className="flex gap-3 overflow-x-auto pb-3 -mx-1 px-1 snap-x snap-mandatory"
-          style={{ scrollbarWidth: "thin" }}
-        >
-          {sorted.map((item) => (
-            <div key={item.code} className="snap-start">
-              <AchievementBadge item={item} />
-            </div>
-          ))}
-        </div>
+      <div
+        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-[28rem] overflow-y-auto pr-1 -mr-1"
+        style={{ scrollbarWidth: "thin" }}
+      >
+        {sorted.map((item) => (
+          <AchievementBadge key={item.code} item={item} />
+        ))}
       </div>
     </section>
   );

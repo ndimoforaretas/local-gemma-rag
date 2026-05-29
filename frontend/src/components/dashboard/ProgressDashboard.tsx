@@ -5,14 +5,14 @@
  * Sections (top to bottom):
  *   1. Hero
  *   2. SummaryCards   (total time, sessions, streak)
- *   3. AchievementStrip
+ *   3. AchievementGrid
  *   4. ActivityHeatmap (GitHub-style; click cell → DayDetailModal)
  */
 
 import { useState } from "react";
 import { BarChart3, Loader2, AlertCircle } from "lucide-react";
 import type { DailyActivityEntry } from "../../types/api";
-import { AchievementStrip } from "./AchievementStrip";
+import { AchievementGrid } from "./AchievementGrid";
 import { ActivityHeatmap } from "./ActivityHeatmap";
 import { DayDetailModal } from "./DayDetailModal";
 import { SummaryCards } from "./SummaryCards";
@@ -34,7 +34,7 @@ export function ProgressDashboard() {
           <>
             {summary.data && <SummaryCards data={summary.data} />}
             {achievements.data && (
-              <AchievementStrip items={achievements.data.achievements} />
+              <AchievementGrid items={achievements.data.achievements} />
             )}
             {daily.data && (
               <ActivityHeatmap

@@ -31,7 +31,7 @@ export function AchievementBadge({ item }: { item: AchievementItem }) {
       title={title}
       aria-label={title}
       className={`
-        shrink-0 w-32 sm:w-36 p-3 rounded-2xl border text-center transition-all
+        w-full h-full p-3 rounded-2xl border text-center transition-all
         ${
           earned
             ? "bg-white dark:bg-[#191b23] border-[#a855f7]/40 shadow-md shadow-[#a855f7]/10 hover:border-[#a855f7]"
