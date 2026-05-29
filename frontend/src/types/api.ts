@@ -201,6 +201,16 @@ export interface AchievementItem {
   icon: string;
   earned_at: number | null;
   is_earned: boolean;
+  /** Stat this badge tracks (e.g. "total_quizzes"); null for binary badges. */
+  metric?: string | null;
+  /** Threshold the metric must reach; null for binary badges. */
+  target?: number | null;
+  /** Family ID — badges in a group form an ascending ladder; null = standalone. */
+  group?: string | null;
+  /** Code of the next badge up the ladder; null at the top or for standalone. */
+  next_code?: string | null;
+  /** User's live value toward target (capped at target); null for binary badges. */
+  current?: number | null;
 }
 
 export interface AchievementsResponse {

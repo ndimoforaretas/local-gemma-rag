@@ -19,7 +19,13 @@ function earnedDate(ts: number): string {
   });
 }
 
-export function AchievementBadge({ item }: { item: AchievementItem }) {
+export function AchievementBadge({
+  item,
+  onSelect,
+}: {
+  item: AchievementItem;
+  onSelect?: (item: AchievementItem) => void;
+}) {
   const earned = item.is_earned;
   const title = earned
     ? `${item.name} — earned ${item.earned_at ? earnedDate(item.earned_at) : ""}\n${item.description}`
@@ -30,6 +36,7 @@ export function AchievementBadge({ item }: { item: AchievementItem }) {
       type="button"
       title={title}
       aria-label={title}
+      onClick={() => onSelect?.(item)}
       className={`
         w-full h-full p-3 rounded-2xl border text-center transition-all
         ${

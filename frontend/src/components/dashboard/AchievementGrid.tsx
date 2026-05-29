@@ -6,11 +6,15 @@
  * Earned badges float to the front; locked ones trail so progress shows first.
  */
 
+import { useState } from "react";
 import { Trophy } from "lucide-react";
 import type { AchievementItem } from "../../types/api";
 import { AchievementBadge } from "./AchievementBadge";
+import { AchievementDetailModal } from "./AchievementDetailModal";
 
 export function AchievementGrid({ items }: { items: AchievementItem[] }) {
+  const [selectedCode, setSelectedCode] = useState<string | null>(null);
+
   const sorted = [...items].sort((a, b) => {
     if (a.is_earned !== b.is_earned) return a.is_earned ? -1 : 1;
     // Within earned, most recent first.
@@ -19,6 +23,7 @@ export function AchievementGrid({ items }: { items: AchievementItem[] }) {
   });
 
   const earnedCount = items.filter((i) => i.is_earned).length;
+  const selected = items.find((i) => i.code === selectedCode) ?? null;
 
   return (
     <section>
@@ -39,9 +44,22 @@ export function AchievementGrid({ items }: { items: AchievementItem[] }) {
         style={{ scrollbarWidth: "thin" }}
       >
         {sorted.map((item) => (
-          <AchievementBadge key={item.code} item={item} />
+          <AchievementBadge
+            key={item.code}
+            item={item}
+            onSelect={(it) => setSelectedCode(it.code)}
+          />
         ))}
       </div>
+
+      {selected && (
+        <AchievementDetailModal
+          item={selected}
+          allItems={items}
+          onClose={() => setSelectedCode(null)}
+          onNavigate={setSelectedCode}
+        />
+      )}
     </section>
   );
 }
