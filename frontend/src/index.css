@@ -103,16 +103,21 @@ body {
      text-ink-faint   tertiary only (timestamps, legends, hints)
    ============================================================ */
 
-/* Dark mode is the default theme (matches @theme above). */
-.text-ink-strong { color: #f4f6fb; }
-.text-ink        { color: #dfe3ec; }
-.text-ink-muted  { color: #bcc2d2; }
-.text-ink-faint  { color: #9aa1b2; }
+/*
+ * Theming note: the app toggles ONLY the `.dark` class on <html>
+ * (see App.tsx) — light mode is the class-less default, exactly like the
+ * Tailwind `dark:` variants used throughout. So these roles are defined
+ * light-first, with `.dark` overrides.
+ */
+.text-ink-strong { color: #14171a; }
+.text-ink        { color: #22262c; }
+.text-ink-muted  { color: #3d4651; }
+.text-ink-faint  { color: #586271; }
 
-.light .text-ink-strong { color: #14171a; }
-.light .text-ink        { color: #22262c; }
-.light .text-ink-muted  { color: #3d4651; }
-.light .text-ink-faint  { color: #586271; }
+.dark .text-ink-strong { color: #f4f6fb; }
+.dark .text-ink        { color: #dfe3ec; }
+.dark .text-ink-muted  { color: #bcc2d2; }
+.dark .text-ink-faint  { color: #9aa1b2; }
 
 /* Scrollbar */
 ::-webkit-scrollbar {

@@ -129,7 +129,7 @@ export function ChatMessageList({
                           <button
                             onClick={() => startEdit(msgIndex, msg.content)}
                             aria-label="Edit message"
-                            className="flex items-center gap-1 text-xs font-medium text-[#c4a3f0] hover:text-white transition-colors opacity-60 hover:opacity-100"
+                            className="flex items-center gap-1 text-xs font-medium text-ink-muted hover:text-[#a855f7] dark:hover:text-[#ddb7ff] transition-colors"
                           >
                             <Pencil size={12} /> Edit
                           </button>
