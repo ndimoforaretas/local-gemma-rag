@@ -48,6 +48,15 @@ Never render essential text below **12px**. Body copy is **14px** minimum.
 
 ---
 
+## 2b. Global UI scale
+
+The whole UI is scaled via the root font size — `html { font-size }` in
+`src/index.css` (currently **22px ≈ 1.375×**; browser default is 16px). Because
+Tailwind's font **and** spacing utilities are rem-based, this one value zooms
+text + spacing together. Tune it there, not per-component. Caveat: arbitrary px
+values (icon `size` props, `min-w-[220px]`, etc.) don't scale, so values ≥26px
+start to look mismatched.
+
 ## 3. Spacing — let it breathe
 
 - Page section rhythm: `space-y-10` (was `space-y-8`).

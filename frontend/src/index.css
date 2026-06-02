@@ -67,6 +67,19 @@
   --color-accent-purple-bright: #c026d3;
 }
 
+/*
+ * ── Global UI scale ──────────────────────────────────────────────────
+ * Single lever for overall text + spacing size. Tailwind's font AND spacing
+ * utilities are rem-based, so raising the root font-size zooms the whole UI
+ * proportionally (rhythm preserved). Browser default is 16px.
+ *   16px = 1.0× · 20px = 1.25× · 22px = 1.375× · 24px = 1.5×
+ * Note: arbitrary px values (icon size props, min-w-[220px], etc.) don't
+ * scale, so very large values (≥28px) start to look mismatched.
+ */
+html {
+  font-size: 22px;
+}
+
 /* ── Base styles ── */
 body {
   background-color: #10131a;
