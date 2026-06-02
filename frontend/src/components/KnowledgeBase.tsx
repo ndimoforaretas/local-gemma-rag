@@ -166,12 +166,15 @@ export function KnowledgeBase() {
   /**
    * Edit a user message at `messageIndex` and resend. Trims the UI and
    * rewinds the agent history to the turn-pairs that existed *before*
-   * this message.
+   * this message. The original message's document scope is preserved so the
+   * AI still answers from the same category/file (it previously fell back to a
+   * whole-KB search on edit).
    */
   const handleEdit = (messageIndex: number, newContent: string) => {
     if (!activeSessionId) return;
+    const originalScope = activeSession?.messages[messageIndex]?.scopeFilter;
     updateSessionMessages(activeSessionId, (prev) => prev.slice(0, messageIndex));
-    rag.send([], newContent, Math.floor(messageIndex / 2));
+    rag.send([], newContent, Math.floor(messageIndex / 2), originalScope);
   };
 
   /** Regenerate the AI response at `messageIndex` by resending its prompt. */
@@ -181,7 +184,7 @@ export function KnowledgeBase() {
     const userMsg = currentMessages[messageIndex - 1];
     if (!userMsg || userMsg.role !== "user") return;
     updateSessionMessages(activeSessionId, (prev) => prev.slice(0, messageIndex));
-    rag.send([], userMsg.content, Math.floor((messageIndex - 1) / 2));
+    rag.send([], userMsg.content, Math.floor((messageIndex - 1) / 2), userMsg.scopeFilter);
   };
 
   // ── Session list actions ───────────────────────────────────────────
