@@ -39,3 +39,7 @@ memory/
 
 # Local planning docs (not committed)
 IMPROVEMENTS_PLAN.md
+
+# Local prompt overrides
+backend/prompts/custom/*
+!backend/prompts/custom/README.md

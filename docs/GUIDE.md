@@ -49,6 +49,8 @@ Your current section persists across browser refreshes. Refresh inside Quiz Mode
 
 Inside the Study Hub, **breadcrumbs** at the top show your exact location (e.g. *Study Hub › Workshop Creator › Python Fundamentals › Lesson 2*). Every crumb except the current one is clickable to jump back to that level.
 
+At the bottom of the sidebar, a **theme toggle** switches between light and dark mode (your choice persists). The whole interface is tuned for readability — large, high-contrast text so it's comfortable for extended study and accessible to low-vision users.
+
 ---
 
 ## 3. Chat — Full Reference
@@ -214,23 +216,37 @@ Radial concept maps of your scoped material.
 
 ## 6. Progress Dashboard
 
-A standalone view (4th sidebar item) that visualises everything you've done.
+A standalone view (4th sidebar item) that visualises everything you've done. Brand new? It shows a friendly **getting-started** card pointing you to Chat, the Study Hub, and Achievements — the full dashboard appears automatically once you send your first message.
 
-### Summary cards (top)
+The dashboard reads top to bottom:
+
+### Summary cards
 
 | Card | Shows |
 |---|---|
-| **Total study time** | Cumulative seconds across chat + quizzes + workshops + flashcards |
-| **Sessions** | How many distinct study sessions, plus total messages sent |
-| **Current streak** | Consecutive days with any study activity |
+| **Total study time** | Cumulative time across chat + all Study Hub modes |
+| **Study sessions** | Distinct sessions, plus total messages sent |
+| **Current streak** | Consecutive active days. A flame **pulses** while the streak is live, your **personal-best** streak sits underneath, and a "Best" badge celebrates when your current run ties or beats your record. |
 
-### Achievements strip (middle)
+### Study time (trend)
 
-Horizontally scrollable row of every badge. Earned badges show in full colour; locked badges are dimmed with a lock overlay. Hover any badge to see the description and (for earned ones) the date you unlocked it.
+A bar chart of your **weekly study minutes** over the last ~12 weeks — see your momentum at a glance.
 
-### Activity heatmap (bottom)
+### Study Hub activity
 
-GitHub-style grid of the last **90 days** — 7 rows (Mon → Sun), 13 columns (one per week). Each cell is colour-coded by that day's total study duration:
+Four cards summarising what you've created: **Quizzes** (count + average score), **Workshops** (created + completed), **Flashcards** (decks + mastered), **Mindmaps** (created + exports). Hidden until you've made at least one artefact.
+
+### Almost there
+
+Your **closest in-progress badges** (up to 3), each with a mini progress bar — a nudge toward your next unlock. Click one to open its details. Hidden when nothing is in progress.
+
+### Achievements
+
+A responsive **grid** of all 25 badges (earned ones first). Earned badges have an **emerald border + check mark**; locked ones are dimmed with a lock. **Click any badge** to open a detail panel showing what it is, a **progress bar** toward the target (e.g. 7/10 quizzes), the date you earned it, and the **next level** in that family — click the next level to jump straight to it. (Full badge list in §7.)
+
+### Activity heatmap
+
+GitHub-style grid of the last **90 days** — 7 rows (Mon → Sun) by week columns, with **month labels** across the top. Each cell is colour-coded by that day's total study duration:
 
 | Cell | Duration |
 |---|---|
@@ -240,13 +256,13 @@ GitHub-style grid of the last **90 days** — 7 rows (Mon → Sun), 13 columns (
 | **Strong purple** | 1–3 h |
 | **Solid purple** | 3 h+ |
 
-**Click any cell** to open a modal with that day's details: total time, sessions, messages, and any achievements earned on that day.
+Below the grid, a quick insight calls out your **most active weekday**. **Click any cell** to open a modal with that day's details: total time, sessions, messages, and any achievements earned that day.
 
 ---
 
 ## 7. Achievements (25 badges)
 
-Auto-tracked. They appear in the Dashboard's Achievements strip as you earn them.
+Auto-tracked. They appear in the Dashboard's **Achievements grid** as you earn them — click any badge to see your progress toward it and the next level in its family.
 
 ### Chat & Activity (10)
 
@@ -328,6 +344,8 @@ To wipe a category of data: delete the corresponding file or table. Nothing else
 - **Click any heatmap day** to see exactly what you did — useful when you can't remember whether you actually studied yesterday.
 - **The chat scope badge** on your sent messages is permanent history — you can always see what scope a past answer was based on.
 - **Export anything.** Quizzes and mindmaps support Markdown; mindmaps also support PNG and PDF — great for sharing or printing.
+- **Chase the "Almost there" nudges** on the Dashboard — they surface the badges you're closest to earning, so you always have a next goal.
+- **Customise how the AI generates content (advanced).** Drop a file in `backend/prompts/custom/` (e.g. `quiz.md`, `flashcards.md`, `workshop_lesson.md`) to override the built-in prompt for that mode. Changes apply on the next generation — no restart needed. See `backend/prompts/README.md` for the available variables.
 
 ---
 

@@ -27,6 +27,7 @@ from typing import Literal, Optional
 import ollama
 
 from backend.config import get_settings
+from backend.services import prompt_loader
 from backend.services.vector_db import vector_db
 
 logger = logging.getLogger("cognivault.quiz")
@@ -196,42 +197,16 @@ def _build_prompt(
 
     diff_note = _DIFFICULTY_GUIDANCE[difficulty]
     types_csv = ", ".join(t for t in question_types)
+    type_descriptions_block = "- " + "\n- ".join(type_descriptions)
 
-    return (
-        "You generate quizzes from study material. Output ONLY a single JSON "
-        "object — no prose, no markdown fences, no text outside the JSON.\n\n"
-        f"DIFFICULTY: {difficulty}. {diff_note}\n"
-        f"NUMBER OF QUESTIONS: EXACTLY {num_questions}. This is a hard requirement — "
-        f"the questions array MUST contain exactly {num_questions} elements, no more, no fewer. "
-        f"If the material seems thin, re-read it and find more angles to question — "
-        f"definitions, applications, comparisons, edge cases — but produce all "
-        f"{num_questions} questions.\n"
-        f"ALLOWED QUESTION TYPES: {types_csv}.\n\n"
-        "QUESTION TYPE SHAPES:\n- "
-        + "\n- ".join(type_descriptions) + "\n\n"
-        "OUTPUT SCHEMA:\n"
-        "{\n"
-        '  "questions": [\n'
-        "    {\n"
-        '      "type": one of [' + types_csv + '],\n'
-        '      "question": the question text (string, no leading numbering),\n'
-        '      "options": array of strings (length 4 for mcq, length 2 for true_false),\n'
-        '      "correct_index": integer index into options (0-based),\n'
-        '      "explanation": 1-2 sentence explanation of the correct answer (string)\n'
-        "    },\n"
-        f"    ... exactly {num_questions} entries\n"
-        "  ]\n"
-        "}\n\n"
-        "RULES:\n"
-        "- Base every question on the source material below — do not invent facts.\n"
-        "- Make incorrect MCQ options plausible but clearly wrong on close reading.\n"
-        "- Vary the position of the correct answer across questions.\n"
-        "- Do not number the questions.\n"
-        "- Output MUST be parseable by JSON.parse with no preprocessing.\n"
-        f"- The questions array MUST contain exactly {num_questions} entries.\n\n"
-        "SOURCE MATERIAL:\n"
-        f"{context_section}\n\n"
-        f"Now emit the JSON object with EXACTLY {num_questions} questions."
+    return prompt_loader.render(
+        "quiz",
+        difficulty=difficulty,
+        diff_note=diff_note,
+        num_questions=num_questions,
+        types_csv=types_csv,
+        type_descriptions=type_descriptions_block,
+        context=context_section,
     )
 
 

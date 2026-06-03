@@ -26,6 +26,7 @@ from typing import Optional
 import ollama
 
 from backend.config import get_settings
+from backend.services import prompt_loader
 from backend.services.vector_db import vector_db
 
 logger = logging.getLogger("cognivault.mindmap")
@@ -100,30 +101,14 @@ def _build_prompt(chunks: list[dict]) -> str:
     for i, c in enumerate(chunks, 1):
         text = (c.get("content") or c.get("text") or "")[:_MAX_CHUNK_CHARS]
         blocks.append(f"[Source {i}: {c.get('source', 'unknown')}]\n{text}")
-    return (
-        "You design a concept mindmap from study material. Output ONLY a single "
-        "JSON object — no prose, no markdown fences.\n\n"
-        "OUTPUT SCHEMA:\n"
-        "{\n"
-        '  "label": short title for the central concept (max 6 words),\n'
-        '  "children": [\n'
-        f'    {{ "label": "...", "children": [{{ "label": "..." }}, ...] }},\n'
-        f'    ... (between {_MIN_L1} and {_MAX_L1} entries)\n'
-        "  ]\n"
-        "}\n\n"
-        "RULES:\n"
-        "- The root `label` summarises the whole material.\n"
-        f"- The top-level branches array MUST have {_MIN_L1}-{_MAX_L1} entries: "
-        "  the main themes / categories of the material.\n"
-        f"- Each branch MUST have {_MIN_L2}-{_MAX_L2} children: concrete sub-topics, "
-        "  examples, or key terms under that theme.\n"
-        f"- Every label is short and scannable (max {_MAX_LABEL_CHARS} chars). "
-        "  Aim for 2-5 words. Capitalise like a title.\n"
-        "- No repeated labels at the same level.\n"
-        "- Ground every node in the source material — do not invent topics.\n\n"
-        "SOURCE MATERIAL:\n"
-        + "\n\n".join(blocks)
-        + "\n\nNow emit the JSON object."
+    return prompt_loader.render(
+        "mindmap",
+        min_l1=_MIN_L1,
+        max_l1=_MAX_L1,
+        min_l2=_MIN_L2,
+        max_l2=_MAX_L2,
+        max_label_chars=_MAX_LABEL_CHARS,
+        context="\n\n".join(blocks),
     )
 
 

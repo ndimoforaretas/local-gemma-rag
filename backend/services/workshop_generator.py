@@ -28,6 +28,7 @@ from typing import Literal, Optional
 import ollama
 
 from backend.config import get_settings
+from backend.services import prompt_loader
 from backend.services.vector_db import vector_db
 
 logger = logging.getLogger("cognivault.workshop")
@@ -133,28 +134,12 @@ def _build_outline_prompt(
     for i, c in enumerate(chunks, 1):
         text = (c.get("content") or c.get("text") or "")[:_MAX_CHUNK_CHARS]
         context_blocks.append(f"[Source {i}: {c.get('source', 'unknown')}]\n{text}")
-    return (
-        "You design a structured workshop from study material. "
-        "Output ONLY a JSON object. No prose, no markdown fences.\n\n"
-        f"DIFFICULTY: {difficulty}. {_DIFF_NOTE[difficulty]}\n"
-        f"NUMBER OF LESSONS: EXACTLY {num_lessons}.\n\n"
-        "OUTPUT SCHEMA:\n"
-        "{\n"
-        '  "title": short engaging workshop title (string),\n'
-        '  "summary": 2-3 sentence overview of what the workshop covers,\n'
-        '  "key_points": array of 3-5 bullet strings — main topics covered,\n'
-        '  "objectives": array of 3-5 bullet strings — what the learner will be able to do after,\n'
-        f'  "lessons": array of EXACTLY {num_lessons} objects, each {{"title": str, "est_minutes": int 3-15}}\n'
-        "}\n\n"
-        "RULES:\n"
-        "- Ground every part in the source material below — do not invent topics.\n"
-        "- Lesson order should build progressively (foundations first, advanced last).\n"
-        "- Lesson titles should be concise and action/topic oriented.\n"
-        "- est_minutes is a realistic reading-time estimate for that lesson.\n"
-        f"- The lessons array MUST contain exactly {num_lessons} items.\n\n"
-        "SOURCE MATERIAL:\n"
-        + "\n\n".join(context_blocks)
-        + "\n\nNow emit the JSON object."
+    return prompt_loader.render(
+        "workshop_outline",
+        difficulty=difficulty,
+        diff_note=_DIFF_NOTE[difficulty],
+        num_lessons=num_lessons,
+        context="\n\n".join(context_blocks),
     )
 
 
@@ -312,40 +297,19 @@ def _build_lesson_prompt(**kw) -> str:
     other_lessons = "\n".join(
         f"  {i + 1}. {t}" for i, t in enumerate(kw["all_lesson_titles"]) if i != kw["lesson_idx"]
     )
-    return (
-        "You write a single workshop lesson as well-structured Markdown. "
-        "Output ONLY the lesson body — no preamble, no acknowledgment of the source material, "
-        "no offers to clarify or answer follow-up questions, no <think> or XML tags, no JSON. "
-        "Your response MUST start with the exact heading line `# " + kw["lesson_title"] + "` "
-        "and nothing before it. Your response MUST end after the last Self-check question — "
-        "do NOT add 'If you have any questions…', 'Let me know…', 'Feel free to ask…', or "
-        "any other chat-style outro.\n\n"
-        f"WORKSHOP: {kw['workshop_title']}\n"
-        f"WORKSHOP SUMMARY: {kw['workshop_summary']}\n"
-        f"DIFFICULTY: {kw['difficulty']}. {_DIFF_NOTE[kw['difficulty']]}\n\n"
-        f"KEY POINTS:\n- " + "\n- ".join(kw["key_points"]) + "\n\n"
-        f"LEARNING OBJECTIVES:\n- " + "\n- ".join(kw["objectives"]) + "\n\n"
-        f"OTHER LESSONS IN THIS WORKSHOP (avoid duplicating their content):\n{other_lessons}\n\n"
-        f"YOUR LESSON ({kw['lesson_idx'] + 1} of {len(kw['all_lesson_titles'])}): "
-        f"{kw['lesson_title']}\n\n"
-        "STRUCTURE THIS LESSON AS:\n"
-        f"# {kw['lesson_title']}\n"
-        "## Introduction\n"
-        "(1-2 short paragraphs orienting the reader)\n\n"
-        "## Core content\n"
-        "(The body — multiple sections / subsections as needed, with examples and "
-        "code blocks where helpful)\n\n"
-        "## Key takeaways\n"
-        "(Bulleted list, 3-5 items)\n\n"
-        "## Self-check\n"
-        "(2-3 short reflective questions the reader can ponder — no answers given)\n\n"
-        "RULES:\n"
-        "- Ground every claim in the source material below.\n"
-        "- Stay tightly focused on YOUR lesson's title — leave other topics to other lessons.\n"
-        "- Use Markdown features: headings, bullets, **bold**, `inline code`, and ```fenced``` blocks.\n"
-        "- Aim for substantial but readable: roughly the est_minutes worth of content.\n\n"
-        "SOURCE MATERIAL:\n"
-        + "\n\n".join(context_blocks)
+    return prompt_loader.render(
+        "workshop_lesson",
+        lesson_title=kw["lesson_title"],
+        workshop_title=kw["workshop_title"],
+        workshop_summary=kw["workshop_summary"],
+        difficulty=kw["difficulty"],
+        diff_note=_DIFF_NOTE[kw["difficulty"]],
+        key_points="- " + "\n- ".join(kw["key_points"]),
+        objectives="- " + "\n- ".join(kw["objectives"]),
+        other_lessons=other_lessons,
+        lesson_number=kw["lesson_idx"] + 1,
+        total_lessons=len(kw["all_lesson_titles"]),
+        context="\n\n".join(context_blocks),
     )
 
 
