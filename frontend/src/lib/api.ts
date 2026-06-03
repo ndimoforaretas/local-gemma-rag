@@ -284,6 +284,7 @@ export const api = {
       answers: (number | null)[];
       completed?: boolean;
       score_pct?: number | null;
+      style?: "practice" | "exam";
     },
   ) => {
     const resp = await fetch(`${API_BASE}/api/study/quiz/saved/${id}/progress`, {

@@ -17,6 +17,7 @@ import {
   type Difficulty,
   type QuestionCount,
   type QuestionType,
+  type QuizStyle,
   type TimeLimit,
 } from "./types";
 
@@ -31,6 +32,8 @@ export interface QuizConfigPanelProps {
   toggleType: (t: QuestionType) => void;
   timeLimit: TimeLimit;
   setTimeLimit: (t: TimeLimit) => void;
+  style: QuizStyle;
+  setStyle: (s: QuizStyle) => void;
   onStart: () => void;
   isLoading: boolean;
   error: string | null;
@@ -80,6 +83,30 @@ export function QuizConfigPanel(p: QuizConfigPanelProps) {
                 {n} questions
               </PillButton>
             ))}
+          </div>
+        </Section>
+
+        <Section
+          label="Mode"
+          hint={
+            p.style === "exam"
+              ? "Exam — answers stay hidden until you submit. Jump between questions, change answers, and flag ones to revisit."
+              : "Practice — see whether each answer is right the moment you submit it, with the explanation."
+          }
+        >
+          <div className="flex flex-wrap gap-2.5">
+            <PillButton
+              active={p.style === "practice"}
+              onClick={() => p.setStyle("practice")}
+            >
+              Practice
+            </PillButton>
+            <PillButton
+              active={p.style === "exam"}
+              onClick={() => p.setStyle("exam")}
+            >
+              Exam
+            </PillButton>
           </div>
         </Section>
 

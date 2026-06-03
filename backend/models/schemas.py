@@ -168,6 +168,7 @@ class QuizProgress(BaseModel):
     answers: list[Optional[int]] = []
     completed: bool = False
     score_pct: Optional[int] = None
+    style: str = "practice"  # "practice" | "exam"
 
 
 class SavedQuizListItem(BaseModel):

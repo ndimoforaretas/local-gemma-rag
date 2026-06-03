@@ -364,6 +364,7 @@ export interface QuizProgress {
   answers: (number | null)[];
   completed: boolean;
   score_pct: number | null;
+  style: "practice" | "exam";
 }
 
 export interface SavedQuizListItem {

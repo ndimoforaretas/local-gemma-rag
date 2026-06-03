@@ -737,12 +737,15 @@ def save_quiz_progress(
     answers: list[Optional[int]],
     completed: bool = False,
     score_pct: Optional[int] = None,
+    style: str = "practice",
 ) -> bool:
     """
     Upsert attempt state for a saved quiz. True if the quiz exists.
 
     ``completed=True`` (with ``score_pct``) marks a finished attempt so the quiz
     stays revisitable as a result, instead of resetting on the next open.
+    ``style`` ("practice" | "exam") is remembered so a resumed quiz reopens in
+    the same play mode.
     """
     import json as _json
 
@@ -753,6 +756,7 @@ def save_quiz_progress(
             "answers": answers,
             "completed": completed,
             "score_pct": score_pct,
+            "style": style,
         }
     )
     with _write_lock:

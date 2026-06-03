@@ -14,6 +14,7 @@ import type {
   QuestionType,
   QuizPhase,
   QuizQuestion,
+  QuizStyle,
   TimeLimit,
 } from "./types";
 import { useQuizPersistence } from "./useQuizPersistence";
@@ -27,6 +28,10 @@ export function useQuiz() {
   const [count, setCount] = useState<QuestionCount>(5);
   const [types, setTypes] = useState<QuestionType[]>(["mcq", "true_false"]);
   const [timeLimit, setTimeLimit] = useState<TimeLimit>(0); // minutes; 0 = none
+  const [style, setStyle] = useState<QuizStyle>("practice");
+
+  // Exam mode: questions the user flagged to revisit before submitting.
+  const [flagged, setFlagged] = useState<Set<number>>(() => new Set());
 
   // ── Timer ────────────────────────────────────────────────────────────
   // Absolute deadline (ms epoch) for a timed quiz, and the live remaining ms.
@@ -67,12 +72,17 @@ export function useQuiz() {
     // (survives restarts / other devices). Best-effort; never blocks the quiz.
     if (activeQuizId != null) {
       api
-        .saveQuizProgress(activeQuizId, { current, correct_count: correctCount, answers })
+        .saveQuizProgress(activeQuizId, {
+          current,
+          correct_count: correctCount,
+          answers,
+          style,
+        })
         .catch(() => undefined);
     }
     // savePersisted is stable enough — no need to include in deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, questions, current, correctCount, answers]);
+  }, [phase, questions, current, correctCount, answers, style]);
 
   const resumeFromSaved = () => {
     if (!savedQuiz) return;
@@ -111,8 +121,9 @@ export function useQuiz() {
     correctCount,
     answers,
     phase,
+    style,
   });
-  latest.current = { activeQuizId, current, correctCount, answers, phase };
+  latest.current = { activeQuizId, current, correctCount, answers, phase, style };
 
   useEffect(() => {
     // Unmount only: persist the in-progress attempt one last time.
@@ -124,6 +135,7 @@ export function useQuiz() {
             current: l.current,
             correct_count: l.correctCount,
             answers: l.answers,
+            style: l.style,
           })
           .catch(() => undefined);
       }
@@ -138,6 +150,7 @@ export function useQuiz() {
     setRevealed(false);
     setCorrectCount(0);
     setAnswers(new Array(qs.length).fill(null));
+    setFlagged(new Set());
     setPhase("playing");
   };
 
@@ -160,17 +173,26 @@ export function useQuiz() {
       setScope(quiz.scope);
       setDifficulty(quiz.difficulty);
       setActiveQuizId(quiz.id);
+      setFlagged(new Set());
+      setDeadline(null);
+      setRemainingMs(null);
 
       const p = quiz.progress;
       const total = quiz.questions.length;
+      // Restore the saved play style (instant-feedback practice vs exam).
+      const savedStyle: QuizStyle = p?.style === "exam" ? "exam" : "practice";
+      setStyle(savedStyle);
       const allAnswered =
         !!p && p.answers.length === total && p.answers.every((a) => a !== null);
+      // Always recompute correctness from the answers — robust for exam mode,
+      // where correct_count isn't tracked live as the user answers.
+      const correct = p ? countCorrect(p.answers, quiz.questions) : 0;
 
       if (p && p.completed) {
         // Already finished → show the saved result (revisitable, no re-record).
         setQuestions(quiz.questions);
         setAnswers(p.answers);
-        setCorrectCount(p.correct_count);
+        setCorrectCount(correct);
         setFinalScore(p.score_pct ?? null);
         setNewlyEarned([]);
         setSelected(null);
@@ -179,10 +201,10 @@ export function useQuiz() {
       } else if (p && allAnswered) {
         // All answered but never finalised → finish now: persist the completed
         // result (so it stays revisitable) and record the attempt once.
-        const scorePct = total ? Math.round((100 * p.correct_count) / total) : 0;
+        const scorePct = total ? Math.round((100 * correct) / total) : 0;
         setQuestions(quiz.questions);
         setAnswers(p.answers);
-        setCorrectCount(p.correct_count);
+        setCorrectCount(correct);
         setFinalScore(null);
         setNewlyEarned([]);
         setSelected(null);
@@ -191,10 +213,11 @@ export function useQuiz() {
         api
           .saveQuizProgress(quiz.id, {
             current: p.current,
-            correct_count: p.correct_count,
+            correct_count: correct,
             answers: p.answers,
             completed: true,
             score_pct: scorePct,
+            style: savedStyle,
           })
           .catch(() => undefined);
         qc.invalidateQueries({ queryKey: ["quizzes", "list"] });
@@ -202,18 +225,24 @@ export function useQuiz() {
         submit.mutate({
           difficulty: quiz.difficulty,
           num_questions: total,
-          correct_count: p.correct_count,
+          correct_count: correct,
           scope_used: quiz.scope.length > 0 ? quiz.scope : undefined,
         });
       } else if (p) {
         // Resume mid-quiz from the saved position.
         setQuestions(quiz.questions);
         setCurrent(p.current);
-        setCorrectCount(p.correct_count);
+        setCorrectCount(correct);
         setAnswers(p.answers);
-        const answeredHere = p.answers[p.current] ?? null;
-        setSelected(answeredHere);
-        setRevealed(answeredHere !== null);
+        if (savedStyle === "exam") {
+          // Exam: feedback is deferred, so never reveal on resume.
+          setSelected(p.answers[p.current] ?? null);
+          setRevealed(false);
+        } else {
+          const answeredHere = p.answers[p.current] ?? null;
+          setSelected(answeredHere);
+          setRevealed(answeredHere !== null);
+        }
         setPhase("playing");
       } else {
         resetPlayer(quiz.questions);
@@ -234,11 +263,22 @@ export function useQuiz() {
     },
   });
 
+  // Correct answers derived from the answer array — accurate in both practice
+  // (instant feedback) and exam (deferred) styles, regardless of what was
+  // tracked live.
+  const countCorrect = (ans: (number | null)[], qs: QuizQuestion[]): number =>
+    ans.reduce<number>(
+      (n, a, i) => n + (a != null && qs[i] && a === qs[i].correct_index ? 1 : 0),
+      0,
+    );
+
   // Finish the current attempt: persist a completed result + record the score.
-  // Shared by the normal "Next on the last question" path and timer expiry.
+  // Shared by the last-question Next, the exam "Submit", and timer expiry.
   const finishQuiz = () => {
     const total = questions.length;
-    const scorePct = total ? Math.round((100 * correctCount) / total) : 0;
+    const correct = countCorrect(answers, questions);
+    const scorePct = total ? Math.round((100 * correct) / total) : 0;
+    setCorrectCount(correct);
     clearPersisted();
     setDeadline(null);
     setRemainingMs(null);
@@ -246,10 +286,11 @@ export function useQuiz() {
       api
         .saveQuizProgress(activeQuizId, {
           current,
-          correct_count: correctCount,
+          correct_count: correct,
           answers,
           completed: true,
           score_pct: scorePct,
+          style,
         })
         .catch(() => undefined);
       qc.invalidateQueries({ queryKey: ["quizzes", "list"] });
@@ -258,7 +299,7 @@ export function useQuiz() {
     submit.mutate({
       difficulty,
       num_questions: total,
-      correct_count: correctCount,
+      correct_count: correct,
       scope_used: scope.length > 0 ? scope : undefined,
     });
   };
@@ -326,6 +367,46 @@ export function useQuiz() {
     }
   };
 
+  // ── Exam-style handlers (deferred feedback, free navigation) ──────────
+  // In exam mode the user can jump around, change answers, and flag
+  // questions; nothing is revealed until they submit the whole paper.
+
+  // Record (or change) the answer for the current question without revealing.
+  const selectExamAnswer = (idx: number) => {
+    setSelected(idx);
+    setAnswers((prev) => {
+      const next = [...prev];
+      next[current] = idx;
+      return next;
+    });
+  };
+
+  // Jump to a specific question (from the navigator grid or prev/next).
+  const goTo = (idx: number) => {
+    if (idx < 0 || idx >= questions.length) return;
+    setCurrent(idx);
+    setSelected(answers[idx] ?? null);
+    setRevealed(false);
+  };
+
+  const goPrev = () => goTo(current - 1);
+  const goNext = () => goTo(current + 1);
+
+  // Toggle whether a question is flagged for review. Guards against being
+  // called as an event handler (where the first arg would be a MouseEvent).
+  const toggleFlag = (idx?: number) => {
+    const target = typeof idx === "number" ? idx : current;
+    setFlagged((prev) => {
+      const next = new Set(prev);
+      if (next.has(target)) next.delete(target);
+      else next.add(target);
+      return next;
+    });
+  };
+
+  // Submit the whole exam → score it (correctness derived from answers).
+  const submitExam = () => finishQuiz();
+
   const resetPlayState = () => {
     clearPersisted();
     setActiveQuizId(null);
@@ -382,11 +463,14 @@ export function useQuiz() {
     count, setCount,
     types, toggleType,
     timeLimit, setTimeLimit,
+    style, setStyle,
     remainingMs,
     phase, questions, current, selected, revealed, correctCount, answers,
     finalScore, newlyEarned,
     generate, submit,
     startQuiz, pickOption, submitAnswer, nextQuestion, restart,
+    // Exam style (deferred feedback + free navigation)
+    flagged, selectExamAnswer, goTo, goPrev, goNext, toggleFlag, submitExam,
     // Library (saved quizzes)
     savedList, loadSaved, deleteSaved, startNew, backToLibrary,
     // Persistence

@@ -186,6 +186,7 @@ def save_quiz_progress(quiz_id: int, req: QuizProgress) -> dict:
         answers=req.answers,
         completed=req.completed,
         score_pct=req.score_pct,
+        style=req.style,
     )
     if not ok:
         raise HTTPException(status_code=404, detail="Quiz not found.")

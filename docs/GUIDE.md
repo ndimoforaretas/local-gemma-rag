@@ -157,11 +157,15 @@ Generates a quiz from your scoped documents — and **saves every quiz** so you 
 
 **Quiz library (landing):** Quiz Mode opens to a grid of your saved quizzes. Click any one to **replay** it, use the trash icon to delete it, or hit **New Quiz** to generate a fresh one. (Each quiz you generate is saved here automatically.)
 
-**Configuration:** difficulty (Beginner / Intermediate / Advanced) · count (5 / 10 / 20) · question types (Multiple Choice / True-False, multi-select) · **time limit** (None / 5 / 10 / 20 min).
+**Configuration:** difficulty (Beginner / Intermediate / Advanced) · count (5 / 10 / 20) · **mode** (Practice / Exam) · question types (Multiple Choice / True-False, multi-select) · **time limit** (None / 5 / 10 / 20 min).
+
+**Practice vs Exam:**
+- **Practice** — instant feedback. Submit each answer to see right/wrong and the explanation immediately, then move on. Best for learning.
+- **Exam** — deferred feedback. Answers stay hidden until you submit the whole paper. You can jump between questions freely, change any answer, and **flag** tricky ones to revisit. A question **navigator** grid shows at a glance what's answered, blank, or flagged. Best for self-testing under realistic conditions.
 
 **Timed quizzes:** pick a time limit to race the clock — a countdown shows at the top of the player (it turns red in the final minute), and the quiz **auto-submits** when time runs out. The timer is for a single sitting; leaving and resuming a quiz continues it untimed.
 
-**Player:** one question at a time. Click an option, hit **Submit answer** for instant feedback (correct/incorrect + explanation), then **Next question**. Final screen shows score + per-question recap.
+**Player:** Practice shows one question at a time — click an option, hit **Submit answer** for instant feedback, then **Next question**. Exam lets you move back and forth with **Back / Next** and the navigator, then **Submit exam** when you're ready. Both end on a score + per-question recap.
 
 **Leave & resume:** you can stop a quiz halfway and come back to it anytime. Your progress (answers + position) is saved automatically; the quiz shows an amber **"In progress · X/N answered · Resume"** badge in the library, and clicking it drops you right back where you left off. This survives app restarts and works across devices (it's saved on the backend, not just your browser).
 

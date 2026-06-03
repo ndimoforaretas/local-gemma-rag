@@ -125,7 +125,7 @@ export function WorkshopFinalQuiz({
           correctCount={correctCount}
           finalScore={finalScore}
           newlyEarned={newlyEarned}
-          onRetry={onBack}
+          exitLabel="Back to workshop"
           onExit={onBack}
         />
       )}

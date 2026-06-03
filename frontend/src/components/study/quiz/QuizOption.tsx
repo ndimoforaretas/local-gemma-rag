@@ -35,7 +35,7 @@ export function QuizOption({
               ? "bg-rose-500/10 border-rose-500/60 text-rose-700 dark:text-rose-300"
               : isSelected
                 ? "bg-[#a855f7]/10 border-[#a855f7]/60 text-ink-strong"
-                : "bg-transparent border-[#c2c6d6] dark:border-[#424754] hover:border-[#a855f7]/40 text-ink-strong"
+                : "bg-transparent border-[#c2c6d6] dark:border-[#424754] hover:bg-[#a855f7]/10 hover:border-[#a855f7]/50 text-ink-strong"
         }
         ${revealed ? "cursor-default" : "cursor-pointer"}
       `}
