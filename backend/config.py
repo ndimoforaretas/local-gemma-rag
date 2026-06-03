@@ -24,6 +24,13 @@ class Settings(BaseSettings):
     # Set to False to disable Gemma 4 thinking mode (faster, no reasoning panel).
     thinking_mode: bool = True
 
+    # Per-chat "working memory" budget, in characters (~4 chars ≈ 1 token).
+    # Older user/assistant turn-pairs are dropped once a conversation exceeds
+    # this. Gemma 4's window is 128K tokens; we keep a conservative slice for
+    # history so most of the window stays free for retrieved chunks + the answer.
+    # 48,000 chars ≈ 12,000 tokens ≈ ~8,000 words of conversation.
+    max_history_chars: int = 48_000
+
     agent_system_prompt: str = (
         "You are Gemma CogniVault AI, a precise technical assistant that answers questions "
         "using the user's indexed documents.\n"

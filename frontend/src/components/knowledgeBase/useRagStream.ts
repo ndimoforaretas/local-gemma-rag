@@ -18,6 +18,7 @@ import { computeScopeLabel } from "./scopeLabel";
 import {
   cleanAssistantText,
   consumeRagStream,
+  type MemoryPayload,
   type MetadataPayload,
 } from "./ragStream";
 import type {
@@ -46,6 +47,8 @@ export interface UseRagStreamArgs {
   updateSessionContextItems: (sessionId: string, items: ContextItem[]) => void;
   isNewChatRef: React.MutableRefObject<boolean>;
   saveHistory: (sessions: ChatSession[]) => void;
+  /** Record the AI's working-memory usage reported at the end of a response. */
+  recordMemory: (sessionId: string, memory: MemoryPayload) => void;
 }
 
 export function useRagStream(args: UseRagStreamArgs) {
@@ -188,6 +191,7 @@ export function useRagStream(args: UseRagStreamArgs) {
             return next;
           });
         },
+        onMemory: (mem) => args.recordMemory(sessionId, mem),
       });
     } catch (e) {
       console.error(e);

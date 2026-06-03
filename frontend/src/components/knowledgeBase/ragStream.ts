@@ -20,7 +20,7 @@ export const MAX_TIMEOUT_RETRIES = 2;
 export type StreamMode = "unknown" | "ndjson" | "plain";
 
 export interface RagStreamEvent {
-  type: "thinking" | "text" | "metadata" | "error";
+  type: "thinking" | "text" | "metadata" | "memory" | "error";
   data: unknown;
 }
 
@@ -30,6 +30,16 @@ export interface MetadataPayload {
   content?: string;
   text?: string;
   page?: number;
+}
+
+/** Working-memory usage reported once per response (end of the stream). */
+export interface MemoryPayload {
+  /** Characters of conversation currently held in the AI's context. */
+  used_chars: number;
+  /** Budget before older turns start dropping. */
+  budget_chars: number;
+  /** True when the budget was exceeded this turn (older turns are dropping). */
+  trimmed: boolean;
 }
 
 /** Parse a single NDJSON line, or return null if it isn't valid JSON. */
@@ -79,6 +89,8 @@ export interface StreamCallbacks {
   onThinking: (text: string) => void;
   onText: (text: string) => void;
   onMetadata: (meta: MetadataPayload) => void;
+  /** Optional — working-memory usage emitted at the end of the response. */
+  onMemory?: (mem: MemoryPayload) => void;
 }
 
 /**
@@ -110,6 +122,8 @@ export async function consumeRagStream(
       callbacks.onText(String(event.data));
     } else if (event.type === "metadata" && event.data) {
       callbacks.onMetadata(event.data as MetadataPayload);
+    } else if (event.type === "memory" && event.data) {
+      callbacks.onMemory?.(event.data as MemoryPayload);
     } else if (event.type === "error") {
       console.error("RAG error:", event.data);
     }

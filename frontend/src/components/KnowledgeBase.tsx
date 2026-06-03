@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChatMessageList } from "./ChatMessageList";
 import { ChatInput } from "./ChatInput";
+import { ChatMemoryMeter } from "./ChatMemoryMeter";
 import { DocScopeFilter } from "./DocScopeFilter";
 import { ContextSidebar } from "./ContextSidebar";
 import { HistorySidebar } from "./HistorySidebar";
@@ -22,6 +23,7 @@ import { ContextSidebarDrawer } from "./knowledgeBase/ContextSidebarDrawer";
 import { useKBBridge } from "./knowledgeBase/useKBBridge";
 import { useRagStream } from "./knowledgeBase/useRagStream";
 import { api } from "../lib/api";
+import type { MemoryPayload } from "./knowledgeBase/ragStream";
 import type { ChatSession, ContextItem, Message } from "../types/api";
 
 export function KnowledgeBase() {
@@ -33,6 +35,10 @@ export function KnowledgeBase() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isContextOpen, setIsContextOpen] = useState(false);
   const [documentFilter, setDocumentFilter] = useState<string[]>([]);
+  // Per-session "working memory" usage, reported by the backend each response.
+  const [sessionMemory, setSessionMemory] = useState<
+    Record<string, MemoryPayload>
+  >({});
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<{
     id: string;
@@ -126,6 +132,8 @@ export function KnowledgeBase() {
     updateSessionContextItems,
     isNewChatRef,
     saveHistory: (next) => saveHistoryMutation.mutate(next),
+    recordMemory: (sessionId, mem) =>
+      setSessionMemory((prev) => ({ ...prev, [sessionId]: mem })),
   });
 
   // ── Derived state + scroll-to-bottom ───────────────────────────────
@@ -266,6 +274,9 @@ export function KnowledgeBase() {
         )}
 
         <div className="flex flex-col gap-2 shrink-0">
+          {activeSessionId && (
+            <ChatMemoryMeter memory={sessionMemory[activeSessionId]} />
+          )}
           <DocScopeFilter selected={documentFilter} onChange={setDocumentFilter} />
           <ChatInput
             input={rag.input}

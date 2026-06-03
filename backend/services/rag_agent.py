@@ -81,9 +81,10 @@ _session_locks: dict[str, asyncio.Lock] = {}
 _locks_meta_lock = asyncio.Lock()
 
 # Character budget for stored history.  Rough heuristic: 4 chars ≈ 1 token.
-# 24 000 chars ≈ 6 000 tokens — leaves the majority of the 128K context for
-# the current query, retrieved chunks, and generation.
-_MAX_HISTORY_CHARS = 24_000
+# Configurable via settings.max_history_chars; older turn-pairs are dropped once
+# a conversation exceeds it, leaving the rest of the 128K window for the current
+# query, retrieved chunks, and generation.
+_MAX_HISTORY_CHARS = settings.max_history_chars
 
 # ── Attachment helpers ────────────────────────────────────────────────────────
 
@@ -121,27 +122,90 @@ async def _get_session_lock(session_id: str) -> asyncio.Lock:
         return _session_locks[session_id]
 
 
+def _history_char_count(history: list) -> int:
+    """Total characters of message text in a Strands/Bedrock history list."""
+    total = 0
+    for msg in history:
+        content = msg.get("content", "")
+        if isinstance(content, str):
+            total += len(content)
+        elif isinstance(content, list):
+            for block in content:
+                if isinstance(block, dict):
+                    total += len(str(block.get("text", "")))
+    return total
+
+
 def _trim_history(history: list) -> list:
     """
     Drop the oldest user/assistant turn-pairs until the total character count
     of the history fits within _MAX_HISTORY_CHARS.
     """
-    def _char_count(h: list) -> int:
-        total = 0
-        for msg in h:
-            content = msg.get("content", "")
-            if isinstance(content, str):
-                total += len(content)
-            elif isinstance(content, list):
-                for block in content:
-                    if isinstance(block, dict):
-                        total += len(str(block.get("text", "")))
-        return total
-
     # Drop pairs (user + assistant) from the front until we fit.
-    while _char_count(history) > _MAX_HISTORY_CHARS and len(history) >= 2:
+    while _history_char_count(history) > _MAX_HISTORY_CHARS and len(history) >= 2:
         history = history[2:]
     return history
+
+
+# Path to the frontend-persisted chat log (mirrors backend/routers/history.py).
+# Relative to the server's working directory, like the history router.
+_HISTORY_FILE = "chat_history.json"
+
+
+def _rebuild_history_from_disk(session_id: str) -> list:
+    """
+    Reconstruct a session's agent conversation history from the
+    frontend-persisted ``chat_history.json`` after a backend restart (the
+    in-memory ``_session_histories`` dict starts empty, so multi-turn memory
+    would otherwise be lost).
+
+    Best-effort: returns ``[]`` on any problem. The in-flight user message (the
+    current query — passed to the agent separately) is excluded by dropping a
+    trailing unanswered user-role message, since the frontend may already have
+    persisted it before this request is served.
+    """
+    try:
+        if not os.path.exists(_HISTORY_FILE):
+            return []
+        with open(_HISTORY_FILE, "r") as f:
+            sessions = json.load(f)
+        if not isinstance(sessions, list):
+            return []
+
+        session = next(
+            (
+                s
+                for s in sessions
+                if isinstance(s, dict) and s.get("id") == session_id
+            ),
+            None,
+        )
+        if not session:
+            return []
+
+        rebuilt: list = []
+        for msg in session.get("messages", []):
+            if not isinstance(msg, dict):
+                continue
+            content = msg.get("content")
+            if not isinstance(content, str) or not content.strip():
+                continue  # skip empty placeholders / non-text payloads
+            role = msg.get("role")
+            if role == "user":
+                rebuilt.append({"role": "user", "content": [{"text": content}]})
+            elif role == "ai":
+                rebuilt.append({"role": "assistant", "content": [{"text": content}]})
+
+        # Drop a trailing unanswered user turn (the in-flight current query).
+        if rebuilt and rebuilt[-1]["role"] == "user":
+            rebuilt.pop()
+
+        return _trim_history(rebuilt)
+    except Exception:
+        logger.exception(
+            "Failed to rebuild history from disk for session %s", session_id
+        )
+        return []
 
 
 async def _stream_thinking(
@@ -421,6 +485,15 @@ async def run_rag_stream(
     lock = await _get_session_lock(sid)
 
     async with lock:
+        # After a restart the in-memory history is empty. Rebuild this session's
+        # context once from the frontend-persisted chat log so multi-turn memory
+        # survives backend restarts (single source of truth = chat_history.json).
+        # Only for real sessions, and only on the first request that touches them.
+        if sid != "__anonymous__" and sid not in _session_histories:
+            rebuilt = _rebuild_history_from_disk(sid)
+            if rebuilt:
+                _session_histories[sid] = rebuilt
+
         # Rewind history when the user edits a message or regenerates a response.
         if trim_history_to_turns is not None:
             stored = _session_histories.get(sid)
@@ -480,6 +553,16 @@ async def run_rag_stream(
                         yield f'{json.dumps({"type": "metadata", "data": all_docs[emitted_docs]})}\n'
                         emitted_docs += 1
                     yield f'{json.dumps({"type": "text", "data": delta_text})}\n'
+
+            # Stream finished — report this session's working-memory usage so the
+            # UI can render a fill meter and warn once older turns start dropping
+            # out of context. ``used`` is the pre-trim size (so it can climb to
+            # 100%); ``trimmed`` flags that the budget was exceeded this turn.
+            final_msgs = list(getattr(agent, "messages", []))
+            used = _history_char_count(final_msgs)
+            yield (
+                f'{json.dumps({"type": "memory", "data": {"used_chars": used, "budget_chars": _MAX_HISTORY_CHARS, "trimmed": used > _MAX_HISTORY_CHARS}})}\n'
+            )
 
         except Exception:
             logger.exception("Error in RAG stream for query: %s", query[:200])

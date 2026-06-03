@@ -95,6 +95,10 @@ The right panel shows **every chunk** the AI cited in its last answer. Each entr
 
 The clock icon (top right) toggles the history sidebar. Every conversation is saved automatically; click any session to resume it. Use the trash icon to delete a session.
 
+**Memory survives restarts.** The AI's working memory of a conversation is rebuilt from your saved history the first time you message a chat after restarting the app — so it still remembers earlier turns in that chat. (Each chat stays independent; there's no cross-chat memory.)
+
+**Working-memory meter.** Above the message box, a slim **Working memory** bar shows how much of the current chat the AI is actively holding in context (roughly the last ~8,000 words). It fills as the conversation grows and turns amber as it gets near the limit. Once a chat is long enough that the **oldest** messages start dropping out of context, the bar turns red with a note — that's your cue to **start a new chat** if you need the AI to remember everything. (Power users: the budget is `max_history_chars` in the backend settings.)
+
 ### Editing and regenerating
 
 - **Edit a user message** → the AI re-answers with the edited text; later turns are discarded.
