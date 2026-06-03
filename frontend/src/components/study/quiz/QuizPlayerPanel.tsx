@@ -4,6 +4,7 @@
  */
 
 import { motion, AnimatePresence } from "framer-motion";
+import { Timer } from "lucide-react";
 import { QuizOption } from "./QuizOption";
 import type { QuizQuestion } from "./types";
 
@@ -13,9 +14,18 @@ export interface QuizPlayerPanelProps {
   total: number;
   selected: number | null;
   revealed: boolean;
+  /** Milliseconds remaining on the timer; null/omitted = untimed. */
+  remainingMs?: number | null;
   onPick: (i: number) => void;
   onSubmit: () => void;
   onNext: () => void;
+}
+
+function formatMMSS(ms: number): string {
+  const total = Math.ceil(ms / 1000);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 export function QuizPlayerPanel({
@@ -24,14 +34,30 @@ export function QuizPlayerPanel({
   total,
   selected,
   revealed,
+  remainingMs = null,
   onPick,
   onSubmit,
   onNext,
 }: QuizPlayerPanelProps) {
   const progressPct = ((current + (revealed ? 1 : 0)) / total) * 100;
+  const urgent = remainingMs != null && remainingMs <= 60_000;
 
   return (
     <div className="space-y-5">
+      {remainingMs != null && (
+        <div className="flex justify-end">
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold tabular-nums ${
+              urgent
+                ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 animate-pulse"
+                : "bg-[#a855f7]/15 text-[#a855f7] dark:text-[#ddb7ff]"
+            }`}
+          >
+            <Timer size={14} /> {formatMMSS(remainingMs)}
+          </span>
+        </div>
+      )}
+
       <ProgressBar current={current + 1} total={total} pct={progressPct} />
 
       <AnimatePresence mode="wait">

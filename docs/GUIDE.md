@@ -157,7 +157,9 @@ Generates a quiz from your scoped documents — and **saves every quiz** so you 
 
 **Quiz library (landing):** Quiz Mode opens to a grid of your saved quizzes. Click any one to **replay** it, use the trash icon to delete it, or hit **New Quiz** to generate a fresh one. (Each quiz you generate is saved here automatically.)
 
-**Configuration:** difficulty (Beginner / Intermediate / Advanced) · count (5 / 10 / 20) · question types (Multiple Choice / True-False, multi-select).
+**Configuration:** difficulty (Beginner / Intermediate / Advanced) · count (5 / 10 / 20) · question types (Multiple Choice / True-False, multi-select) · **time limit** (None / 5 / 10 / 20 min).
+
+**Timed quizzes:** pick a time limit to race the clock — a countdown shows at the top of the player (it turns red in the final minute), and the quiz **auto-submits** when time runs out. The timer is for a single sitting; leaving and resuming a quiz continues it untimed.
 
 **Player:** one question at a time. Click an option, hit **Submit answer** for instant feedback (correct/incorrect + explanation), then **Next question**. Final screen shows score + per-question recap.
 

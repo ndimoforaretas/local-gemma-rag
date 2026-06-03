@@ -8,10 +8,10 @@
  */
 
 import { useState } from "react";
-import { Download, FileText, Printer } from "lucide-react";
+import { Download, FileText, FileDown } from "lucide-react";
 import {
   downloadMarkdown,
-  printAsPdf,
+  downloadPdf,
   type ExportContent,
 } from "./quizExport";
 import type { QuizQuestion } from "./types";
@@ -73,12 +73,12 @@ export function QuizExportMenu({ questions }: { questions: QuizQuestion[] }) {
         </button>
         <button
           type="button"
-          onClick={() => printAsPdf(questions, content)}
-          title="Save as PDF via the browser print dialog"
-          aria-label="Save as PDF via the browser print dialog"
+          onClick={() => void downloadPdf(questions, content)}
+          title="Download as a PDF file"
+          aria-label="Download as a PDF file"
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#a855f7] hover:bg-[#9333ea] text-white text-sm font-medium transition-colors"
         >
-          <Printer size={14} /> PDF
+          <FileDown size={14} /> PDF
         </button>
       </div>
     </div>

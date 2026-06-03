@@ -14,6 +14,7 @@ import type {
   QuestionType,
   QuizPhase,
   QuizQuestion,
+  TimeLimit,
 } from "./types";
 import { useQuizPersistence } from "./useQuizPersistence";
 
@@ -25,6 +26,12 @@ export function useQuiz() {
   const [difficulty, setDifficulty] = useState<Difficulty>("beginner");
   const [count, setCount] = useState<QuestionCount>(5);
   const [types, setTypes] = useState<QuestionType[]>(["mcq", "true_false"]);
+  const [timeLimit, setTimeLimit] = useState<TimeLimit>(0); // minutes; 0 = none
+
+  // ── Timer ────────────────────────────────────────────────────────────
+  // Absolute deadline (ms epoch) for a timed quiz, and the live remaining ms.
+  const [deadline, setDeadline] = useState<number | null>(null);
+  const [remainingMs, setRemainingMs] = useState<number | null>(null);
 
   // ── Playing ──────────────────────────────────────────────────────────
   // Landing on the library (saved quizzes) view.
@@ -139,6 +146,8 @@ export function useQuiz() {
     onSuccess: (data) => {
       setActiveQuizId(data.quiz_id || null);
       resetPlayer(data.questions);
+      // Start the countdown if the user picked a time limit (timed practice).
+      setDeadline(timeLimit > 0 ? Date.now() + timeLimit * 60_000 : null);
       // A new quiz was auto-saved server-side; refresh the library.
       qc.invalidateQueries({ queryKey: ["quizzes", "list"] });
     },
@@ -225,6 +234,56 @@ export function useQuiz() {
     },
   });
 
+  // Finish the current attempt: persist a completed result + record the score.
+  // Shared by the normal "Next on the last question" path and timer expiry.
+  const finishQuiz = () => {
+    const total = questions.length;
+    const scorePct = total ? Math.round((100 * correctCount) / total) : 0;
+    clearPersisted();
+    setDeadline(null);
+    setRemainingMs(null);
+    if (activeQuizId != null) {
+      api
+        .saveQuizProgress(activeQuizId, {
+          current,
+          correct_count: correctCount,
+          answers,
+          completed: true,
+          score_pct: scorePct,
+        })
+        .catch(() => undefined);
+      qc.invalidateQueries({ queryKey: ["quizzes", "list"] });
+    }
+    setPhase("results");
+    submit.mutate({
+      difficulty,
+      num_questions: total,
+      correct_count: correctCount,
+      scope_used: scope.length > 0 ? scope : undefined,
+    });
+  };
+
+  // Tick the countdown once per second while a timed quiz is in play.
+  useEffect(() => {
+    if (phase !== "playing" || deadline == null) {
+      setRemainingMs(null);
+      return;
+    }
+    const tick = () => setRemainingMs(Math.max(0, deadline - Date.now()));
+    tick();
+    const iv = setInterval(tick, 1000);
+    return () => clearInterval(iv);
+  }, [phase, deadline]);
+
+  // Time's up → auto-submit whatever has been answered.
+  useEffect(() => {
+    if (phase === "playing" && deadline != null && remainingMs === 0) {
+      finishQuiz();
+    }
+    // finishQuiz reads current state; we intentionally key on remainingMs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remainingMs, phase, deadline]);
+
   const toggleType = (t: QuestionType) =>
     setTypes((prev) =>
       prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t],
@@ -263,30 +322,7 @@ export function useQuiz() {
       setSelected(null);
       setRevealed(false);
     } else {
-      // Quiz finished — persist a *completed* result (with score) so the quiz
-      // stays revisitable instead of resetting, then record the attempt.
-      const total = questions.length;
-      const scorePct = total ? Math.round((100 * correctCount) / total) : 0;
-      clearPersisted();
-      if (activeQuizId != null) {
-        api
-          .saveQuizProgress(activeQuizId, {
-            current,
-            correct_count: correctCount,
-            answers,
-            completed: true,
-            score_pct: scorePct,
-          })
-          .catch(() => undefined);
-        qc.invalidateQueries({ queryKey: ["quizzes", "list"] });
-      }
-      setPhase("results");
-      submit.mutate({
-        difficulty,
-        num_questions: total,
-        correct_count: correctCount,
-        scope_used: scope.length > 0 ? scope : undefined,
-      });
+      finishQuiz();
     }
   };
 
@@ -300,6 +336,8 @@ export function useQuiz() {
     setAnswers([]);
     setFinalScore(null);
     setNewlyEarned([]);
+    setDeadline(null);
+    setRemainingMs(null);
     generate.reset();
     submit.reset();
   };
@@ -316,6 +354,8 @@ export function useQuiz() {
       setNewlyEarned([]);
       api.clearQuizProgress(id).catch(() => undefined);
       qc.invalidateQueries({ queryKey: ["quizzes", "list"] });
+      setDeadline(null); // retakes of saved quizzes are untimed
+      setRemainingMs(null);
       resetPlayer(qs); // replay the same questions from Q1
     } else {
       resetPlayState();
@@ -341,6 +381,8 @@ export function useQuiz() {
     difficulty, setDifficulty,
     count, setCount,
     types, toggleType,
+    timeLimit, setTimeLimit,
+    remainingMs,
     phase, questions, current, selected, revealed, correctCount, answers,
     finalScore, newlyEarned,
     generate, submit,

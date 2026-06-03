@@ -37,3 +37,7 @@ export const DIFFICULTIES: { id: Difficulty; label: string; tone: string }[] = [
 
 export const COUNTS = [5, 10, 20] as const;
 export type QuestionCount = (typeof COUNTS)[number];
+
+// Optional quiz time limit, in minutes. 0 = no limit.
+export const TIME_LIMITS = [0, 5, 10, 20] as const;
+export type TimeLimit = (typeof TIME_LIMITS)[number];

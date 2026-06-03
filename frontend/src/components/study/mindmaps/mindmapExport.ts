@@ -139,14 +139,27 @@ export async function printAsPdf(mm: Mindmap, svgId: string): Promise<void> {
   cw.document.open();
   cw.document.write(html);
   cw.document.close();
-  iframe.onload = () => {
-    cw.focus();
-    cw.print();
+
+  let done = false;
+  const runPrint = () => {
+    if (done) return;
+    done = true;
+    try {
+      cw.focus();
+      cw.print();
+    } catch {
+      /* ignore */
+    }
     setTimeout(() => {
       if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
       URL.revokeObjectURL(pngUrl);
     }, 2000);
   };
+
+  // Prefer onload (waits for the embedded PNG), but fall back to a timeout
+  // since browsers don't reliably fire `load` after `document.write()`.
+  iframe.onload = runPrint;
+  setTimeout(runPrint, 500);
 }
 
 // ── Shared helpers ─────────────────────────────────────────────────────────

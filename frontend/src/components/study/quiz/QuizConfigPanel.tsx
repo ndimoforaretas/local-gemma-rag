@@ -13,9 +13,11 @@ import { ConfigHeader } from "./ConfigHeader";
 import {
   COUNTS,
   DIFFICULTIES,
+  TIME_LIMITS,
   type Difficulty,
   type QuestionCount,
   type QuestionType,
+  type TimeLimit,
 } from "./types";
 
 export interface QuizConfigPanelProps {
@@ -27,6 +29,8 @@ export interface QuizConfigPanelProps {
   setCount: (n: QuestionCount) => void;
   types: QuestionType[];
   toggleType: (t: QuestionType) => void;
+  timeLimit: TimeLimit;
+  setTimeLimit: (t: TimeLimit) => void;
   onStart: () => void;
   isLoading: boolean;
   error: string | null;
@@ -74,6 +78,23 @@ export function QuizConfigPanel(p: QuizConfigPanelProps) {
                 onClick={() => p.setCount(n)}
               >
                 {n} questions
+              </PillButton>
+            ))}
+          </div>
+        </Section>
+
+        <Section
+          label="Time limit"
+          hint="Optional — race the clock. The quiz auto-submits when time runs out."
+        >
+          <div className="flex flex-wrap gap-2.5">
+            {TIME_LIMITS.map((m) => (
+              <PillButton
+                key={m}
+                active={p.timeLimit === m}
+                onClick={() => p.setTimeLimit(m)}
+              >
+                {m === 0 ? "No limit" : `${m} min`}
               </PillButton>
             ))}
           </div>
