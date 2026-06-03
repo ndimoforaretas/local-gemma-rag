@@ -5,8 +5,8 @@
  * us unit-test the state machine independently if we ever need to.
  */
 
-import { useEffect, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../lib/api";
 import type {
   Difficulty,
@@ -18,6 +18,8 @@ import type {
 import { useQuizPersistence } from "./useQuizPersistence";
 
 export function useQuiz() {
+  const qc = useQueryClient();
+
   // ── Config ───────────────────────────────────────────────────────────
   const [scope, setScope] = useState<string[]>([]);
   const [difficulty, setDifficulty] = useState<Difficulty>("beginner");
@@ -25,13 +27,16 @@ export function useQuiz() {
   const [types, setTypes] = useState<QuestionType[]>(["mcq", "true_false"]);
 
   // ── Playing ──────────────────────────────────────────────────────────
-  const [phase, setPhase] = useState<QuizPhase>("config");
+  // Landing on the library (saved quizzes) view.
+  const [phase, setPhase] = useState<QuizPhase>("library");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
+  // id of the saved quiz currently being played (for server-side resume).
+  const [activeQuizId, setActiveQuizId] = useState<number | null>(null);
 
   // ── Results ──────────────────────────────────────────────────────────
   const [finalScore, setFinalScore] = useState<number | null>(null);
@@ -51,6 +56,13 @@ export function useQuiz() {
       correctCount,
       answers,
     });
+    // Mirror to the server so this quiz can be resumed later from the library
+    // (survives restarts / other devices). Best-effort; never blocks the quiz.
+    if (activeQuizId != null) {
+      api
+        .saveQuizProgress(activeQuizId, { current, correct_count: correctCount, answers })
+        .catch(() => undefined);
+    }
     // savePersisted is stable enough — no need to include in deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, questions, current, correctCount, answers]);
@@ -71,17 +83,138 @@ export function useQuiz() {
     setPhase("playing");
   };
 
+  // ── Saved-quiz library ───────────────────────────────────────────────
+  const savedList = useQuery({
+    queryKey: ["quizzes", "list"],
+    queryFn: () => api.listSavedQuizzes(),
+    // Always pull fresh progress when the library is shown again (the count
+    // could have changed in another mount of the player).
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+  });
+
+  // Mirror the latest play state into a ref so the unmount-flush below always
+  // saves the freshest progress — even if the user navigates away (which
+  // unmounts the whole mode) right after answering, before the per-change
+  // save settles.
+  const latest = useRef({
+    activeQuizId,
+    current,
+    correctCount,
+    answers,
+    phase,
+  });
+  latest.current = { activeQuizId, current, correctCount, answers, phase };
+
+  useEffect(() => {
+    // Unmount only: persist the in-progress attempt one last time.
+    return () => {
+      const l = latest.current;
+      if (l.phase === "playing" && l.activeQuizId != null) {
+        api
+          .saveQuizProgress(l.activeQuizId, {
+            current: l.current,
+            correct_count: l.correctCount,
+            answers: l.answers,
+          })
+          .catch(() => undefined);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const resetPlayer = (qs: QuizQuestion[]) => {
+    setQuestions(qs);
+    setCurrent(0);
+    setSelected(null);
+    setRevealed(false);
+    setCorrectCount(0);
+    setAnswers(new Array(qs.length).fill(null));
+    setPhase("playing");
+  };
+
   const generate = useMutation({
     mutationFn: api.generateQuiz,
     onSuccess: (data) => {
-      setQuestions(data.questions);
-      setCurrent(0);
-      setSelected(null);
-      setRevealed(false);
-      setCorrectCount(0);
-      setAnswers(new Array(data.questions.length).fill(null));
-      setPhase("playing");
+      setActiveQuizId(data.quiz_id || null);
+      resetPlayer(data.questions);
+      // A new quiz was auto-saved server-side; refresh the library.
+      qc.invalidateQueries({ queryKey: ["quizzes", "list"] });
     },
+  });
+
+  // Open a saved quiz — resume from saved progress if any, else start fresh.
+  const loadSaved = useMutation({
+    mutationFn: api.getSavedQuiz,
+    onSuccess: (quiz) => {
+      setScope(quiz.scope);
+      setDifficulty(quiz.difficulty);
+      setActiveQuizId(quiz.id);
+
+      const p = quiz.progress;
+      const total = quiz.questions.length;
+      const allAnswered =
+        !!p && p.answers.length === total && p.answers.every((a) => a !== null);
+
+      if (p && p.completed) {
+        // Already finished → show the saved result (revisitable, no re-record).
+        setQuestions(quiz.questions);
+        setAnswers(p.answers);
+        setCorrectCount(p.correct_count);
+        setFinalScore(p.score_pct ?? null);
+        setNewlyEarned([]);
+        setSelected(null);
+        setRevealed(false);
+        setPhase("results");
+      } else if (p && allAnswered) {
+        // All answered but never finalised → finish now: persist the completed
+        // result (so it stays revisitable) and record the attempt once.
+        const scorePct = total ? Math.round((100 * p.correct_count) / total) : 0;
+        setQuestions(quiz.questions);
+        setAnswers(p.answers);
+        setCorrectCount(p.correct_count);
+        setFinalScore(null);
+        setNewlyEarned([]);
+        setSelected(null);
+        setRevealed(false);
+        clearPersisted();
+        api
+          .saveQuizProgress(quiz.id, {
+            current: p.current,
+            correct_count: p.correct_count,
+            answers: p.answers,
+            completed: true,
+            score_pct: scorePct,
+          })
+          .catch(() => undefined);
+        qc.invalidateQueries({ queryKey: ["quizzes", "list"] });
+        setPhase("results");
+        submit.mutate({
+          difficulty: quiz.difficulty,
+          num_questions: total,
+          correct_count: p.correct_count,
+          scope_used: quiz.scope.length > 0 ? quiz.scope : undefined,
+        });
+      } else if (p) {
+        // Resume mid-quiz from the saved position.
+        setQuestions(quiz.questions);
+        setCurrent(p.current);
+        setCorrectCount(p.correct_count);
+        setAnswers(p.answers);
+        const answeredHere = p.answers[p.current] ?? null;
+        setSelected(answeredHere);
+        setRevealed(answeredHere !== null);
+        setPhase("playing");
+      } else {
+        resetPlayer(quiz.questions);
+      }
+    },
+  });
+
+  const deleteSaved = useMutation({
+    mutationFn: api.deleteSavedQuiz,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["quizzes", "list"] }),
   });
 
   const submit = useMutation({
@@ -130,21 +263,36 @@ export function useQuiz() {
       setSelected(null);
       setRevealed(false);
     } else {
-      // Quiz finished — clear localStorage so it doesn't reappear next visit.
+      // Quiz finished — persist a *completed* result (with score) so the quiz
+      // stays revisitable instead of resetting, then record the attempt.
+      const total = questions.length;
+      const scorePct = total ? Math.round((100 * correctCount) / total) : 0;
       clearPersisted();
+      if (activeQuizId != null) {
+        api
+          .saveQuizProgress(activeQuizId, {
+            current,
+            correct_count: correctCount,
+            answers,
+            completed: true,
+            score_pct: scorePct,
+          })
+          .catch(() => undefined);
+        qc.invalidateQueries({ queryKey: ["quizzes", "list"] });
+      }
       setPhase("results");
       submit.mutate({
         difficulty,
-        num_questions: questions.length,
+        num_questions: total,
         correct_count: correctCount,
         scope_used: scope.length > 0 ? scope : undefined,
       });
     }
   };
 
-  const restart = () => {
+  const resetPlayState = () => {
     clearPersisted();
-    setPhase("config");
+    setActiveQuizId(null);
     setQuestions([]);
     setSelected(null);
     setRevealed(false);
@@ -156,6 +304,38 @@ export function useQuiz() {
     submit.reset();
   };
 
+  // "Retry" from the results screen. With a saved quiz active, retake the SAME
+  // quiz from scratch (clearing its completed result); otherwise → config form.
+  const restart = () => {
+    if (activeQuizId != null && questions.length > 0) {
+      const qs = questions;
+      const id = activeQuizId;
+      clearPersisted();
+      submit.reset();
+      setFinalScore(null);
+      setNewlyEarned([]);
+      api.clearQuizProgress(id).catch(() => undefined);
+      qc.invalidateQueries({ queryKey: ["quizzes", "list"] });
+      resetPlayer(qs); // replay the same questions from Q1
+    } else {
+      resetPlayState();
+      setPhase("config");
+    }
+  };
+
+  // Open the new-quiz config form from the library.
+  const startNew = () => {
+    resetPlayState();
+    setPhase("config");
+  };
+
+  // Back to the saved-quiz library (refresh the list).
+  const backToLibrary = () => {
+    resetPlayState();
+    setPhase("library");
+    qc.invalidateQueries({ queryKey: ["quizzes", "list"] });
+  };
+
   return {
     scope, setScope,
     difficulty, setDifficulty,
@@ -165,6 +345,8 @@ export function useQuiz() {
     finalScore, newlyEarned,
     generate, submit,
     startQuiz, pickOption, submitAnswer, nextQuestion, restart,
+    // Library (saved quizzes)
+    savedList, loadSaved, deleteSaved, startNew, backToLibrary,
     // Persistence
     savedQuiz, resumeFromSaved, discardSaved: clearPersisted,
   };

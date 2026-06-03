@@ -32,8 +32,12 @@ from backend.models.schemas import (
     QuizGenerateRequest,
     QuizGenerateResponse,
     QuizQuestionOut,
+    QuizProgress,
     QuizSubmitRequest,
     QuizSubmitResponse,
+    SavedQuizListItem,
+    SavedQuizListResponse,
+    SavedQuizOut,
     WorkshopCreateRequest,
     WorkshopLessonOut,
     WorkshopListItem,
@@ -58,6 +62,19 @@ router = APIRouter(prefix="/api/study", tags=["Study"])
 _ALLOWED_QUESTION_TYPES = {"mcq", "true_false"}
 # Allowed quiz lengths per UI spec. Anything else 422s.
 _ALLOWED_QUESTION_COUNTS = {5, 10, 20}
+
+
+def _derive_quiz_title(scope: list[str] | None) -> str:
+    """A readable title for a saved quiz, derived from its document scope."""
+    import re
+
+    scope = scope or []
+    if len(scope) == 1:
+        stem = re.sub(r"\.[a-z0-9]+$", "", scope[0], flags=re.IGNORECASE)
+        return stem.replace("_", " ").replace("-", " ").strip().title() + " Quiz"
+    if len(scope) > 1:
+        return f"{len(scope)}-source Quiz"
+    return "Knowledge Base Quiz"
 
 
 @router.post("/quiz/generate", response_model=QuizGenerateResponse)
@@ -104,19 +121,89 @@ def generate_quiz(req: QuizGenerateRequest) -> QuizGenerateResponse:
             detail="The model did not return a usable quiz. Try again or change scope.",
         )
 
+    questions_out = [
+        QuizQuestionOut(
+            type=q.type,
+            question=q.question,
+            options=q.options,
+            correct_index=q.correct_index,
+            explanation=q.explanation,
+        )
+        for q in result.questions
+    ]
+
+    # Auto-save so the quiz is revisitable later (parity with the other modes).
+    # Best-effort: a persistence hiccup must not fail generation.
+    quiz_id = 0
+    try:
+        quiz_id = progress_tracker.create_quiz(
+            difficulty=req.difficulty,
+            scope=req.document_filter or [],
+            title=_derive_quiz_title(req.document_filter),
+            questions=[q.model_dump() for q in questions_out],
+        )
+    except Exception:
+        logger.exception("Saving generated quiz failed (non-fatal)")
+
     return QuizGenerateResponse(
-        questions=[
-            QuizQuestionOut(
-                type=q.type,
-                question=q.question,
-                options=q.options,
-                correct_index=q.correct_index,
-                explanation=q.explanation,
-            )
-            for q in result.questions
-        ],
+        questions=questions_out,
         source_chunks_used=result.source_chunks_used,
+        quiz_id=quiz_id,
     )
+
+
+@router.get("/quiz/list", response_model=SavedQuizListResponse)
+def list_saved_quizzes() -> SavedQuizListResponse:
+    return SavedQuizListResponse(
+        quizzes=[SavedQuizListItem(**q) for q in progress_tracker.list_quizzes()],
+    )
+
+
+@router.get("/quiz/saved/{quiz_id}", response_model=SavedQuizOut)
+def get_saved_quiz(quiz_id: int) -> SavedQuizOut:
+    quiz = progress_tracker.get_quiz(quiz_id)
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found.")
+    return SavedQuizOut(
+        id=quiz["id"],
+        created_at=quiz["created_at"],
+        difficulty=quiz["difficulty"],
+        scope=quiz["scope"],
+        title=quiz["title"],
+        question_count=quiz["question_count"],
+        questions=[QuizQuestionOut(**q) for q in quiz["questions"]],
+        progress=QuizProgress(**quiz["progress"]) if quiz.get("progress") else None,
+    )
+
+
+@router.put("/quiz/saved/{quiz_id}/progress", response_model=dict)
+def save_quiz_progress(quiz_id: int, req: QuizProgress) -> dict:
+    """Persist in-progress attempt state so the quiz can be resumed later."""
+    ok = progress_tracker.save_quiz_progress(
+        quiz_id,
+        current=req.current,
+        correct_count=req.correct_count,
+        answers=req.answers,
+        completed=req.completed,
+        score_pct=req.score_pct,
+    )
+    if not ok:
+        raise HTTPException(status_code=404, detail="Quiz not found.")
+    return {"status": "saved"}
+
+
+@router.delete("/quiz/saved/{quiz_id}/progress", response_model=dict)
+def clear_quiz_progress(quiz_id: int) -> dict:
+    """Clear in-progress state (called when a quiz is finished)."""
+    progress_tracker.clear_quiz_progress(quiz_id)
+    return {"status": "cleared"}
+
+
+@router.delete("/quiz/saved/{quiz_id}", response_model=dict)
+def delete_saved_quiz(quiz_id: int) -> dict:
+    if not progress_tracker.delete_quiz(quiz_id):
+        raise HTTPException(status_code=404, detail="Quiz not found.")
+    return {"status": "deleted"}
 
 
 @router.post("/quiz/submit", response_model=QuizSubmitResponse)

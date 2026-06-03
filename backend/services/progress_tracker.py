@@ -98,6 +98,33 @@ def _init_schema(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_quiz_finished_at
             ON quiz_attempts(finished_at);
 
+        -- Saved quizzes (revisitable, like the other modes) ----------------
+        CREATE TABLE IF NOT EXISTS quizzes (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at      REAL    NOT NULL,
+            difficulty      TEXT    NOT NULL,
+            scope_json      TEXT    NOT NULL,
+            title           TEXT    NOT NULL,
+            question_count  INTEGER NOT NULL,
+            -- In-progress state for resume: JSON {current, correct_count, answers}.
+            -- NULL = no in-progress attempt (fresh or just-finished).
+            progress_json   TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS quiz_questions (
+            quiz_id        INTEGER NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+            q_idx          INTEGER NOT NULL,
+            type           TEXT    NOT NULL,
+            question       TEXT    NOT NULL,
+            options_json   TEXT    NOT NULL,
+            correct_index  INTEGER NOT NULL,
+            explanation    TEXT    NOT NULL DEFAULT '',
+            PRIMARY KEY (quiz_id, q_idx)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_quizzes_created
+            ON quizzes(created_at);
+
         -- Workshop Creator (Mode 2) ----------------------------------------
         CREATE TABLE IF NOT EXISTS workshops (
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -162,6 +189,12 @@ def _init_schema(conn: sqlite3.Connection) -> None:
             ON mindmaps(created_at);
         """
     )
+    # Defensive migration: add quizzes.progress_json if an older DB created the
+    # table before this column existed. ALTER raises if the column is present,
+    # so we check first.
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(quizzes)").fetchall()}
+    if "progress_json" not in cols:
+        conn.execute("ALTER TABLE quizzes ADD COLUMN progress_json TEXT")
     conn.commit()
 
 
@@ -564,6 +597,202 @@ def delete_flashcard_deck(deck_id: int) -> bool:
             _init_schema(conn)
             cur = conn.cursor()
             cur.execute("DELETE FROM flashcard_decks WHERE id = ?", (deck_id,))
+            conn.commit()
+            return cur.rowcount > 0
+        finally:
+            conn.close()
+
+
+# ── Saved quizzes ────────────────────────────────────────────────────────────
+
+
+def create_quiz(
+    difficulty: str,
+    scope: list[str],
+    title: str,
+    questions: list[dict],  # [{type, question, options, correct_index, explanation}, ...]
+    created_at: Optional[float] = None,
+) -> int:
+    """Persist a generated quiz and its questions. Returns the new quiz id."""
+    import json as _json
+
+    ts = created_at if created_at is not None else _dt.datetime.now().timestamp()
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO quizzes "
+                "(created_at, difficulty, scope_json, title, question_count) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (ts, difficulty, _json.dumps(scope), title, len(questions)),
+            )
+            quiz_id = cur.lastrowid or 0
+            for idx, q in enumerate(questions):
+                cur.execute(
+                    "INSERT INTO quiz_questions "
+                    "(quiz_id, q_idx, type, question, options_json, correct_index, explanation) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        quiz_id,
+                        idx,
+                        q["type"],
+                        q["question"],
+                        _json.dumps(q["options"]),
+                        q["correct_index"],
+                        q.get("explanation", ""),
+                    ),
+                )
+            conn.commit()
+            return quiz_id
+        finally:
+            conn.close()
+
+
+def get_quiz(quiz_id: int) -> Optional[dict]:
+    """Return a saved quiz + all its questions, or None if missing."""
+    import json as _json
+
+    conn = _connect()
+    try:
+        _init_schema(conn)
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM quizzes WHERE id = ?", (quiz_id,))
+        row = cur.fetchone()
+        if not row:
+            return None
+        cur.execute(
+            "SELECT q_idx, type, question, options_json, correct_index, explanation "
+            "FROM quiz_questions WHERE quiz_id = ? ORDER BY q_idx",
+            (quiz_id,),
+        )
+        questions = [
+            {
+                "type": r["type"],
+                "question": r["question"],
+                "options": _json.loads(r["options_json"]),
+                "correct_index": r["correct_index"],
+                "explanation": r["explanation"] or "",
+            }
+            for r in cur.fetchall()
+        ]
+        progress = _json.loads(row["progress_json"]) if row["progress_json"] else None
+        return {
+            "id": row["id"],
+            "created_at": row["created_at"],
+            "difficulty": row["difficulty"],
+            "scope": _json.loads(row["scope_json"]),
+            "title": row["title"],
+            "question_count": row["question_count"],
+            "questions": questions,
+            "progress": progress,
+        }
+    finally:
+        conn.close()
+
+
+def list_quizzes() -> list[dict]:
+    """All saved quizzes, newest first (metadata + resume state, no questions)."""
+    import json as _json
+
+    conn = _connect()
+    try:
+        _init_schema(conn)
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id, created_at, difficulty, title, question_count, progress_json "
+            "FROM quizzes ORDER BY created_at DESC"
+        )
+        out = []
+        for r in cur.fetchall():
+            progress = _json.loads(r["progress_json"]) if r["progress_json"] else None
+            completed = bool(progress and progress.get("completed"))
+            answered = 0
+            if progress:
+                answered = sum(1 for a in progress.get("answers", []) if a is not None)
+            out.append(
+                {
+                    "id": r["id"],
+                    "created_at": r["created_at"],
+                    "difficulty": r["difficulty"],
+                    "title": r["title"],
+                    "question_count": int(r["question_count"] or 0),
+                    # in_progress = started but not finished.
+                    "in_progress": progress is not None and not completed,
+                    "answered_count": answered,
+                    "completed": completed,
+                    "last_score": progress.get("score_pct") if completed else None,
+                }
+            )
+        return out
+    finally:
+        conn.close()
+
+
+def save_quiz_progress(
+    quiz_id: int,
+    current: int,
+    correct_count: int,
+    answers: list[Optional[int]],
+    completed: bool = False,
+    score_pct: Optional[int] = None,
+) -> bool:
+    """
+    Upsert attempt state for a saved quiz. True if the quiz exists.
+
+    ``completed=True`` (with ``score_pct``) marks a finished attempt so the quiz
+    stays revisitable as a result, instead of resetting on the next open.
+    """
+    import json as _json
+
+    blob = _json.dumps(
+        {
+            "current": current,
+            "correct_count": correct_count,
+            "answers": answers,
+            "completed": completed,
+            "score_pct": score_pct,
+        }
+    )
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE quizzes SET progress_json = ? WHERE id = ?", (blob, quiz_id)
+            )
+            conn.commit()
+            return cur.rowcount > 0
+        finally:
+            conn.close()
+
+
+def clear_quiz_progress(quiz_id: int) -> bool:
+    """Clear in-progress state (on finish). True if the quiz exists."""
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE quizzes SET progress_json = NULL WHERE id = ?", (quiz_id,)
+            )
+            conn.commit()
+            return cur.rowcount > 0
+        finally:
+            conn.close()
+
+
+def delete_quiz(quiz_id: int) -> bool:
+    """Remove a saved quiz + cascade its questions. True if a row was deleted."""
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute("DELETE FROM quizzes WHERE id = ?", (quiz_id,))
             conn.commit()
             return cur.rowcount > 0
         finally:

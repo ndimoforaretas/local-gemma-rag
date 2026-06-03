@@ -153,13 +153,15 @@ All modes share three rules:
 
 ### 5.1 Quiz Mode
 
-Generates a quiz from your scoped documents.
+Generates a quiz from your scoped documents — and **saves every quiz** so you can retake it later.
+
+**Quiz library (landing):** Quiz Mode opens to a grid of your saved quizzes. Click any one to **replay** it, use the trash icon to delete it, or hit **New Quiz** to generate a fresh one. (Each quiz you generate is saved here automatically.)
 
 **Configuration:** difficulty (Beginner / Intermediate / Advanced) · count (5 / 10 / 20) · question types (Multiple Choice / True-False, multi-select).
 
 **Player:** one question at a time. Click an option, hit **Submit answer** for instant feedback (correct/incorrect + explanation), then **Next question**. Final screen shows score + per-question recap.
 
-**Resume on refresh:** if you refresh mid-quiz, a purple banner offers to resume from where you left off. Saved for 24 hours.
+**Leave & resume:** you can stop a quiz halfway and come back to it anytime. Your progress (answers + position) is saved automatically; the quiz shows an amber **"In progress · X/N answered · Resume"** badge in the library, and clicking it drops you right back where you left off. This survives app restarts and works across devices (it's saved on the backend, not just your browser).
 
 **Export the finished quiz:** Markdown or PDF. Three content levels — *questions only* · *with answers* · *with answers & explanations*.
 

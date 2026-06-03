@@ -5,9 +5,10 @@
  * just layout: top bar, then one of four panels based on phase + loading.
  */
 
-import { Breadcrumbs } from "../Breadcrumbs";
+import { Breadcrumbs, type Crumb } from "../Breadcrumbs";
 import { QuizConfigPanel } from "./quiz/QuizConfigPanel";
 import { QuizGeneratingCard } from "./quiz/QuizGeneratingCard";
+import { QuizList } from "./quiz/QuizList";
 import { QuizPlayerPanel } from "./quiz/QuizPlayerPanel";
 import { QuizResultsPanel } from "./quiz/QuizResultsPanel";
 import { ResumeQuizBanner } from "./quiz/ResumeQuizBanner";
@@ -15,6 +16,12 @@ import { useQuiz } from "./quiz/useQuiz";
 
 export function QuizMode({ onExit }: { onExit: () => void }) {
   const q = useQuiz();
+
+  const crumbs: Crumb[] = [
+    { label: "Study Hub", onClick: onExit },
+    { label: "Quiz Mode", onClick: q.phase === "library" ? undefined : q.backToLibrary },
+  ];
+  if (q.phase === "config") crumbs.push({ label: "New Quiz" });
 
   return (
     <div className="h-full overflow-y-auto">
@@ -25,15 +32,20 @@ export function QuizMode({ onExit }: { onExit: () => void }) {
       */}
       <div className="max-w-4xl mx-auto w-full px-6 sm:px-8 py-8 min-h-full flex flex-col">
         <div className="mb-6">
-          <Breadcrumbs
-            crumbs={[
-              { label: "Study Hub", onClick: onExit },
-              { label: "Quiz Mode" },
-            ]}
-          />
+          <Breadcrumbs crumbs={crumbs} />
         </div>
 
         <div className="my-auto w-full">
+
+        {q.phase === "library" && (
+          <QuizList
+            items={q.savedList.data?.quizzes ?? []}
+            isLoading={q.savedList.isLoading || q.loadSaved.isPending}
+            onOpen={(id) => q.loadSaved.mutate(id)}
+            onNew={q.startNew}
+            onDelete={(id) => q.deleteSaved.mutate(id)}
+          />
+        )}
 
         {q.phase === "config" && q.generate.isPending && <QuizGeneratingCard />}
 

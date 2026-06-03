@@ -7,7 +7,7 @@
 
 export type Difficulty = "beginner" | "intermediate" | "advanced";
 export type QuestionType = "mcq" | "true_false";
-export type QuizPhase = "config" | "playing" | "results";
+export type QuizPhase = "library" | "config" | "playing" | "results";
 
 export interface QuizQuestion {
   type: QuestionType;
@@ -15,6 +15,18 @@ export interface QuizQuestion {
   options: string[];
   correct_index: number;
   explanation: string;
+}
+
+export interface SavedQuizListItem {
+  id: number;
+  created_at: number;
+  difficulty: Difficulty;
+  title: string;
+  question_count: number;
+  in_progress: boolean;
+  answered_count: number;
+  completed: boolean;
+  last_score: number | null;
 }
 
 export const DIFFICULTIES: { id: Difficulty; label: string; tone: string }[] = [

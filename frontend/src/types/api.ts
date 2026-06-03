@@ -348,6 +348,51 @@ export interface MindmapListResponse {
   mindmaps: MindmapListItem[];
 }
 
+// ── Saved Quizzes ────────────────────────────────────────────────────────────
+
+export interface SavedQuizQuestion {
+  type: "mcq" | "true_false";
+  question: string;
+  options: string[];
+  correct_index: number;
+  explanation: string;
+}
+
+export interface QuizProgress {
+  current: number;
+  correct_count: number;
+  answers: (number | null)[];
+  completed: boolean;
+  score_pct: number | null;
+}
+
+export interface SavedQuizListItem {
+  id: number;
+  created_at: number;
+  difficulty: WorkshopDifficulty;
+  title: string;
+  question_count: number;
+  in_progress: boolean;
+  answered_count: number;
+  completed: boolean;
+  last_score: number | null;
+}
+
+export interface SavedQuizListResponse {
+  quizzes: SavedQuizListItem[];
+}
+
+export interface SavedQuiz {
+  id: number;
+  created_at: number;
+  difficulty: WorkshopDifficulty;
+  scope: string[];
+  title: string;
+  question_count: number;
+  questions: SavedQuizQuestion[];
+  progress: QuizProgress | null;
+}
+
 export interface MindmapExportResponse {
   export_count: number;
   newly_earned_achievements: string[];

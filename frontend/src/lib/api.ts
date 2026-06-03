@@ -248,6 +248,7 @@ export const api = {
       explanation: string;
     }[];
     source_chunks_used: number;
+    quiz_id: number;
   }> => {
     const resp = await fetch(`${API_BASE}/api/study/quiz/generate`, {
       method: "POST",
@@ -255,6 +256,49 @@ export const api = {
       body: JSON.stringify(req),
     });
     return handleJsonResponse(resp);
+  },
+
+  // Saved quizzes (revisit/replay)
+  listSavedQuizzes: async () => {
+    const resp = await fetch(`${API_BASE}/api/study/quiz/list`);
+    return handleJsonResponse<import("../types/api").SavedQuizListResponse>(resp);
+  },
+
+  getSavedQuiz: async (id: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/quiz/saved/${id}`);
+    return handleJsonResponse<import("../types/api").SavedQuiz>(resp);
+  },
+
+  deleteSavedQuiz: async (id: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/quiz/saved/${id}`, {
+      method: "DELETE",
+    });
+    return handleJsonResponse<{ status: string }>(resp);
+  },
+
+  saveQuizProgress: async (
+    id: number,
+    body: {
+      current: number;
+      correct_count: number;
+      answers: (number | null)[];
+      completed?: boolean;
+      score_pct?: number | null;
+    },
+  ) => {
+    const resp = await fetch(`${API_BASE}/api/study/quiz/saved/${id}/progress`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return handleJsonResponse<{ status: string }>(resp);
+  },
+
+  clearQuizProgress: async (id: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/quiz/saved/${id}/progress`, {
+      method: "DELETE",
+    });
+    return handleJsonResponse<{ status: string }>(resp);
   },
 
   // ── Progress Dashboard ───────────────────────────────────────────────

@@ -143,6 +143,8 @@ class QuizQuestionOut(BaseModel):
 class QuizGenerateResponse(BaseModel):
     questions: list[QuizQuestionOut]
     source_chunks_used: int
+    # id of the auto-saved quiz, so the frontend can deep-link / delete it.
+    quiz_id: int
 
 
 class QuizSubmitRequest(BaseModel):
@@ -157,6 +159,42 @@ class QuizSubmitResponse(BaseModel):
     """Returned after recording an attempt — includes any badges just unlocked."""
     score_pct: int
     newly_earned_achievements: list[str] = []
+
+
+class QuizProgress(BaseModel):
+    """Attempt state for resume / completed review."""
+    current: int = Field(..., ge=0)
+    correct_count: int = Field(..., ge=0)
+    answers: list[Optional[int]] = []
+    completed: bool = False
+    score_pct: Optional[int] = None
+
+
+class SavedQuizListItem(BaseModel):
+    id: int
+    created_at: float
+    difficulty: str
+    title: str
+    question_count: int
+    in_progress: bool = False
+    answered_count: int = 0
+    completed: bool = False
+    last_score: Optional[int] = None
+
+
+class SavedQuizListResponse(BaseModel):
+    quizzes: list[SavedQuizListItem]
+
+
+class SavedQuizOut(BaseModel):
+    id: int
+    created_at: float
+    difficulty: str
+    scope: list[str]
+    title: str
+    question_count: int
+    questions: list[QuizQuestionOut]
+    progress: Optional[QuizProgress] = None
 
 
 # ── Study Hub: Workshops ────────────────────────────────────────────────────
