@@ -322,6 +322,8 @@ Auto-tracked. They appear in the Dashboard's **Achievements grid** as you earn t
 | 📐 Cartographer | Export a mindmap (Markdown, PNG, or PDF) |
 | 🌐 Concept Network | Create 5 mindmaps total |
 
+> **Add your own badges (advanced).** All badges live in `backend/achievements.json` — a plain list of `{code, name, description, icon, metric, target, group}`. Append an entry and restart the backend to add a new badge (most use the default `gte` comparator: earned when `metric ≥ target`; time-of-day badges use `"comparator": "hour_between"` with `"hours": [start, end]`). A malformed entry is logged and skipped, so a typo can't break anything.
+
 ---
 
 ## 8. Privacy & Data Storage

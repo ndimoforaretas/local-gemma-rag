@@ -343,3 +343,55 @@ def test_current_is_capped_at_target(client):
     by_code = {a["code"]: a for a in client.get("/api/progress/achievements").json()["achievements"]}
     assert by_code["first_quiz"]["current"] == 1  # capped at target=1
     assert by_code["quiz_marathon"]["current"] == 2  # target=10, raw 2, uncapped
+
+
+# ── Data-file achievement loading (#5) ────────────────────────────────────────
+
+
+def test_achievements_loaded_from_json_file():
+    """The live ACHIEVEMENTS list is built from achievements.json."""
+    import json as _json
+
+    raw = _json.loads(ach_service._ACHIEVEMENTS_FILE.read_text(encoding="utf-8"))
+    file_codes = {r["code"] for r in raw}
+    loaded_codes = {a.code for a in ach_service.ACHIEVEMENTS}
+    assert loaded_codes == file_codes
+    assert len(ach_service.ACHIEVEMENTS) >= 14
+
+
+def test_gte_and_hour_between_comparators_fire(monkeypatch):
+    """Both comparators evaluate correctly off the loaded data."""
+    progress_tracker.record_message()
+    monkeypatch.setattr(
+        progress_tracker, "stats_for_eval",
+        lambda now_ts=None: {
+            "total_seconds": 0, "total_messages": 1, "longest_session_seconds": 0,
+            "messages_today": 1, "scope_filter_uses": 0, "current_streak_days": 1,
+            "local_hour": 2,  # 2am → inside the night_owl wrap window [22, 4)
+        },
+    )
+    earned = ach_service.evaluate_and_persist()
+    assert "first_question" in earned  # gte comparator
+    assert "night_owl" in earned        # hour_between comparator (wrap-around)
+    assert "early_bird" not in earned   # 2am is outside [5, 8)
+
+
+def test_loader_skips_invalid_entries_and_surfaces_new_badge(tmp_path, monkeypatch):
+    """A malformed entry is dropped; a well-formed new one is loaded."""
+    data = [
+        {"code": "good_new", "name": "Good", "description": "d", "icon": "✅",
+         "metric": "total_messages", "target": 3, "group": "messages"},
+        {"code": "bad_comparator", "name": "Bad", "description": "d", "icon": "❌",
+         "comparator": "wat", "metric": "x", "target": 1},
+        {"code": "bad_gte", "name": "Bad2", "description": "d", "icon": "❌"},  # no metric/target
+        {"name": "No code", "description": "d", "icon": "❌", "metric": "x", "target": 1},
+    ]
+    f = tmp_path / "ach.json"
+    import json as _json
+
+    f.write_text(_json.dumps(data), encoding="utf-8")
+    monkeypatch.setattr(ach_service, "_ACHIEVEMENTS_FILE", f)
+
+    loaded = ach_service._load_achievements()
+    codes = {a.code for a in loaded}
+    assert codes == {"good_new"}  # only the valid entry survives
