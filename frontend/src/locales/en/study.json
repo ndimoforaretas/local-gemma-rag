@@ -200,5 +200,90 @@
       "masteredBadge": "Mastered",
       "reviewBadge": "Review"
     }
+  },
+  "workshop": {
+    "crumbs": {
+      "creator": "Workshop Creator",
+      "newWorkshop": "New Workshop",
+      "recapQuiz": "Recap Quiz"
+    },
+    "list": {
+      "yourWorkshops": "Your workshops",
+      "yourWorkshopsCount": "Your workshops ({{count}})",
+      "newWorkshop": "New Workshop",
+      "emptyTitle": "Build your first workshop",
+      "emptyBody": "Workshops turn your scoped documents into a structured, multi-lesson learning path you can work through at your own pace.",
+      "emptyHintPre": "Click",
+      "emptyHintPost": "above to get started.",
+      "deleteTitle": "Delete this workshop?",
+      "deleteMessage": "\"{{title}}\" and all its lessons will be permanently removed. This can't be undone.",
+      "delete": "Delete",
+      "keep": "Keep"
+    },
+    "card": {
+      "deleteAria": "Delete workshop",
+      "complete": "Complete",
+      "lessonsCount": "{{completed}} / {{total}} lessons"
+    },
+    "config": {
+      "back": "Back to workshops",
+      "title": "New Workshop",
+      "subtitle": "Choose your scope, difficulty, and how many lessons to generate.",
+      "scopeLabel": "Document scope (required)",
+      "scopeHintHas": "The workshop pulls all content from these documents.",
+      "scopeHintEmpty": "Pick at least one category or file. Wide scope = unfocused workshop.",
+      "difficultyLabel": "Difficulty",
+      "lessonsLabel": "Number of lessons",
+      "lessonsOption": "{{count}} lessons",
+      "buildingOutline": "Building outline…",
+      "build": "Build Workshop"
+    },
+    "outline": {
+      "back": "Back to workshops",
+      "meta": "{{difficulty}} · {{total}} lessons · {{done}} done",
+      "keyPoints": "Key points",
+      "objectives": "You will learn to",
+      "lessons": "Lessons",
+      "completeTitle": "Workshop complete!",
+      "completeBody": "Test what you learned with a 5-question recap quiz.",
+      "takeRecap": "Take recap quiz"
+    },
+    "lessonCard": {
+      "minRead": "{{count}} min read",
+      "completed": "Completed",
+      "inProgress": "In progress"
+    },
+    "lesson": {
+      "back": "Back to lessons",
+      "loading": "Loading lesson…",
+      "saving": "Saving…",
+      "completed": "Lesson completed",
+      "markComplete": "Mark complete"
+    },
+    "toc": {
+      "onThisPage": "On this page"
+    },
+    "gen": {
+      "outlineTitle": "Building your workshop outline",
+      "lessonTitle": "Writing this lesson",
+      "body": "Gemma is on it. This usually takes {{eta}}.",
+      "outlineEta": "10–40 seconds",
+      "lessonEta": "20–60 seconds",
+      "elapsed": "{{time}} elapsed",
+      "outlineStage0": "Scanning your documents…",
+      "outlineStage1": "Identifying the core concepts…",
+      "outlineStage2": "Structuring the learning path…",
+      "outlineStage3": "Drafting lesson titles and reading-time estimates…",
+      "outlineStage4": "Almost there — finalising the outline…",
+      "lessonStage0": "Re-reading the relevant material…",
+      "lessonStage1": "Outlining the lesson sections…",
+      "lessonStage2": "Writing the body, examples, and code blocks…",
+      "lessonStage3": "Polishing structure and self-check prompts…",
+      "lessonStage4": "Just finishing up — almost ready…"
+    },
+    "finalQuiz": {
+      "back": "Back to workshop outline",
+      "backToWorkshop": "Back to workshop"
+    }
   }
 }

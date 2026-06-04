@@ -2,6 +2,7 @@
  * One card in the workshop list view: title, summary, progress, delete.
  */
 
+import { useTranslation } from "react-i18next";
 import { Trash2, CheckCircle2 } from "lucide-react";
 import type { WorkshopListItem } from "./types";
 
@@ -14,6 +15,7 @@ export function WorkshopCard({
   onOpen: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation("study");
   const pct = item.total_lessons === 0
     ? 0
     : Math.round((100 * item.completed_lessons) / item.total_lessons);
@@ -26,8 +28,8 @@ export function WorkshopCard({
       <button
         type="button"
         onClick={onDelete}
-        aria-label="Delete workshop"
-        title="Delete workshop"
+        aria-label={t("workshop.card.deleteAria")}
+        title={t("workshop.card.deleteAria")}
         className="absolute top-3 right-3 p-1.5 rounded-lg text-ink-muted hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
       >
         <Trash2 size={14} />
@@ -40,12 +42,12 @@ export function WorkshopCard({
       >
         <div className="flex items-center gap-2 mb-2">
           <span className="text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-[#a855f7]/15 text-[#a855f7] dark:text-[#ddb7ff]">
-            {item.difficulty}
+            {t(`difficulty.${item.difficulty}`)}
           </span>
           {finished && (
             <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
               <CheckCircle2 size={10} />
-              Complete
+              {t("workshop.card.complete")}
             </span>
           )}
         </div>
@@ -56,7 +58,7 @@ export function WorkshopCard({
           {item.summary}
         </p>
         <div className="flex items-center justify-between text-xs text-ink-muted mb-1">
-          <span>{item.completed_lessons} / {item.total_lessons} lessons</span>
+          <span>{t("workshop.card.lessonsCount", { completed: item.completed_lessons, total: item.total_lessons })}</span>
           <span>{pct}%</span>
         </div>
         <div className="h-1.5 bg-[#c2c6d6]/40 dark:bg-[#424754]/40 rounded-full overflow-hidden">

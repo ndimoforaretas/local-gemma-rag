@@ -200,5 +200,90 @@
       "masteredBadge": "Gemeistert",
       "reviewBadge": "Wiederholen"
     }
+  },
+  "workshop": {
+    "crumbs": {
+      "creator": "Workshop-Ersteller",
+      "newWorkshop": "Neuer Workshop",
+      "recapQuiz": "Abschlussquiz"
+    },
+    "list": {
+      "yourWorkshops": "Deine Workshops",
+      "yourWorkshopsCount": "Deine Workshops ({{count}})",
+      "newWorkshop": "Neuer Workshop",
+      "emptyTitle": "Erstelle deinen ersten Workshop",
+      "emptyBody": "Workshops verwandeln deine ausgewählten Dokumente in einen strukturierten, mehrteiligen Lernpfad, den du in deinem eigenen Tempo durcharbeiten kannst.",
+      "emptyHintPre": "Klicke oben auf",
+      "emptyHintPost": "um loszulegen.",
+      "deleteTitle": "Diesen Workshop löschen?",
+      "deleteMessage": "„{{title}}“ und alle zugehörigen Lektionen werden dauerhaft entfernt. Dies kann nicht rückgängig gemacht werden.",
+      "delete": "Löschen",
+      "keep": "Behalten"
+    },
+    "card": {
+      "deleteAria": "Workshop löschen",
+      "complete": "Abgeschlossen",
+      "lessonsCount": "{{completed}} / {{total}} Lektionen"
+    },
+    "config": {
+      "back": "Zurück zu den Workshops",
+      "title": "Neuer Workshop",
+      "subtitle": "Wähle deinen Umfang, den Schwierigkeitsgrad und die Anzahl der zu erstellenden Lektionen.",
+      "scopeLabel": "Dokumentbereich (erforderlich)",
+      "scopeHintHas": "Der Workshop nutzt den gesamten Inhalt dieser Dokumente.",
+      "scopeHintEmpty": "Wähle mindestens eine Kategorie oder Datei. Zu breiter Umfang = unfokussierter Workshop.",
+      "difficultyLabel": "Schwierigkeit",
+      "lessonsLabel": "Anzahl der Lektionen",
+      "lessonsOption": "{{count}} Lektionen",
+      "buildingOutline": "Gliederung wird erstellt…",
+      "build": "Workshop erstellen"
+    },
+    "outline": {
+      "back": "Zurück zu den Workshops",
+      "meta": "{{difficulty}} · {{total}} Lektionen · {{done}} erledigt",
+      "keyPoints": "Kernpunkte",
+      "objectives": "Du wirst lernen,",
+      "lessons": "Lektionen",
+      "completeTitle": "Workshop abgeschlossen!",
+      "completeBody": "Teste dein Wissen mit einem Abschlussquiz aus 5 Fragen.",
+      "takeRecap": "Abschlussquiz starten"
+    },
+    "lessonCard": {
+      "minRead": "{{count}} Min. Lesezeit",
+      "completed": "Abgeschlossen",
+      "inProgress": "In Bearbeitung"
+    },
+    "lesson": {
+      "back": "Zurück zu den Lektionen",
+      "loading": "Lektion wird geladen…",
+      "saving": "Wird gespeichert…",
+      "completed": "Lektion abgeschlossen",
+      "markComplete": "Als erledigt markieren"
+    },
+    "toc": {
+      "onThisPage": "Auf dieser Seite"
+    },
+    "gen": {
+      "outlineTitle": "Deine Workshop-Gliederung wird erstellt",
+      "lessonTitle": "Diese Lektion wird geschrieben",
+      "body": "Gemma ist dran. Das dauert normalerweise {{eta}}.",
+      "outlineEta": "10–40 Sekunden",
+      "lessonEta": "20–60 Sekunden",
+      "elapsed": "{{time}} vergangen",
+      "outlineStage0": "Deine Dokumente werden gescannt…",
+      "outlineStage1": "Die Kernkonzepte werden identifiziert…",
+      "outlineStage2": "Der Lernpfad wird strukturiert…",
+      "outlineStage3": "Lektionstitel und Lesezeit-Schätzungen werden entworfen…",
+      "outlineStage4": "Fast geschafft — die Gliederung wird finalisiert…",
+      "lessonStage0": "Das relevante Material wird erneut gelesen…",
+      "lessonStage1": "Die Lektionsabschnitte werden gegliedert…",
+      "lessonStage2": "Text, Beispiele und Code-Blöcke werden geschrieben…",
+      "lessonStage3": "Struktur und Selbstkontroll-Fragen werden verfeinert…",
+      "lessonStage4": "Wird gerade fertiggestellt — fast bereit…"
+    },
+    "finalQuiz": {
+      "back": "Zurück zur Workshop-Gliederung",
+      "backToWorkshop": "Zurück zum Workshop"
+    }
   }
 }

@@ -2,6 +2,7 @@
  * One lesson card in the outline view: index, title, est minutes, status badge.
  */
 
+import { useTranslation } from "react-i18next";
 import { Clock, CheckCircle2, Circle, ChevronRight } from "lucide-react";
 import type { WorkshopLesson } from "./types";
 
@@ -12,6 +13,7 @@ export function LessonCard({
   lesson: WorkshopLesson;
   onClick: () => void;
 }) {
+  const { t } = useTranslation("study");
   const done = lesson.completed_at != null;
   const started = lesson.has_content && !done;
 
@@ -38,9 +40,9 @@ export function LessonCard({
         </div>
         <div className="flex items-center gap-1 text-xs text-ink-muted">
           <Clock size={11} />
-          <span>{lesson.est_minutes} min read</span>
-          {done && <span>· Completed</span>}
-          {started && <span>· In progress</span>}
+          <span>{t("workshop.lessonCard.minRead", { count: lesson.est_minutes })}</span>
+          {done && <span>· {t("workshop.lessonCard.completed")}</span>}
+          {started && <span>· {t("workshop.lessonCard.inProgress")}</span>}
         </div>
       </div>
       <ChevronRight size={16} className="shrink-0 text-ink-muted" />

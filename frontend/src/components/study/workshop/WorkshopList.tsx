@@ -5,6 +5,7 @@
  */
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Plus, BookOpen, Loader2 } from "lucide-react";
 import { ConfirmationModal } from "../../ConfirmationModal";
 import type { WorkshopListItem } from "./types";
@@ -24,19 +25,22 @@ export function WorkshopList({
   onDelete: (id: number) => void;
 }) {
   const [pendingDelete, setPendingDelete] = useState<WorkshopListItem | null>(null);
+  const { t } = useTranslation("study");
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h2 className="text-2xl sm:text-3xl font-bold text-ink-strong">
-          {items.length === 0 ? "Your workshops" : `Your workshops (${items.length})`}
+          {items.length === 0
+            ? t("workshop.list.yourWorkshops")
+            : t("workshop.list.yourWorkshopsCount", { count: items.length })}
         </h2>
         <button
           type="button"
           onClick={onNew}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#a855f7] hover:bg-[#9333ea] text-white text-sm font-semibold shadow-lg shadow-[#a855f7]/20 transition-colors"
         >
-          <Plus size={14} /> New Workshop
+          <Plus size={14} /> {t("workshop.list.newWorkshop")}
         </button>
       </div>
 
@@ -52,14 +56,13 @@ export function WorkshopList({
             <BookOpen size={36} strokeWidth={2.2} />
           </div>
           <h3 className="text-2xl font-bold text-ink-strong mb-3">
-            Build your first workshop
+            {t("workshop.list.emptyTitle")}
           </h3>
           <p className="text-base sm:text-lg text-ink max-w-xl mx-auto mb-2 leading-relaxed">
-            Workshops turn your scoped documents into a structured,
-            multi-lesson learning path you can work through at your own pace.
+            {t("workshop.list.emptyBody")}
           </p>
           <p className="text-sm text-ink-muted">
-            Click <span className="font-semibold text-[#a855f7] dark:text-[#ddb7ff]">New Workshop</span> above to get started.
+            {t("workshop.list.emptyHintPre")} <span className="font-semibold text-[#a855f7] dark:text-[#ddb7ff]">{t("workshop.list.newWorkshop")}</span> {t("workshop.list.emptyHintPost")}
           </p>
         </div>
       )}
@@ -80,10 +83,10 @@ export function WorkshopList({
       {pendingDelete && (
         <ConfirmationModal
           isOpen
-          title="Delete this workshop?"
-          message={`"${pendingDelete.title}" and all its lessons will be permanently removed. This can't be undone.`}
-          confirmLabel="Delete"
-          cancelLabel="Keep"
+          title={t("workshop.list.deleteTitle")}
+          message={t("workshop.list.deleteMessage", { title: pendingDelete.title })}
+          confirmLabel={t("workshop.list.delete")}
+          cancelLabel={t("workshop.list.keep")}
           type="destructive"
           onConfirm={() => {
             onDelete(pendingDelete.id);

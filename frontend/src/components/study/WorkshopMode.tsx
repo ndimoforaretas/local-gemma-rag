@@ -6,6 +6,8 @@
  * All state + queries live in `useWorkshop`; this file is composition only.
  */
 
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Breadcrumbs, type Crumb } from "../Breadcrumbs";
 import { LessonView } from "./workshop/LessonView";
 import { useWorkshop } from "./workshop/useWorkshop";
@@ -17,7 +19,8 @@ import { WorkshopOutlineView } from "./workshop/WorkshopOutlineView";
 
 export function WorkshopMode({ onExit }: { onExit: () => void }) {
   const w = useWorkshop();
-  const crumbs = buildCrumbs(w, onExit);
+  const { t } = useTranslation("study");
+  const crumbs = buildCrumbs(w, onExit, t);
 
   return (
     <div className="h-full overflow-y-auto">
@@ -115,18 +118,19 @@ export function WorkshopMode({ onExit }: { onExit: () => void }) {
 function buildCrumbs(
   w: ReturnType<typeof useWorkshop>,
   onExit: () => void,
+  t: TFunction,
 ): Crumb[] {
   const crumbs: Crumb[] = [
-    { label: "Study Hub", onClick: onExit },
+    { label: t("hub.title"), onClick: onExit },
     {
-      label: "Workshop Creator",
+      label: t("workshop.crumbs.creator"),
       // Final crumb is non-clickable; intermediate crumbs jump back to list.
       onClick: w.phase === "list" ? undefined : w.backToList,
     },
   ];
   switch (w.phase) {
     case "config":
-      crumbs.push({ label: "New Workshop" });
+      crumbs.push({ label: t("workshop.crumbs.newWorkshop") });
       break;
     case "outline":
       if (w.active.data) crumbs.push({ label: w.active.data.title });
@@ -141,7 +145,7 @@ function buildCrumbs(
     case "final_quiz":
       if (w.active.data) {
         crumbs.push({ label: w.active.data.title, onClick: w.backToOutline });
-        crumbs.push({ label: "Recap Quiz" });
+        crumbs.push({ label: t("workshop.crumbs.recapQuiz") });
       }
       break;
   }

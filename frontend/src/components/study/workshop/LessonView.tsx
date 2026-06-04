@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { marked } from "marked";
 import type { LessonContent } from "./types";
@@ -34,6 +35,7 @@ export function LessonView({
   onBack: () => void;
   onMarkComplete: () => void;
 }) {
+  const { t } = useTranslation("study");
   // Body markdown with any leading H1 removed (title rendered separately).
   const bodyMd = useMemo(
     () => (lesson ? lesson.content_md.replace(/^\s*#\s+[^\n]+\n+/, "") : ""),
@@ -63,13 +65,13 @@ export function LessonView({
         className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink-strong"
       >
         <ArrowLeft size={14} />
-        Back to lessons
+        {t("workshop.lesson.back")}
       </button>
 
       {isLoading && (
         <div className="flex items-center gap-2 p-8 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23] text-ink-muted">
           <Loader2 size={18} className="animate-spin" />
-          <span>Loading lesson…</span>
+          <span>{t("workshop.lesson.loading")}</span>
         </div>
       )}
 
@@ -105,15 +107,15 @@ export function LessonView({
           >
             {isMarking ? (
               <>
-                <Loader2 size={14} className="animate-spin" /> Saving…
+                <Loader2 size={14} className="animate-spin" /> {t("workshop.lesson.saving")}
               </>
             ) : isCompleted ? (
               <>
-                <CheckCircle2 size={14} /> Lesson completed
+                <CheckCircle2 size={14} /> {t("workshop.lesson.completed")}
               </>
             ) : (
               <>
-                <CheckCircle2 size={14} /> Mark complete
+                <CheckCircle2 size={14} /> {t("workshop.lesson.markComplete")}
               </>
             )}
           </button>

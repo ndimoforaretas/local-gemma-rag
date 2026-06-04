@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ListOrdered } from "lucide-react";
 import type { TocHeading } from "./tocHelpers";
 
@@ -23,6 +24,7 @@ export function TocSidebar({
   articleEl: HTMLElement | null;
 }) {
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
+  const { t } = useTranslation("study");
 
   // Scroll-spy: highlight the topmost heading currently visible in the viewport.
   useEffect(() => {
@@ -64,7 +66,7 @@ export function TocSidebar({
     <aside className="hidden lg:block w-48 shrink-0 sticky top-6 self-start">
       <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-ink-muted mb-3">
         <ListOrdered size={12} />
-        On this page
+        {t("workshop.toc.onThisPage")}
       </div>
       <nav>
         <ul className="border-l border-[#c2c6d6] dark:border-[#424754]">

@@ -4,6 +4,7 @@
  * If every lesson is completed, surfaces a "Take final quiz" CTA at the bottom.
  */
 
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, Target, Sparkles, Trophy } from "lucide-react";
 import type { Workshop } from "./types";
 import { LessonCard } from "./LessonCard";
@@ -19,6 +20,7 @@ export function WorkshopOutlineView({
   onOpenLesson: (idx: number) => void;
   onStartQuiz: () => void;
 }) {
+  const { t } = useTranslation("study");
   const allDone = workshop.lessons.every((l) => l.completed_at != null);
   const doneCount = workshop.lessons.filter((l) => l.completed_at != null).length;
 
@@ -30,12 +32,12 @@ export function WorkshopOutlineView({
         className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink-strong"
       >
         <ArrowLeft size={14} />
-        Back to workshops
+        {t("workshop.outline.back")}
       </button>
 
       <header>
         <div className="text-xs uppercase tracking-wider font-semibold inline-block px-2 py-0.5 rounded-full bg-[#a855f7]/15 text-[#a855f7] dark:text-[#ddb7ff] mb-3">
-          {workshop.difficulty} · {workshop.lessons.length} lessons · {doneCount} done
+          {t("workshop.outline.meta", { difficulty: t(`difficulty.${workshop.difficulty}`), total: workshop.lessons.length, done: doneCount })}
         </div>
         <h1 className="text-3xl font-bold text-ink-strong mb-2">
           {workshop.title}
@@ -46,13 +48,13 @@ export function WorkshopOutlineView({
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <PointsCard icon={Sparkles} label="Key points" items={workshop.key_points} />
-        <PointsCard icon={Target} label="You will learn to" items={workshop.objectives} />
+        <PointsCard icon={Sparkles} label={t("workshop.outline.keyPoints")} items={workshop.key_points} />
+        <PointsCard icon={Target} label={t("workshop.outline.objectives")} items={workshop.objectives} />
       </div>
 
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-muted mb-3">
-          Lessons
+          {t("workshop.outline.lessons")}
         </h2>
         <div className="space-y-2">
           {workshop.lessons.map((lesson) => (
@@ -71,10 +73,10 @@ export function WorkshopOutlineView({
             <Trophy className="text-emerald-500 shrink-0" size={22} />
             <div>
               <div className="font-semibold text-ink-strong">
-                Workshop complete!
+                {t("workshop.outline.completeTitle")}
               </div>
               <div className="text-sm text-ink-muted">
-                Test what you learned with a 5-question recap quiz.
+                {t("workshop.outline.completeBody")}
               </div>
             </div>
           </div>
@@ -83,7 +85,7 @@ export function WorkshopOutlineView({
             onClick={onStartQuiz}
             className="px-4 py-2 rounded-xl bg-[#a855f7] hover:bg-[#9333ea] text-white font-medium text-sm transition-colors"
           >
-            Take recap quiz
+            {t("workshop.outline.takeRecap")}
           </button>
         </div>
       )}

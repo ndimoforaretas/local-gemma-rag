@@ -36,31 +36,31 @@ export function WorkshopConfigPanel(p: WorkshopConfigPanelProps) {
         className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink-strong"
       >
         <ArrowLeft size={14} />
-        Back to workshops
+        {t("workshop.config.back")}
       </button>
 
       <div>
         <h2 className="text-2xl font-bold text-ink-strong mb-1">
-          New Workshop
+          {t("workshop.config.title")}
         </h2>
         <p className="text-sm text-ink-muted">
-          Choose your scope, difficulty, and how many lessons to generate.
+          {t("workshop.config.subtitle")}
         </p>
       </div>
 
       <div className="bg-white dark:bg-[#191b23] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-6 sm:p-8 space-y-7">
         <Section
-          label="Document scope (required)"
+          label={t("workshop.config.scopeLabel")}
           hint={
             hasScope
-              ? "The workshop pulls all content from these documents."
-              : "Pick at least one category or file. Wide scope = unfocused workshop."
+              ? t("workshop.config.scopeHintHas")
+              : t("workshop.config.scopeHintEmpty")
           }
         >
           <DocScopeFilter selected={p.scope} onChange={p.setScope} />
         </Section>
 
-        <Section label="Difficulty">
+        <Section label={t("workshop.config.difficultyLabel")}>
           <div className="flex flex-wrap gap-2.5">
             {DIFFICULTIES.map((d) => (
               <PillButton
@@ -74,7 +74,7 @@ export function WorkshopConfigPanel(p: WorkshopConfigPanelProps) {
           </div>
         </Section>
 
-        <Section label="Number of lessons">
+        <Section label={t("workshop.config.lessonsLabel")}>
           <div className="flex flex-wrap gap-2.5">
             {LESSON_COUNTS.map((n) => (
               <PillButton
@@ -82,7 +82,7 @@ export function WorkshopConfigPanel(p: WorkshopConfigPanelProps) {
                 active={p.lessonCount === n}
                 onClick={() => p.setLessonCount(n)}
               >
-                {n} lessons
+                {t("workshop.config.lessonsOption", { count: n })}
               </PillButton>
             ))}
           </div>
@@ -105,11 +105,11 @@ export function WorkshopConfigPanel(p: WorkshopConfigPanelProps) {
         >
           {p.isLoading ? (
             <>
-              <Loader2 size={16} className="animate-spin" /> Building outline…
+              <Loader2 size={16} className="animate-spin" /> {t("workshop.config.buildingOutline")}
             </>
           ) : (
             <>
-              <BookOpen size={16} /> Build Workshop
+              <BookOpen size={16} /> {t("workshop.config.build")}
             </>
           )}
         </button>
