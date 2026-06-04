@@ -8,7 +8,7 @@
  *  - `useKBBridge`: post-message "Add to KB" action + polling.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChatMessageList } from "./ChatMessageList";
 import { ChatInput } from "./ChatInput";
@@ -16,8 +16,8 @@ import { ChatMemoryMeter } from "./ChatMemoryMeter";
 import { DocScopeFilter } from "./DocScopeFilter";
 import { ContextSidebar } from "./ContextSidebar";
 import { HistorySidebar } from "./HistorySidebar";
+import { useChatChrome } from "./ChatChromeContext";
 import { ConfirmationModal } from "./ConfirmationModal";
-import { ChatHeaderBar } from "./knowledgeBase/ChatHeaderBar";
 import { KBBridgeCard } from "./knowledgeBase/KBBridgeCard";
 import { ContextSidebarDrawer } from "./knowledgeBase/ContextSidebarDrawer";
 import { useKBBridge } from "./knowledgeBase/useKBBridge";
@@ -26,11 +26,13 @@ import { api } from "../lib/api";
 import type { MemoryPayload } from "./knowledgeBase/ragStream";
 import type { ChatSession, ContextItem, Message } from "../types/api";
 
-export function KnowledgeBase() {
+export function KnowledgeBase({ onOpenHelp }: { onOpenHelp: () => void }) {
   const queryClient = useQueryClient();
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  // New Chat + history-open live in the Sidebar via this shared chrome context.
+  const chrome = useChatChrome();
+  const { isHistoryOpen } = chrome;
   const [contextItems, setContextItems] = useState<ContextItem[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isContextOpen, setIsContextOpen] = useState(false);
@@ -147,7 +149,6 @@ export function KnowledgeBase() {
 
   const activeSession = sessions.find((s) => s.id === activeSessionId);
   const messages = activeSession ? activeSession.messages : [];
-  const contextCount = contextItems.length;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -203,6 +204,16 @@ export function KnowledgeBase() {
     setContextItems(session?.contextItems ?? []);
   };
 
+  // Start a fresh chat — exposed to the Sidebar's "New Chat" button.
+  const handleNewChat = useCallback(() => {
+    isNewChatRef.current = true;
+    setActiveSessionId(null);
+    setContextItems([]);
+  }, []);
+  useEffect(() => {
+    chrome.registerNewChat(handleNewChat);
+  }, [chrome, handleNewChat]);
+
   const handleDeleteSession = (id: string) => {
     const target = sessions.find((s) => s.id === id);
     if (!target) return;
@@ -237,19 +248,6 @@ export function KnowledgeBase() {
   return (
     <div className="flex h-full w-full relative">
       <div className="flex-1 flex flex-col h-full overflow-hidden p-3 sm:p-4 lg:p-6 gap-3 lg:gap-4 min-w-0">
-        <ChatHeaderBar
-          sessionTitle={activeSession?.title || "New Conversation"}
-          contextCount={contextCount}
-          isHistoryOpen={isHistoryOpen}
-          onOpenContextDrawer={() => setIsContextOpen(true)}
-          onToggleHistory={() => setIsHistoryOpen(!isHistoryOpen)}
-          onNewChat={() => {
-            isNewChatRef.current = true;
-            setActiveSessionId(null);
-            setContextItems([]);
-          }}
-        />
-
         <ChatMessageList
           messages={messages}
           isLoading={rag.isLoading}
@@ -257,9 +255,7 @@ export function KnowledgeBase() {
           onCopy={handleCopyMessage}
           onExport={handleExportMessage}
           messagesEndRef={messagesEndRef}
-          onSuggestionSelect={(prompt, scope) =>
-            rag.send([], prompt, undefined, scope)
-          }
+          onOpenHelp={onOpenHelp}
           onEdit={handleEdit}
           onRegenerate={handleRegenerate}
         />

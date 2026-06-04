@@ -25,14 +25,14 @@ interface ChatMessageListProps {
   onCopy: (content: string, id: string) => void;
   onExport: (content: string, id: string) => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
-  onSuggestionSelect: (prompt: string, scope?: string[]) => void;
+  onOpenHelp: () => void;
   onEdit?: (messageIndex: number, newContent: string) => void;
   onRegenerate?: (messageIndex: number) => void;
 }
 
 export function ChatMessageList({
   messages, isLoading, copiedId, onCopy, onExport,
-  messagesEndRef, onSuggestionSelect, onEdit, onRegenerate,
+  messagesEndRef, onOpenHelp, onEdit, onRegenerate,
 }: ChatMessageListProps) {
   const prefersReducedMotion = useReducedMotion();
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -60,7 +60,7 @@ export function ChatMessageList({
     <div className="flex-1 rounded-2xl bg-[#f2f4f6] dark:bg-[#191b23] border border-[#c2c6d6] dark:border-[#424754] transition-colors duration-300 overflow-hidden relative">
       <div role="log" aria-live="polite" aria-relevant="additions text" aria-label="Conversation messages" className="h-full overflow-y-auto p-6">
         {messages.length === 0 ? (
-          <EmptyState onSuggestionSelect={onSuggestionSelect} />
+          <EmptyState onOpenHelp={onOpenHelp} />
         ) : (
           <div className="flex flex-col gap-6" role="list">
             <AnimatePresence initial={false}>

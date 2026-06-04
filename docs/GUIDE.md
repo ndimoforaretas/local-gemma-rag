@@ -1,6 +1,6 @@
 # Gemma CogniVault — User Guide
 
-> Your fully local AI study companion. This guide is pre-loaded into the knowledge base and powers the starter cards on a new chat.
+> Your fully local, private AI companion for your documents. This guide is pre-loaded into the knowledge base and powers the in-app **Help** section.
 
 ---
 
@@ -21,7 +21,7 @@
 
 ## 1. What CogniVault Does
 
-CogniVault is a **100% local, privacy-first AI study app**. Nothing leaves your machine — no API keys, no cloud calls, no usage fees.
+CogniVault is a **100% local, privacy-first AI document companion**. Nothing leaves your machine — no API keys, no cloud calls, no usage fees. Whether you're a researcher, lawyer, doctor, teacher, or student, it works the same way: bring your own documents and put them to work.
 
 It does four things well:
 
@@ -36,20 +36,24 @@ Under the hood: Ollama + Gemma 4 (LLM), `embeddinggemma` (embeddings), FAISS + B
 
 ## 2. The Interface
 
-The left sidebar has **four top-level sections**. The active section is highlighted in purple.
+The left sidebar has **six top-level sections**. The active section is highlighted in purple.
 
 | Section | What it does |
 |---|---|
+| **Home** | Your landing screen — a welcome plus clickable cards that jump into each section. |
 | **Chat** | Conversational interface — ask anything about your documents. |
 | **Knowledge Base** | Upload, categorise, and delete documents. |
 | **Study Hub** | Generate quizzes, workshops, flashcards, mindmaps. |
 | **Dashboard** | See your study time, achievements, and daily activity heatmap. |
+| **Help** | A guided FAQ — click any question to see the answer inline (no typing needed). |
 
 Your current section persists across browser refreshes. Refresh inside Quiz Mode and you land back in Quiz Mode.
 
+**Collapse the sidebar** with the toggle next to the app name to shrink it to a slim icon rail (hover any icon for its label) — handy for giving the chat or a mindmap more width. Your collapsed/expanded choice is remembered.
+
 Inside the Study Hub, **breadcrumbs** at the top show your exact location (e.g. *Study Hub › Workshop Creator › Python Fundamentals › Lesson 2*). Every crumb except the current one is clickable to jump back to that level.
 
-At the bottom of the sidebar, a **theme toggle** switches between light and dark mode (your choice persists). The whole interface is tuned for readability — large, high-contrast text so it's comfortable for extended study and accessible to low-vision users.
+At the bottom of the sidebar, a **theme toggle** switches between light and dark mode (your choice persists). The whole interface is tuned for readability — large, high-contrast text so it's comfortable for extended reading and accessible to low-vision users.
 
 ---
 
@@ -80,7 +84,7 @@ Click the **filter pill** ("All documents ▾") just above the composer. Pick a 
 
 - The active scope is **stamped on the user message** as a purple badge so you can see what was active when you asked.
 - The pill clears after sending so the next message uses the full KB unless you re-scope.
-- This scope also drives the **starter suggestion cards** on a new chat — anything clicked from the empty state is automatically scoped to this guide.
+- The same guide-scoping powers the **Help** section — clicking any question there answers it from this guide without touching your own documents.
 
 ### Sources sidebar
 
@@ -93,7 +97,7 @@ The right panel shows **every chunk** the AI cited in its last answer. Each entr
 
 ### Chat history
 
-The clock icon (top right) toggles the history sidebar. Every conversation is saved automatically; click any session to resume it. Use the trash icon to delete a session.
+Use **New Chat** and **Browse Past Sessions** in the left sidebar (under the app name, shown while you're in Chat) to start a fresh conversation or toggle the history panel. Every conversation is saved automatically; click any session to resume it, or use the trash icon to delete one.
 
 **Memory survives restarts.** The AI's working memory of a conversation is rebuilt from your saved history the first time you message a chat after restarting the app — so it still remembers earlier turns in that chat. (Each chat stays independent; there's no cross-chat memory.)
 
