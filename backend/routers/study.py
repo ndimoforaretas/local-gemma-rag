@@ -26,9 +26,12 @@ from backend.models.schemas import (
     LessonContentResponse,
     MindmapCreateRequest,
     MindmapExportResponse,
+    MindmapLayoutRequest,
     MindmapListItem,
     MindmapListResponse,
     MindmapOut,
+    MindmapPositionsRequest,
+    MindmapSourceRequest,
     QuizGenerateRequest,
     QuizGenerateResponse,
     QuizQuestionOut,
@@ -565,6 +568,39 @@ def list_mindmaps() -> MindmapListResponse:
 
 @router.get("/mindmaps/mindmap/{mindmap_id}", response_model=MindmapOut)
 def get_mindmap(mindmap_id: int) -> MindmapOut:
+    mm = progress_tracker.get_mindmap(mindmap_id)
+    if not mm:
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
+    return MindmapOut(**mm)
+
+
+@router.put("/mindmaps/mindmap/{mindmap_id}/source", response_model=MindmapOut)
+def set_mindmap_source(mindmap_id: int, req: MindmapSourceRequest) -> MindmapOut:
+    """Save (or clear) a user-edited mermaid diagram for this mindmap."""
+    if not progress_tracker.set_mindmap_source(mindmap_id, req.source):
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
+    mm = progress_tracker.get_mindmap(mindmap_id)
+    if not mm:
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
+    return MindmapOut(**mm)
+
+
+@router.put("/mindmaps/mindmap/{mindmap_id}/layout", response_model=MindmapOut)
+def set_mindmap_layout(mindmap_id: int, req: MindmapLayoutRequest) -> MindmapOut:
+    """Set the layout (TD / LR / radial) for this mindmap's auto diagram."""
+    if not progress_tracker.set_mindmap_layout(mindmap_id, req.layout):
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
+    mm = progress_tracker.get_mindmap(mindmap_id)
+    if not mm:
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
+    return MindmapOut(**mm)
+
+
+@router.put("/mindmaps/mindmap/{mindmap_id}/positions", response_model=MindmapOut)
+def set_mindmap_positions(mindmap_id: int, req: MindmapPositionsRequest) -> MindmapOut:
+    """Save (or clear) manual React Flow node positions for this mindmap."""
+    if not progress_tracker.set_mindmap_positions(mindmap_id, req.positions):
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
     mm = progress_tracker.get_mindmap(mindmap_id)
     if not mm:
         raise HTTPException(status_code=404, detail="Mindmap not found.")

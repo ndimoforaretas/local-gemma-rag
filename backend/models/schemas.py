@@ -6,7 +6,7 @@ the API contract is self-documenting via OpenAPI.
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Literal, Optional
 
 
 # ── Requests ─────────────────────────────────────────────────────────────────
@@ -328,6 +328,26 @@ class MindmapOut(BaseModel):
     title: str
     tree: MindmapNode
     export_count: int
+    # User-edited mermaid source; null → render the auto-generated diagram.
+    custom_source: Optional[str] = None
+    # Auto-diagram layout: 'TD' | 'LR' (null → frontend default).
+    layout: Optional[str] = None
+    # Manual node positions {id: {x, y}} (null → dagre auto-layout).
+    node_positions: Optional[dict] = None
+
+
+class MindmapSourceRequest(BaseModel):
+    # The edited mermaid code. Empty/whitespace resets to the auto diagram.
+    source: str = Field("", max_length=20_000)
+
+
+class MindmapLayoutRequest(BaseModel):
+    layout: Literal["TD", "LR"]
+
+
+class MindmapPositionsRequest(BaseModel):
+    # Manual node positions; empty/null clears them (back to auto-layout).
+    positions: Optional[dict] = None
 
 
 class MindmapListItem(BaseModel):

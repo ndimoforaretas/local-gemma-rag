@@ -195,6 +195,17 @@ def _init_schema(conn: sqlite3.Connection) -> None:
     cols = {r["name"] for r in conn.execute("PRAGMA table_info(quizzes)").fetchall()}
     if "progress_json" not in cols:
         conn.execute("ALTER TABLE quizzes ADD COLUMN progress_json TEXT")
+    # Defensive migration: add mindmaps.custom_source (user-edited mermaid code,
+    # NULL = use the auto-generated diagram).
+    mm_cols = {r["name"] for r in conn.execute("PRAGMA table_info(mindmaps)").fetchall()}
+    if "custom_source" not in mm_cols:
+        conn.execute("ALTER TABLE mindmaps ADD COLUMN custom_source TEXT")
+    # Layout for the auto-generated diagram: 'TD' | 'LR' (NULL → LR).
+    if "layout" not in mm_cols:
+        conn.execute("ALTER TABLE mindmaps ADD COLUMN layout TEXT")
+    # Manual React Flow node positions (JSON {id: {x, y}}); NULL → auto-layout.
+    if "node_positions" not in mm_cols:
+        conn.execute("ALTER TABLE mindmaps ADD COLUMN node_positions TEXT")
     conn.commit()
 
 
@@ -843,6 +854,7 @@ def get_mindmap(mindmap_id: int) -> Optional[dict]:
         row = cur.fetchone()
         if not row:
             return None
+        keys = row.keys()
         return {
             "id": row["id"],
             "created_at": row["created_at"],
@@ -851,6 +863,16 @@ def get_mindmap(mindmap_id: int) -> Optional[dict]:
             "title": row["title"],
             "tree": _json.loads(row["tree_json"]),
             "export_count": int(row["export_count"] or 0),
+            # User-edited mermaid source (NULL → render the auto-generated tree).
+            "custom_source": row["custom_source"] if "custom_source" in keys else None,
+            # Auto-diagram layout: 'TD' | 'LR' (NULL → frontend default).
+            "layout": row["layout"] if "layout" in keys else None,
+            # Manual node positions {id: {x, y}} (NULL → dagre auto-layout).
+            "node_positions": (
+                _json.loads(row["node_positions"])
+                if "node_positions" in keys and row["node_positions"]
+                else None
+            ),
         }
     finally:
         conn.close()
@@ -891,6 +913,78 @@ def increment_mindmap_export(mindmap_id: int) -> None:
                 (mindmap_id,),
             )
             conn.commit()
+        finally:
+            conn.close()
+
+
+def set_mindmap_source(mindmap_id: int, source: Optional[str]) -> bool:
+    """
+    Persist (or clear) a user-edited mermaid diagram for a mindmap.
+
+    ``source=None`` (or empty) resets to the auto-generated diagram. Returns
+    True if a row was updated.
+    """
+    cleaned = source.strip() if isinstance(source, str) and source.strip() else None
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE mindmaps SET custom_source = ? WHERE id = ?",
+                (cleaned, mindmap_id),
+            )
+            conn.commit()
+            return cur.rowcount > 0
+        finally:
+            conn.close()
+
+
+def set_mindmap_layout(mindmap_id: int, layout: str) -> bool:
+    """
+    Persist the chosen layout for a mindmap's auto-generated diagram.
+
+    ``layout`` is one of 'TD' | 'LR'. Returns True if a row updated.
+    """
+    if layout not in ("TD", "LR"):
+        layout = "LR"
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            # Changing direction invalidates any manual drag positions → reset.
+            cur.execute(
+                "UPDATE mindmaps SET layout = ?, node_positions = NULL WHERE id = ?",
+                (layout, mindmap_id),
+            )
+            conn.commit()
+            return cur.rowcount > 0
+        finally:
+            conn.close()
+
+
+def set_mindmap_positions(mindmap_id: int, positions: Optional[dict]) -> bool:
+    """
+    Persist (or clear) manual React Flow node positions for a mindmap.
+
+    ``positions`` is a dict ``{node_id: {"x": float, "y": float}}``; None/empty
+    clears it (back to auto-layout). Returns True if a row was updated.
+    """
+    import json as _json
+
+    blob = _json.dumps(positions) if positions else None
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE mindmaps SET node_positions = ? WHERE id = ?",
+                (blob, mindmap_id),
+            )
+            conn.commit()
+            return cur.rowcount > 0
         finally:
             conn.close()
 

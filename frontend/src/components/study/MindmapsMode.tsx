@@ -52,6 +52,12 @@ export function MindmapsMode({ onExit }: { onExit: () => void }) {
             <MindmapView
               mindmap={m.active.data}
               onExported={() => m.recordExport.mutate(m.activeId!)}
+              onSaveLayout={(layout) =>
+                m.saveLayout.mutate({ id: m.activeId!, layout })
+              }
+              onSavePositions={(positions) =>
+                m.savePositions.mutate({ id: m.activeId!, positions })
+              }
             />
           )}
         </div>

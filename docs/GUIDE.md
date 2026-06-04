@@ -210,17 +210,21 @@ Scrollable decks of flip-cards for spaced review.
 
 ### 5.4 Mindmaps
 
-Radial concept maps of your scoped material.
+Concept maps of your scoped material, rendered as a clean top-down diagram.
 
 **Configuration:** just scope. Depth is fixed at 2 (root → themes → sub-topics).
 
-**The map:** central root pill (purple-pink gradient), 4–6 themed branches around it, 2–4 sub-topics fanning out from each theme. **Drag** to pan, **scroll** to zoom (0.4× → 2.5×).
+**The map:** an interactive node graph of your root → 4–6 themes → 2–4 sub-topics each, themed to match light/dark mode. **Drag the background** to pan, **scroll** to zoom, or use the on-canvas controls.
 
-**Export buttons** in the header:
+**Rearrange it.** **Drag any node** to move it — your arrangement is **saved automatically** and restored next time you open the map. Hit **Reset layout** (top-right of the toolbar) to snap back to the automatic layout.
+
+**Layout selector.** A small control switches the automatic layout between **Left-right** (default — best for wordy nodes) and **Top-down**. Switching direction re-runs the auto layout (and clears any manual drags). Your choice is saved per-map.
+
+**Export buttons** (top-right of the canvas):
 
 - **Markdown** — nested bulleted list. Opens a native Save As dialog (Chromium-based browsers).
-- **Image (PNG)** — rasterised at 2400 px wide on a dark background. Same Save As dialog.
-- **PDF** — opens the browser print dialog with the rendered image pre-filled.
+- **Image (PNG)** — the whole map rendered crisply (2× pixel density) on a solid background. Same Save As dialog.
+- **PDF** — the map embedded in a one-page PDF, downloaded directly.
 
 **Badges:** 🗺️ Mind Mapper · 📐 Cartographer (first export) · 🌐 Concept Network (5 mindmaps).
 

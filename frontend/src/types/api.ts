@@ -334,6 +334,12 @@ export interface Mindmap {
   title: string;
   tree: MindmapNode;
   export_count: number;
+  /** User-edited mermaid source; null/absent → render the auto diagram. */
+  custom_source?: string | null;
+  /** Auto-diagram layout: "TD" | "LR" (null → default). */
+  layout?: "TD" | "LR" | null;
+  /** Manual React Flow node positions {id: {x, y}} (null → auto-layout). */
+  node_positions?: Record<string, { x: number; y: number }> | null;
 }
 
 export interface MindmapListItem {

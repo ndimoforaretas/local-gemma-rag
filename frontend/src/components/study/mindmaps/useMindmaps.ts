@@ -44,6 +44,27 @@ export function useMindmaps() {
     },
   });
 
+  // Change the auto-diagram layout (TD / LR); updates cache in place.
+  const saveLayout = useMutation({
+    mutationFn: ({ id, layout }: { id: number; layout: "TD" | "LR" }) =>
+      api.setMindmapLayout(id, layout),
+    onSuccess: (mm: Mindmap) =>
+      qc.setQueryData(["mindmaps", "detail", mm.id], mm),
+  });
+
+  // Save (or clear) manual node positions after dragging; cache in place.
+  const savePositions = useMutation({
+    mutationFn: ({
+      id,
+      positions,
+    }: {
+      id: number;
+      positions: Record<string, { x: number; y: number }> | null;
+    }) => api.setMindmapPositions(id, positions),
+    onSuccess: (mm: Mindmap) =>
+      qc.setQueryData(["mindmaps", "detail", mm.id], mm),
+  });
+
   const deleteMindmap = useMutation({
     mutationFn: api.deleteMindmap,
     onSuccess: () => list.refetch(),
@@ -67,7 +88,7 @@ export function useMindmaps() {
     phase, setPhase,
     scope, setScope,
     list, active,
-    createMindmap, recordExport, deleteMindmap,
+    createMindmap, recordExport, deleteMindmap, saveLayout, savePositions,
     activeId,
     openMindmap, backToList, startNew,
   };

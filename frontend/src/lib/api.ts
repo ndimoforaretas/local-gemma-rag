@@ -437,6 +437,35 @@ export const api = {
     return handleJsonResponse<import("../types/api").Mindmap>(resp);
   },
 
+  // Set the auto-diagram layout (TD / LR).
+  setMindmapLayout: async (id: number, layout: "TD" | "LR") => {
+    const resp = await fetch(
+      `${API_BASE}/api/study/mindmaps/mindmap/${id}/layout`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ layout }),
+      },
+    );
+    return handleJsonResponse<import("../types/api").Mindmap>(resp);
+  },
+
+  // Save (or clear, with null) manual React Flow node positions.
+  setMindmapPositions: async (
+    id: number,
+    positions: Record<string, { x: number; y: number }> | null,
+  ) => {
+    const resp = await fetch(
+      `${API_BASE}/api/study/mindmaps/mindmap/${id}/positions`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ positions }),
+      },
+    );
+    return handleJsonResponse<import("../types/api").Mindmap>(resp);
+  },
+
   recordMindmapExport: async (id: number) => {
     const resp = await fetch(
       `${API_BASE}/api/study/mindmaps/mindmap/${id}/export`,
