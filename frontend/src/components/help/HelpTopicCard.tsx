@@ -2,6 +2,7 @@
  * One expandable Help topic — click to reveal its pre-written answer instantly.
  */
 
+import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
 import { renderMarkdown } from "../../lib/markdownTable";
 import type { HelpTopic } from "./helpTopics";
@@ -15,6 +16,7 @@ export function HelpTopicCard({
   open: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation("help");
   const Icon = topic.icon;
   return (
     <div className="rounded-xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23] overflow-hidden">
@@ -29,10 +31,10 @@ export function HelpTopicCard({
         </span>
         <span className="flex-1 min-w-0">
           <span className="block text-sm font-semibold text-ink-strong">
-            {topic.label}
+            {t(`topics.${topic.id}.label`)}
           </span>
           <span className="block text-xs text-ink-muted truncate">
-            {topic.question}
+            {t(`topics.${topic.id}.question`)}
           </span>
         </span>
         <ChevronDown
@@ -45,7 +47,7 @@ export function HelpTopicCard({
         <div className="px-4 pb-4 pt-3 border-t border-[#c2c6d6] dark:border-[#424754]">
           <div
             className="ai-response prose prose-slate dark:prose-invert max-w-none text-sm"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(topic.answer) }}
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(t(`topics.${topic.id}.answer`)) }}
           />
         </div>
       )}

@@ -1,0 +1,93 @@
+{
+  "header": {
+    "badge": "Hilfe & Anleitung",
+    "title": "Wie können wir helfen?",
+    "subtitle": "Wähle eine Frage, um die Antwort direkt hier zu sehen — ganz ohne Tippen."
+  },
+  "toc": {
+    "onThisPage": "Auf dieser Seite",
+    "aria": "Hilfe-Abschnitte"
+  },
+  "groups": {
+    "gettingStarted": "Erste Schritte",
+    "tools": "Werkzeuge",
+    "progressData": "Fortschritt & Daten"
+  },
+  "topics": {
+    "uploadDocuments": {
+      "label": "Dokumente hochladen",
+      "question": "Wie füge ich meine Dokumente hinzu?",
+      "answer": "Öffne die **Wissensdatenbank** in der Seitenleiste und ziehe Dateien auf den Ablagebereich oder nutze die Dateiauswahl. Du kannst beim Hochladen eine Kategorie zuweisen. Du kannst auch eine **URL** einfügen, um eine Webseite zu importieren. Dateien werden automatisch verarbeitet und im Chat durchsuchbar."
+    },
+    "supportedTypes": {
+      "label": "Unterstützte Dateitypen",
+      "question": "Welche Dateitypen kann ich hochladen?",
+      "answer": "PDF, Word (`.docx`), PowerPoint (`.pptx`), Markdown (`.md`), reiner Text (`.txt`), CSV und Bilder (PNG/JPG). Gescannte oder reine Bild-PDFs werden automatisch per **OCR** verarbeitet, sodass ihr Text durchsuchbar wird."
+    },
+    "attachFiles": {
+      "label": "Dateien an eine Nachricht anhängen",
+      "question": "Kann ich Dateien oder Bilder an eine einzelne Nachricht anhängen?",
+      "answer": "Ja. Klicke auf die **Büroklammer** im Nachrichtenfeld (oder ziehe darauf), um Dokumente oder Bilder an eine Frage anzuhängen. Sie werden nur für diese Nachricht analysiert — danach kannst du **Zur Wissensdatenbank hinzufügen** wählen, um sie dauerhaft zu behalten."
+    },
+    "voiceInput": {
+      "label": "Spracheingabe",
+      "question": "Wie stelle ich eine Frage per Sprache?",
+      "answer": "Tippe auf das **Mikrofon** im Nachrichtenfeld und sprich. Deine Sprache wird **lokal** transkribiert und in das Eingabefeld eingefügt, sodass du sie vor dem Senden prüfen und bearbeiten kannst."
+    },
+    "focusDocuments": {
+      "label": "Auf bestimmte Dokumente fokussieren",
+      "question": "Wie beschränke ich Antworten auf bestimmte Dokumente?",
+      "answer": "Nutze den **Bereichsfilter** über dem Nachrichtenfeld, um Antworten auf eine Kategorie oder bestimmte Dateien zu beschränken. Der aktive Bereich wird als Abzeichen auf deiner Nachricht vermerkt und nach dem Senden zurückgesetzt, sodass deine nächste Nachricht wieder alles verwendet."
+    },
+    "seeSources": {
+      "label": "Quellen ansehen",
+      "question": "Wie prüfe ich, woher eine Antwort stammt?",
+      "answer": "Jede Antwort listet ihre **Quellen** im rechten Bereich auf. Klappe einen Eintrag auf, um den genauen Textabschnitt zu sehen, den die KI verwendet hat, seine Relevanzbewertung und einen Link zum Öffnen der Originaldatei."
+    },
+    "categories": {
+      "label": "Mit Kategorien organisieren",
+      "question": "Wie organisiere ich meine Dokumente?",
+      "answer": "Gib einem Dokument beim Hochladen eine **Kategorie** (z. B. *Verträge*, *Forschung*, *Rezepte*). Kategorien erscheinen als Ordner im Bereichsfilter, sodass du einen Chat — oder beliebige generierte Materialien — auf ein Themengebiet fokussieren kannst."
+    },
+    "quizzes": {
+      "label": "Quizze",
+      "question": "Wie erstelle ich ein Quiz?",
+      "answer": "Gehe zu **Lern-Hub → Quiz-Modus**, beschränke es auf deine Dokumente, wähle Schwierigkeit, Anzahl der Fragen und **Übung** (sofortiges Feedback) oder **Prüfung** (verzögert), und starte dann. Jedes Quiz wird gespeichert, sodass du es fortsetzen oder wiederholen kannst."
+    },
+    "workshops": {
+      "label": "Workshops",
+      "question": "Wie erstelle ich einen mehrteiligen Workshop?",
+      "answer": "**Lern-Hub → Workshop-Ersteller** erstellt aus deinen ausgewählten Dokumenten einen strukturierten, mehrteiligen Kurs — eine Gliederung plus Lektionen, die du nacheinander durcharbeitest und mit einem Abschlussquiz beendest."
+    },
+    "flashcards": {
+      "label": "Lernkarten",
+      "question": "Wie funktionieren Lernkarten?",
+      "answer": "**Lern-Hub → Lernkarten** erstellt einen Satz aus deinen Dokumenten. Drehe jede Karte um, markiere sie als **Gemeistert** oder **Zu wiederholen**, und dein Fortschritt wird pro Satz gespeichert."
+    },
+    "mindmaps": {
+      "label": "Mindmaps",
+      "question": "Wie erstelle und exportiere ich eine Mindmap?",
+      "answer": "**Lern-Hub → Mindmaps** verwandelt deine Dokumente in eine interaktive Knotenkarte. **Ziehe Knoten**, um sie neu anzuordnen, wechsle zwischen dem Layout **Links-rechts / Oben-unten** und exportiere als **Markdown, PNG oder PDF**."
+    },
+    "dashboard": {
+      "label": "Aktivitäts-Dashboard",
+      "question": "Wo sehe ich meine Aktivität und Zeit?",
+      "answer": "Das **Dashboard** zeigt deine Gesamtzeit, Sitzungen, aktuelle und beste Serie, eine Aufschlüsselung nach Bereich und eine tägliche Aktivitäts-**Heatmap**. Klicke auf einen Tag in der Heatmap, um die Details dieses Tages zu sehen."
+    },
+    "achievements": {
+      "label": "Erfolge",
+      "question": "Welche Erfolge kann ich freischalten?",
+      "answer": "Abzeichen werden automatisch freigeschaltet, während du die App nutzt — erste Frage, tägliche Serien, Quizze, Sätze, Mindmaps und mehr. Du findest sie im **Erfolge**-Raster des Dashboards; klicke auf ein Abzeichen, um deinen Fortschritt dazu zu sehen."
+    },
+    "exporting": {
+      "label": "Exportieren",
+      "question": "Wie exportiere ich meine Arbeit?",
+      "answer": "Quizze werden als **Markdown** oder **PDF** exportiert; Mindmaps als **Markdown, PNG oder PDF** (Schaltflächen auf dem jeweiligen Bildschirm). Einzelne Chat-Antworten können ebenfalls als Markdown exportiert werden."
+    },
+    "privacy": {
+      "label": "Datenschutz & Speicherung",
+      "question": "Wo werden meine Daten gespeichert?",
+      "answer": "**Alles bleibt auf deinem Rechner.** Deine Dokumente, der Suchindex, der Chat-Verlauf und der Fortschritt sind alle lokale Dateien. Nichts wird an einen externen KI-Dienst gesendet — das Modell läuft lokal."
+    }
+  }
+}

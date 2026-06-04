@@ -5,25 +5,27 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { LifeBuoy } from "lucide-react";
 import { HELP_GROUPS, type HelpTopic } from "./help/helpTopics";
 import { HelpTopicCard } from "./help/HelpTopicCard";
 import { HelpToc } from "./help/HelpToc";
 
-const GROUP_TITLES = HELP_GROUPS.map((g) => g.title);
+const GROUP_IDS = HELP_GROUPS.map((g) => g.id);
 
 export function Help() {
-  const [openLabel, setOpenLabel] = useState<string | null>(null);
-  const [activeGroup, setActiveGroup] = useState(GROUP_TITLES[0]);
+  const { t } = useTranslation("help");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [activeGroup, setActiveGroup] = useState(GROUP_IDS[0]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const toggle = (topic: HelpTopic) =>
-    setOpenLabel((cur) => (cur === topic.label ? null : topic.label));
+    setOpenId((cur) => (cur === topic.id ? null : topic.id));
 
-  const jump = (title: string) =>
-    sectionRefs.current[title]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const jump = (id: string) =>
+    sectionRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   // Scroll-spy: the active group is the last section whose heading has passed
   // the top of the scroll container. Deterministic — updates on scroll up too.
@@ -32,10 +34,10 @@ export function Help() {
     if (!root) return;
     const onScroll = () => {
       const rootTop = root.getBoundingClientRect().top;
-      let current = GROUP_TITLES[0];
-      for (const title of GROUP_TITLES) {
-        const el = sectionRefs.current[title];
-        if (el && el.getBoundingClientRect().top - rootTop <= 96) current = title;
+      let current = GROUP_IDS[0];
+      for (const id of GROUP_IDS) {
+        const el = sectionRefs.current[id];
+        if (el && el.getBoundingClientRect().top - rootTop <= 96) current = id;
       }
       setActiveGroup(current);
     };
@@ -50,35 +52,35 @@ export function Help() {
         <div className="flex-1 min-w-0 max-w-3xl">
           <header className="mb-8">
             <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full bg-[#a855f7]/15 text-[#a855f7] dark:text-[#ddb7ff] mb-3">
-              <LifeBuoy size={13} /> Help &amp; Guide
+              <LifeBuoy size={13} /> {t("header.badge")}
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-ink-strong">
-              How can we help?
+              {t("header.title")}
             </h1>
             <p className="text-base text-ink-muted mt-2 max-w-xl">
-              Pick a question to see the answer right here — no typing needed.
+              {t("header.subtitle")}
             </p>
           </header>
 
           <div className="space-y-8">
             {HELP_GROUPS.map((group) => (
               <section
-                key={group.title}
-                data-group={group.title}
+                key={group.id}
+                data-group={group.id}
                 ref={(el) => {
-                  sectionRefs.current[group.title] = el;
+                  sectionRefs.current[group.id] = el;
                 }}
                 className="scroll-mt-4"
               >
                 <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-muted mb-3">
-                  {group.title}
+                  {t(`groups.${group.id}`)}
                 </h2>
                 <div className="flex flex-col gap-2">
                   {group.topics.map((topic) => (
                     <HelpTopicCard
-                      key={topic.label}
+                      key={topic.id}
                       topic={topic}
-                      open={openLabel === topic.label}
+                      open={openId === topic.id}
                       onToggle={() => toggle(topic)}
                     />
                   ))}
@@ -90,7 +92,11 @@ export function Help() {
 
         <aside className="hidden xl:block w-44 shrink-0">
           <div className="sticky top-8">
-            <HelpToc groups={GROUP_TITLES} active={activeGroup} onJump={jump} />
+            <HelpToc
+              groups={GROUP_IDS.map((id) => ({ id, title: t(`groups.${id}`) }))}
+              active={activeGroup}
+              onJump={jump}
+            />
           </div>
         </aside>
       </div>
