@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Pencil, User } from "lucide-react";
 import { Tooltip } from "./Tooltip";
@@ -34,6 +35,7 @@ export function ChatMessageList({
   messages, isLoading, copiedId, onCopy, onExport,
   messagesEndRef, onOpenHelp, onEdit, onRegenerate,
 }: ChatMessageListProps) {
+  const { t } = useTranslation("chat");
   const prefersReducedMotion = useReducedMotion();
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editDraft, setEditDraft] = useState("");
@@ -125,10 +127,10 @@ export function ChatMessageList({
 
                     {msg.role === "user" && onEdit && !isLoading && editingIndex !== msgIndex && !msg.attachments?.length && (
                       <div className="flex justify-end mt-1">
-                        <Tooltip content="Edit and resend" position="top">
+                        <Tooltip content={t("message.editTip")} position="top">
                           <button
                             onClick={() => startEdit(msgIndex, msg.content)}
-                            aria-label="Edit message"
+                            aria-label={t("message.editAria")}
                             className="flex items-center gap-1 text-xs font-medium text-ink-muted hover:text-[#a855f7] dark:hover:text-[#ddb7ff] transition-colors"
                           >
                             <Pencil size={12} /> Edit

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { CornerDownLeft, FileText, X as XIcon } from "lucide-react";
 import type { MessageAttachment } from "../../types/api";
 
@@ -16,6 +17,7 @@ export function UserMessageBubble({
   content, attachments, isEditing, editDraft,
   editTextareaRef, onEditDraftChange, onEditSubmit, onEditCancel,
 }: UserMessageBubbleProps) {
+  const { t } = useTranslation("chat");
   if (isEditing) {
     return (
       <div className="flex flex-col gap-2 w-full min-w-[220px]">
@@ -29,7 +31,7 @@ export function UserMessageBubble({
           }}
           rows={3}
           className="w-full rounded-xl bg-white/15 text-white placeholder-white/50 text-sm leading-relaxed p-2 resize-none border border-white/30 focus:outline-none focus:border-white/60"
-          aria-label="Edit your message"
+          aria-label={t("message.editYourAria")}
         />
         <div className="flex items-center justify-end gap-2">
           <button
@@ -37,7 +39,7 @@ export function UserMessageBubble({
             onClick={onEditCancel}
             className="flex items-center gap-1 text-xs font-medium text-white/70 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-white/10"
           >
-            <XIcon size={12} /> Cancel
+            <XIcon size={12} /> {t("message.cancel")}
           </button>
           <button
             type="button"
@@ -45,7 +47,7 @@ export function UserMessageBubble({
             disabled={!editDraft.trim()}
             className="flex items-center gap-1 text-xs font-semibold text-white bg-white/20 hover:bg-white/30 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1 rounded-lg transition-colors"
           >
-            <CornerDownLeft size={12} /> Send
+            <CornerDownLeft size={12} /> {t("message.resend")}
           </button>
         </div>
       </div>

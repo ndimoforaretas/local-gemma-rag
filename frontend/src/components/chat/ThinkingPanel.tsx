@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
@@ -9,6 +10,7 @@ interface ThinkingPanelProps {
 }
 
 export function ThinkingPanel({ thinking, isStreaming = false }: ThinkingPanelProps) {
+  const { t } = useTranslation("chat");
   const [isOpen, setIsOpen] = useState(false);
   const prefersReducedMotion = useReducedMotion();
 
@@ -20,7 +22,7 @@ export function ThinkingPanel({ thinking, isStreaming = false }: ThinkingPanelPr
         className="flex items-center gap-1.5 text-xs font-medium text-ink-muted hover:text-ink-strong transition-colors select-none group"
       >
         <span className="text-[13px]">🧠</span>
-        <span>Reasoning</span>
+        <span>{t("message.reasoning")}</span>
         {isStreaming && (
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#a855f7] animate-pulse ml-0.5" />
         )}

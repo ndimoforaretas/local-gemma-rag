@@ -1,0 +1,53 @@
+{
+  "empty": {
+    "title": "Ask anything about your documents",
+    "intro": "Type a question below to get started. A few things you can do:",
+    "hint1": "Scope the chat to a category or specific files so answers stay on-topic.",
+    "hint2": "Attach documents or images right in the message box.",
+    "hint3": "Prefer talking? Tap the mic to dictate your question.",
+    "browseHelp": "Browse all help"
+  },
+  "input": {
+    "placeholder": "Message Gemma CogniVault…",
+    "ariaInput": "Message input",
+    "attach": "Attach files",
+    "attachFull": "Attach files (images, PDF, DOCX, text — up to {{max}})",
+    "attachLimit": "Maximum {{max}} attachments reached",
+    "send": "Send message",
+    "generating": "Generating response…",
+    "recordStart": "Record voice message (Whisper)",
+    "recordStop": "Stop recording",
+    "transcribing": "Transcribing…",
+    "helper": "Enter to send · Shift+Enter for new line · attach up to {{max}} files",
+    "chars": "{{count}} chars"
+  },
+  "message": {
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyTip": "Copy response to clipboard",
+    "copiedTip": "Copied to clipboard!",
+    "copyAria": "Copy response",
+    "copiedAria": "Response copied",
+    "export": "Export",
+    "exportTip": "Export this response as a Markdown file",
+    "exportAria": "Export response as markdown",
+    "regenerate": "Regenerate",
+    "regenerateTip": "Regenerate this response",
+    "regenerateAria": "Regenerate response",
+    "editTip": "Edit and resend",
+    "editAria": "Edit message",
+    "editYourAria": "Edit your message",
+    "cancel": "Cancel",
+    "resend": "Send",
+    "reasoning": "Reasoning"
+  },
+  "memory": {
+    "label": "Working memory",
+    "trimmed": "This chat is long — the oldest messages are dropping out of the AI's memory. Start a new chat to keep full context.",
+    "tooltip": "The AI is holding about {{words}} words of this conversation in memory ({{pct}}% of its rolling window)."
+  },
+  "scope": {
+    "documents_one": "{{count}} document",
+    "documents_other": "{{count}} documents"
+  }
+}

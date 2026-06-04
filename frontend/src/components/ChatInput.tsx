@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useId, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Loader2, Mic, Paperclip, Send, Square } from "lucide-react";
 import { Tooltip } from "./Tooltip";
 import { AttachmentTray } from "./chat/AttachmentTray";
@@ -24,6 +25,7 @@ interface ChatInputProps {
 }
 
 export function ChatInput({ input, isLoading, onInputChange, onSend }: ChatInputProps) {
+  const { t } = useTranslation("chat");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const helperTextId = useId();
   const charCountId = useId();
@@ -75,13 +77,13 @@ export function ChatInput({ input, isLoading, onInputChange, onSend }: ChatInput
       <div className="bg-white dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl px-3 py-2 flex items-end gap-2 transition-all focus-within:border-[#0058be] dark:focus-within:border-[#a855f7] focus-within:ring-2 focus-within:ring-[#0058be]/20 dark:focus-within:ring-[#a855f7]/20">
         {/* Attach button */}
         <Tooltip
-          content={attachmentsAtLimit ? `Maximum ${MAX_ATTACHMENTS} attachments reached` : isLoading ? "Generating response..." : "Attach files (images, PDF, DOCX, text — up to 5)"}
+          content={attachmentsAtLimit ? t("input.attachLimit", { max: MAX_ATTACHMENTS }) : isLoading ? t("input.generating") : t("input.attachFull", { max: MAX_ATTACHMENTS })}
           position="top-start"
         >
           <button
             type="button"
             onClick={() => { if (!isLoading && !attachmentsAtLimit) files.fileInputRef.current?.click(); }}
-            aria-label="Attach files"
+            aria-label={t("input.attach")}
             aria-disabled={isLoading || attachmentsAtLimit}
             className={`w-9 h-9 mb-1 flex items-center justify-center rounded-full transition-all ${isLoading || attachmentsAtLimit ? "opacity-40 cursor-not-allowed text-ink-muted" : "text-ink-muted hover:text-[#0058be] dark:hover:text-[#ddb7ff] hover:bg-[#d0e1fb] dark:hover:bg-[#3d2f4b]"}`}
           >
@@ -100,14 +102,14 @@ export function ChatInput({ input, isLoading, onInputChange, onSend }: ChatInput
         {/* Mic button — only when Whisper is available */}
         {voice.transcriptionAvailable && (
           <Tooltip
-            content={isLoading ? "Generating response…" : voice.isTranscribing ? "Transcribing…" : voice.isRecording ? "Stop recording" : "Record voice message (Whisper)"}
+            content={isLoading ? t("input.generating") : voice.isTranscribing ? t("input.transcribing") : voice.isRecording ? t("input.recordStop") : t("input.recordStart")}
             position="top"
           >
             <button
               type="button"
               onClick={voice.isRecording ? voice.stopRecording : voice.startRecording}
               disabled={isLoading || voice.isTranscribing}
-              aria-label={voice.isRecording ? "Stop recording" : "Record voice message"}
+              aria-label={voice.isRecording ? t("input.recordStop") : t("input.recordStart")}
               className={`w-9 h-9 mb-1 flex items-center justify-center rounded-full transition-all ${isLoading || voice.isTranscribing ? "opacity-40 cursor-not-allowed text-ink-muted" : voice.isRecording ? "bg-red-500/90 text-white animate-pulse hover:bg-red-600" : "text-ink-muted hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"}`}
             >
               {voice.isTranscribing ? <Loader2 size={18} className="animate-spin" /> : voice.isRecording ? <Square size={16} className="fill-current" /> : <Mic size={18} />}
@@ -120,20 +122,20 @@ export function ChatInput({ input, isLoading, onInputChange, onSend }: ChatInput
           value={input}
           onChange={(e) => onInputChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Message Gemma CogniVault..."
+          placeholder={t("input.placeholder")}
           rows={1}
-          aria-label="Message input"
+          aria-label={t("input.ariaInput")}
           aria-describedby={`${helperTextId} ${charCountId}`}
           aria-busy={isLoading}
           className="flex-1 bg-transparent border-0 outline-none resize-none min-h-[44px] max-h-44 py-2 px-1 text-base leading-6 text-ink placeholder-[#586271] dark:placeholder-[#9aa1b2]"
         />
 
         {/* Send button */}
-        <Tooltip content={isLoading ? "Generating response..." : "Send message"} position="top">
+        <Tooltip content={isLoading ? t("input.generating") : t("input.send")} position="top">
           <button
             type="button"
             onClick={handleSend}
-            aria-label={isLoading ? "Generating response" : "Send message"}
+            aria-label={isLoading ? t("input.generating") : t("input.send")}
             aria-disabled={!canSend}
             disabled={!canSend}
             className="w-10 h-10 rounded-full mb-1 bg-[#a855f7] hover:bg-[#9333ea] disabled:bg-[#e0e3e5] dark:disabled:bg-[#3d2f4b] disabled:text-[#727785] dark:disabled:text-[#988d9f] text-white flex items-center justify-center transition-all hover:shadow-[0_0_16px_rgba(168,85,247,0.5)] active:scale-95 disabled:scale-100"
@@ -145,9 +147,9 @@ export function ChatInput({ input, isLoading, onInputChange, onSend }: ChatInput
 
       <div className="flex items-center justify-between px-2 text-xs text-ink-faint">
         <span id={helperTextId}>
-          {isLoading ? "Generating response..." : "Enter to send · Shift+Enter for new line · attach up to 5 files"}
+          {isLoading ? t("input.generating") : t("input.helper", { max: MAX_ATTACHMENTS })}
         </span>
-        <span id={charCountId} aria-live="polite">{input.length} chars</span>
+        <span id={charCountId} aria-live="polite">{t("input.chars", { count: input.length })}</span>
       </div>
     </div>
   );

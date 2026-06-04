@@ -6,10 +6,12 @@
  * the user is never surprised when the assistant "forgets" earlier messages.
  */
 
+import { useTranslation } from "react-i18next";
 import { Brain, AlertTriangle } from "lucide-react";
 import type { MemoryPayload } from "./knowledgeBase/ragStream";
 
 export function ChatMemoryMeter({ memory }: { memory?: MemoryPayload }) {
+  const { t } = useTranslation("chat");
   if (!memory || memory.budget_chars <= 0) return null;
 
   const pct = Math.min(
@@ -32,11 +34,11 @@ export function ChatMemoryMeter({ memory }: { memory?: MemoryPayload }) {
     <div className="flex flex-col gap-1">
       <div
         className="flex items-center gap-2"
-        title={`The AI is holding about ${approxWords.toLocaleString()} words of this conversation in memory (${pct}% of its rolling window).`}
+        title={t("memory.tooltip", { words: approxWords.toLocaleString(), pct })}
       >
         <Brain size={12} className={`shrink-0 ${tone.text}`} />
         <span className={`text-[11px] font-medium shrink-0 ${tone.text}`}>
-          Working memory
+          {t("memory.label")}
         </span>
         <div className="flex-1 h-1.5 rounded-full bg-[#c2c6d6]/40 dark:bg-[#424754]/40 overflow-hidden">
           <div
@@ -52,10 +54,7 @@ export function ChatMemoryMeter({ memory }: { memory?: MemoryPayload }) {
       {trimmed && (
         <div className="flex items-start gap-1.5 text-[11px] text-rose-600 dark:text-rose-400">
           <AlertTriangle size={12} className="mt-0.5 shrink-0" />
-          <span>
-            This chat is long — the oldest messages are dropping out of the AI's
-            memory. Start a new chat to keep full context.
-          </span>
+          <span>{t("memory.trimmed")}</span>
         </div>
       )}
     </div>
