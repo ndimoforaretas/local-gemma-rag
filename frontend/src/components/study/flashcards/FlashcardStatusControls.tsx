@@ -4,20 +4,22 @@
  *   - StatusButton  the Got it / Review pair on the back
  */
 
+import { useTranslation } from "react-i18next";
 import type { FlashcardStatus } from "./types";
 
 export function StatusBadge({ status }: { status: FlashcardStatus }) {
+  const { t } = useTranslation("study");
   if (!status) return null;
   if (status === "mastered") {
     return (
       <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-        Mastered
+        {t("flashcards.cardFace.masteredBadge")}
       </span>
     );
   }
   return (
     <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
-      Review
+      {t("flashcards.cardFace.reviewBadge")}
     </span>
   );
 }

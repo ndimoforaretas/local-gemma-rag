@@ -3,6 +3,8 @@
  * Layout matches WorkshopMode (top-aligned, wide container).
  */
 
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Breadcrumbs, type Crumb } from "../Breadcrumbs";
 import { FlashcardDeckView } from "./flashcards/FlashcardDeckView";
 import { FlashcardsConfigPanel } from "./flashcards/FlashcardsConfigPanel";
@@ -12,7 +14,8 @@ import { useFlashcards } from "./flashcards/useFlashcards";
 
 export function FlashcardsMode({ onExit }: { onExit: () => void }) {
   const f = useFlashcards();
-  const crumbs = buildCrumbs(f, onExit);
+  const { t } = useTranslation("study");
+  const crumbs = buildCrumbs(f, onExit, t);
 
   return (
     <div className="h-full overflow-y-auto">
@@ -81,16 +84,17 @@ export function FlashcardsMode({ onExit }: { onExit: () => void }) {
 function buildCrumbs(
   f: ReturnType<typeof useFlashcards>,
   onExit: () => void,
+  t: TFunction,
 ): Crumb[] {
   const crumbs: Crumb[] = [
-    { label: "Study Hub", onClick: onExit },
+    { label: t("hub.title"), onClick: onExit },
     {
-      label: "Flashcards",
+      label: t("flashcards.crumbs.flashcards"),
       onClick: f.phase === "list" ? undefined : f.backToList,
     },
   ];
   if (f.phase === "config") {
-    crumbs.push({ label: "New Deck" });
+    crumbs.push({ label: t("flashcards.crumbs.newDeck") });
   } else if (f.phase === "deck" && f.active.data) {
     crumbs.push({ label: f.active.data.title });
   }

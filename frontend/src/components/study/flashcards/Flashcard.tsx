@@ -11,6 +11,7 @@
  */
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, RotateCw } from "lucide-react";
 import type { Flashcard as FlashcardT } from "./types";
 import { gradientForStatus, glowForStatus } from "./flashcardStyles";
@@ -27,6 +28,7 @@ export function Flashcard({
     recordFlip: boolean,
   ) => void;
 }) {
+  const { t } = useTranslation("study");
   const [flipped, setFlipped] = useState(false);
 
   const handleFlip = () => {
@@ -55,7 +57,7 @@ export function Flashcard({
         <div
           onClick={handleFlip}
           role="button"
-          aria-label={flipped ? "Show prompt" : "Show answer"}
+          aria-label={flipped ? t("flashcards.cardFace.showPrompt") : t("flashcards.cardFace.showAnswer")}
           className={`relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d] cursor-pointer ${
             flipped ? "[transform:rotateY(180deg)]" : ""
           }`}
@@ -73,7 +75,7 @@ export function Flashcard({
           <div className="flex items-center justify-center gap-1.5 mt-3">
             <RotateCw size={12} className="text-[#a855f7] dark:text-[#ddb7ff]" />
             <span className="text-xs font-bold text-[#a855f7] dark:text-[#ddb7ff]">
-              Click to flip
+              {t("flashcards.cardFace.clickToFlip")}
             </span>
           </div>
         </CardFace>
@@ -81,7 +83,7 @@ export function Flashcard({
         <CardFace gradient={gradient} glow={glow} back>
           <div className="flex items-center justify-between mb-3">
             <div className="text-xs uppercase tracking-wider font-extrabold text-[#a855f7] dark:text-[#ddb7ff]">
-              Answer
+              {t("flashcards.cardFace.answer")}
             </div>
             <span className="text-xs font-medium text-ink-muted tabular-nums">
               #{card.card_idx + 1}
@@ -98,14 +100,14 @@ export function Flashcard({
               active={card.status === "mastered"}
               onClick={mark("mastered")}
               icon={<Check size={14} />}
-              label="Got it"
+              label={t("flashcards.cardFace.gotIt")}
             />
             <StatusButton
               tone="amber"
               active={card.status === "review"}
               onClick={mark("review")}
               icon={<RotateCw size={14} />}
-              label="Review"
+              label={t("flashcards.cardFace.review")}
             />
           </div>
         </CardFace>

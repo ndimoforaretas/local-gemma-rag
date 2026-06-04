@@ -2,6 +2,7 @@
  * Single deck card in the deck list.
  */
 
+import { useTranslation } from "react-i18next";
 import { Trash2, CheckCircle2 } from "lucide-react";
 import type { FlashcardDeckListItem } from "./types";
 
@@ -14,6 +15,7 @@ export function FlashcardDeckCard({
   onOpen: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation("study");
   const pct = item.card_count === 0
     ? 0
     : Math.round((100 * item.mastered_count) / item.card_count);
@@ -24,8 +26,8 @@ export function FlashcardDeckCard({
       <button
         type="button"
         onClick={onDelete}
-        aria-label="Delete deck"
-        title="Delete deck"
+        aria-label={t("flashcards.card.deleteAria")}
+        title={t("flashcards.card.deleteAria")}
         className="absolute top-3 right-3 p-1.5 rounded-lg text-ink-muted hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
       >
         <Trash2 size={14} />
@@ -34,11 +36,11 @@ export function FlashcardDeckCard({
       <button type="button" onClick={onOpen} className="text-left w-full">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-[#a855f7]/15 text-[#a855f7] dark:text-[#ddb7ff]">
-            {item.difficulty}
+            {t(`difficulty.${item.difficulty}`)}
           </span>
           {mastered && (
             <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 size={10} /> Mastered
+              <CheckCircle2 size={10} /> {t("flashcards.card.mastered")}
             </span>
           )}
         </div>
@@ -46,7 +48,7 @@ export function FlashcardDeckCard({
           {item.title}
         </h3>
         <div className="flex items-center justify-between text-xs text-ink-muted mb-1">
-          <span>{item.mastered_count} / {item.card_count} mastered</span>
+          <span>{t("flashcards.card.masteredCount", { mastered: item.mastered_count, total: item.card_count })}</span>
           <span>{pct}%</span>
         </div>
         <div className="h-1.5 bg-[#c2c6d6]/40 dark:bg-[#424754]/40 rounded-full overflow-hidden">

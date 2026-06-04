@@ -138,5 +138,67 @@
       "markdownAria": "Als Markdown herunterladen – öffnet einen Speichern-unter-Dialog",
       "pdfTip": "Als PDF-Datei herunterladen"
     }
+  },
+  "flashcards": {
+    "crumbs": { "flashcards": "Lernkarten", "newDeck": "Neuer Stapel" },
+    "config": {
+      "title": "Neuer Lernkartenstapel",
+      "subtitle": "Wählen Sie Bereich, Schwierigkeit und Anzahl der Karten.",
+      "back": "Zurück zu den Stapeln",
+      "scopeLabel": "Dokumentbereich (erforderlich)",
+      "scopeHintHas": "Die Karten werden aus diesen Dokumenten erstellt.",
+      "scopeHintEmpty": "Wählen Sie mindestens eine Kategorie oder Datei. Weiter Bereich = unfokussierte Karten.",
+      "difficultyLabel": "Schwierigkeit",
+      "countLabel": "Anzahl der Karten",
+      "cardsN": "{{count}} Karten",
+      "build": "Stapel erstellen",
+      "generating": "Wird generiert …"
+    },
+    "list": {
+      "yourDecks": "Ihre Lernkartenstapel",
+      "yourDecksCount": "Ihre Stapel ({{count}})",
+      "newDeck": "Neuer Stapel",
+      "emptyTitle": "Erstellen Sie Ihren ersten Stapel",
+      "emptyBody": "Lernkarten verwandeln Ihre ausgewählten Dokumente in einen Stapel Klappkarten, die Sie jederzeit durchgehen können, wenn Sie schnell Ihr Wissen auffrischen möchten.",
+      "emptyHint": "Klicken Sie oben auf „Neuer Stapel“, um zu beginnen.",
+      "deleteTitle": "Diesen Stapel löschen?",
+      "deleteMessage": "„{{title}}“ und alle {{count}} Karten werden dauerhaft entfernt.",
+      "delete": "Löschen",
+      "keep": "Behalten"
+    },
+    "card": {
+      "deleteAria": "Stapel löschen",
+      "mastered": "Gemeistert",
+      "masteredCount": "{{mastered}} / {{total}} gemeistert"
+    },
+    "gen": {
+      "title": "Ihr Stapel wird erstellt",
+      "body": "Gemma liest Ihre ausgewählten Dokumente und schreibt Klappkarten. Das dauert in der Regel 10–40 Sekunden.",
+      "elapsed": "{{time}} vergangen",
+      "stage0": "Ihre Dokumente werden gescannt …",
+      "stage1": "Schlüsselkonzepte zum Merken werden ausgewählt …",
+      "stage2": "Frage-/Antwort-Paare werden entworfen …",
+      "stage3": "Kartenformate werden variiert für abwechslungsreiches Lernen …",
+      "stage4": "Fast geschafft – Ihr Stapel wird fertiggestellt …"
+    },
+    "deck": {
+      "back": "Zurück zu den Stapeln",
+      "meta": "{{difficulty}} · {{count}} Karten · {{mastered}} gemeistert",
+      "filterAll": "Alle",
+      "filterUnmarked": "Unmarkiert",
+      "filterReview": "Wiederholen",
+      "filterMastered": "Gemeistert",
+      "noMatch": "Keine Karten passen zu diesem Filter."
+    },
+    "cardFace": {
+      "clickToFlip": "Zum Umdrehen klicken",
+      "answer": "Antwort",
+      "showPrompt": "Frage anzeigen",
+      "showAnswer": "Antwort anzeigen",
+      "gotIt": "Verstanden",
+      "review": "Wiederholen",
+      "masteredBadge": "Gemeistert",
+      "reviewBadge": "Wiederholen"
+    }
   }
 }

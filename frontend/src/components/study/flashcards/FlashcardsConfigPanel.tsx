@@ -35,31 +35,25 @@ export function FlashcardsConfigPanel(p: FlashcardsConfigPanelProps) {
         className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink-strong"
       >
         <ArrowLeft size={14} />
-        Back to decks
+        {t("flashcards.config.back")}
       </button>
 
       <div>
         <h2 className="text-2xl font-bold text-ink-strong mb-1">
-          New Flashcard Deck
+          {t("flashcards.config.title")}
         </h2>
-        <p className="text-sm text-ink-muted">
-          Pick your scope, difficulty, and how many cards to generate.
-        </p>
+        <p className="text-sm text-ink-muted">{t("flashcards.config.subtitle")}</p>
       </div>
 
       <div className="bg-white dark:bg-[#191b23] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-6 sm:p-8 space-y-7">
         <Section
-          label="Document scope (required)"
-          hint={
-            hasScope
-              ? "Cards are drawn from these documents."
-              : "Pick at least one category or file. Wide scope = unfocused cards."
-          }
+          label={t("flashcards.config.scopeLabel")}
+          hint={hasScope ? t("flashcards.config.scopeHintHas") : t("flashcards.config.scopeHintEmpty")}
         >
           <DocScopeFilter selected={p.scope} onChange={p.setScope} />
         </Section>
 
-        <Section label="Difficulty">
+        <Section label={t("flashcards.config.difficultyLabel")}>
           <div className="flex flex-wrap gap-2.5">
             {DIFFICULTIES.map((d) => (
               <PillButton
@@ -73,11 +67,11 @@ export function FlashcardsConfigPanel(p: FlashcardsConfigPanelProps) {
           </div>
         </Section>
 
-        <Section label="Number of cards">
+        <Section label={t("flashcards.config.countLabel")}>
           <div className="flex flex-wrap gap-2.5">
             {CARD_COUNTS.map((n) => (
               <PillButton key={n} active={p.cardCount === n} onClick={() => p.setCardCount(n)}>
-                {n} cards
+                {t("flashcards.config.cardsN", { count: n })}
               </PillButton>
             ))}
           </div>
@@ -100,11 +94,11 @@ export function FlashcardsConfigPanel(p: FlashcardsConfigPanelProps) {
         >
           {p.isLoading ? (
             <>
-              <Loader2 size={16} className="animate-spin" /> Generating…
+              <Loader2 size={16} className="animate-spin" /> {t("flashcards.config.generating")}
             </>
           ) : (
             <>
-              <Layers size={16} /> Build Deck
+              <Layers size={16} /> {t("flashcards.config.build")}
             </>
           )}
         </button>

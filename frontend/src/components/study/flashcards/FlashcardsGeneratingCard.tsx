@@ -4,24 +4,26 @@
  */
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Layers } from "lucide-react";
 import { motion } from "framer-motion";
 
 const STAGES = [
-  { from: 0, message: "Scanning your documents…" },
-  { from: 3, message: "Picking the key concepts to memorise…" },
-  { from: 8, message: "Drafting prompt / answer pairs…" },
-  { from: 18, message: "Varying card formats for richer review…" },
-  { from: 30, message: "Almost there — finalising your deck…" },
+  { from: 0, key: "stage0" },
+  { from: 3, key: "stage1" },
+  { from: 8, key: "stage2" },
+  { from: 18, key: "stage3" },
+  { from: 30, key: "stage4" },
 ];
 
-function stage(elapsed: number): string {
-  let cur = STAGES[0].message;
-  for (const s of STAGES) if (elapsed >= s.from) cur = s.message;
+function stageKey(elapsed: number): string {
+  let cur = STAGES[0].key;
+  for (const s of STAGES) if (elapsed >= s.from) cur = s.key;
   return cur;
 }
 
 export function FlashcardsGeneratingCard() {
+  const { t } = useTranslation("study");
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     const t0 = Date.now();
@@ -29,7 +31,7 @@ export function FlashcardsGeneratingCard() {
     return () => clearInterval(id);
   }, []);
 
-  const status = stage(elapsed);
+  const status = t(`flashcards.gen.${stageKey(elapsed)}`);
   const mins = Math.floor(elapsed / 60);
   const secs = elapsed % 60;
   const timer = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
@@ -44,12 +46,9 @@ export function FlashcardsGeneratingCard() {
         <Layers size={32} />
       </motion.div>
       <h2 className="text-xl font-bold text-ink-strong mb-1">
-        Building your deck
+        {t("flashcards.gen.title")}
       </h2>
-      <p className="text-sm text-ink-muted mb-6">
-        Gemma is reading your selected documents and writing flip cards.
-        This usually takes 10–40 seconds.
-      </p>
+      <p className="text-sm text-ink-muted mb-6">{t("flashcards.gen.body")}</p>
 
       <div className="w-full max-w-sm h-1.5 bg-[#c2c6d6]/40 dark:bg-[#424754]/40 rounded-full overflow-hidden mb-4">
         <motion.div
@@ -70,7 +69,7 @@ export function FlashcardsGeneratingCard() {
         {status}
       </motion.div>
       <div className="text-xs text-ink-muted tabular-nums">
-        {timer} elapsed
+        {t("flashcards.gen.elapsed", { time: timer })}
       </div>
     </div>
   );

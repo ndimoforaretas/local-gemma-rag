@@ -138,5 +138,67 @@
       "markdownAria": "Download as Markdown — opens a Save As dialog",
       "pdfTip": "Download as a PDF file"
     }
+  },
+  "flashcards": {
+    "crumbs": { "flashcards": "Flashcards", "newDeck": "New Deck" },
+    "config": {
+      "title": "New Flashcard Deck",
+      "subtitle": "Pick your scope, difficulty, and how many cards to generate.",
+      "back": "Back to decks",
+      "scopeLabel": "Document scope (required)",
+      "scopeHintHas": "Cards are drawn from these documents.",
+      "scopeHintEmpty": "Pick at least one category or file. Wide scope = unfocused cards.",
+      "difficultyLabel": "Difficulty",
+      "countLabel": "Number of cards",
+      "cardsN": "{{count}} cards",
+      "build": "Build Deck",
+      "generating": "Generating…"
+    },
+    "list": {
+      "yourDecks": "Your flashcard decks",
+      "yourDecksCount": "Your decks ({{count}})",
+      "newDeck": "New Deck",
+      "emptyTitle": "Build your first deck",
+      "emptyBody": "Flashcards turn your scoped documents into a deck of flip cards you can review whenever you want a quick recall workout.",
+      "emptyHint": "Click ‘New Deck’ above to get started.",
+      "deleteTitle": "Delete this deck?",
+      "deleteMessage": "“{{title}}” and all {{count}} of its cards will be permanently removed.",
+      "delete": "Delete",
+      "keep": "Keep"
+    },
+    "card": {
+      "deleteAria": "Delete deck",
+      "mastered": "Mastered",
+      "masteredCount": "{{mastered}} / {{total}} mastered"
+    },
+    "gen": {
+      "title": "Building your deck",
+      "body": "Gemma is reading your selected documents and writing flip cards. This usually takes 10–40 seconds.",
+      "elapsed": "{{time}} elapsed",
+      "stage0": "Scanning your documents…",
+      "stage1": "Picking the key concepts to memorise…",
+      "stage2": "Drafting prompt / answer pairs…",
+      "stage3": "Varying card formats for richer review…",
+      "stage4": "Almost there — finalising your deck…"
+    },
+    "deck": {
+      "back": "Back to decks",
+      "meta": "{{difficulty}} · {{count}} cards · {{mastered}} mastered",
+      "filterAll": "All",
+      "filterUnmarked": "Unmarked",
+      "filterReview": "Review",
+      "filterMastered": "Mastered",
+      "noMatch": "No cards match this filter."
+    },
+    "cardFace": {
+      "clickToFlip": "Click to flip",
+      "answer": "Answer",
+      "showPrompt": "Show prompt",
+      "showAnswer": "Show answer",
+      "gotIt": "Got it",
+      "review": "Review",
+      "masteredBadge": "Mastered",
+      "reviewBadge": "Review"
+    }
   }
 }
