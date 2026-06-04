@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { FolderOpen, X, UploadCloud } from "lucide-react";
 
@@ -27,6 +28,7 @@ export function CategoryModal({
   onConfirm,
   onCancel,
 }: CategoryModalProps) {
+  const { t } = useTranslation("kb");
   const [selected, setSelected] = useState("General");
   const [newName, setNewName] = useState("");
   const [creatingNew, setCreatingNew] = useState(false);
@@ -113,7 +115,7 @@ export function CategoryModal({
             <button
               onClick={onCancel}
               className="absolute top-4 right-4 p-1.5 rounded-lg text-ink-muted hover:text-ink-strong hover:bg-[#eceef0] dark:hover:bg-[#272a31] transition-colors"
-              aria-label="Close"
+              aria-label={t("category.close")}
             >
               <X className="w-5 h-5" />
             </button>
@@ -129,11 +131,10 @@ export function CategoryModal({
                     id="cat-modal-title"
                     className="text-lg font-bold text-ink-strong tracking-tight"
                   >
-                    Categorize Files
+                    {t("category.title")}
                   </h3>
                   <p className="mt-1 text-sm text-ink-muted leading-relaxed">
-                    Group these files so you can filter the AI's attention by
-                    topic during chat.
+                    {t("category.subtitle")}
                   </p>
                 </div>
               </div>
@@ -142,7 +143,7 @@ export function CategoryModal({
               <div className="rounded-xl border border-[#c2c6d6] dark:border-[#424754] bg-[#f2f4f6] dark:bg-[#272a31] overflow-hidden">
                 <div className="px-3 py-2 border-b border-[#c2c6d6] dark:border-[#424754]">
                   <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
-                    {files.length} file{files.length !== 1 ? "s" : ""} selected
+                    {t("category.filesSelected", { count: files.length })}
                   </span>
                 </div>
                 <ul className="divide-y divide-[#c2c6d6] dark:divide-[#424754] max-h-40 overflow-y-auto">
@@ -165,7 +166,7 @@ export function CategoryModal({
               {/* Category selector */}
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold text-ink-strong">
-                  Category
+                  {t("category.label")}
                 </label>
 
                 {!creatingNew ? (
@@ -179,7 +180,7 @@ export function CategoryModal({
                         {cat}
                       </option>
                     ))}
-                    <option value="__new__">＋ Create new category…</option>
+                    <option value="__new__">{t("category.createNew")}</option>
                   </select>
                 ) : (
                   <div className="flex items-center gap-2">
@@ -189,7 +190,7 @@ export function CategoryModal({
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") handleConfirm(); }}
-                      placeholder="e.g. Health, Finance, Research…"
+                      placeholder={t("category.placeholder")}
                       maxLength={64}
                       className="flex-1 rounded-xl border border-[#0058be]/50 dark:border-[#adc6ff]/40 bg-white dark:bg-[#272a31] px-3 py-2.5 text-sm text-ink-strong placeholder:text-[#727785] dark:placeholder:text-[#8c909f] focus:outline-none focus:ring-2 focus:ring-[#0058be]/30 dark:focus:ring-[#adc6ff]/20 transition-colors"
                     />
@@ -197,7 +198,7 @@ export function CategoryModal({
                       type="button"
                       onClick={() => { setCreatingNew(false); setNewName(""); }}
                       className="p-2.5 rounded-xl text-ink-muted hover:text-ink-strong hover:bg-[#eceef0] dark:hover:bg-[#32353c] transition-colors"
-                      aria-label="Back to category list"
+                      aria-label={t("category.backAria")}
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -206,7 +207,7 @@ export function CategoryModal({
 
                 {/* Preview of effective category */}
                 <p className="text-xs text-ink-muted">
-                  Files will be stored under{" "}
+                  {t("category.storedUnder")}{" "}
                   <span className="font-semibold text-[#0058be] dark:text-[#adc6ff]">
                     {effectiveCategory}
                   </span>
@@ -220,7 +221,7 @@ export function CategoryModal({
                   onClick={onCancel}
                   className="px-4 py-2 rounded-xl bg-[#e0e3e5] hover:bg-[#c2c6d6] dark:bg-[#272a31] dark:hover:bg-[#32353c] text-ink text-sm font-medium transition-colors"
                 >
-                  Cancel
+                  {t("category.cancel")}
                 </button>
                 <button
                   type="button"
@@ -228,7 +229,7 @@ export function CategoryModal({
                   className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-[#0058be] hover:bg-[#2170e4] dark:bg-[#4d8eff] dark:hover:bg-[#4d8eff]/90 text-white dark:text-[#002e6a] text-sm font-semibold shadow-[0_4px_12px_rgba(77,142,255,0.2)] transition-all"
                 >
                   <UploadCloud className="w-4 h-4" />
-                  Upload &amp; Sync
+                  {t("category.upload")}
                 </button>
               </div>
             </div>

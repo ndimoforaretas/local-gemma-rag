@@ -7,6 +7,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Shield, HardDrive, Database, Clock, Server } from "lucide-react";
 import { api } from "../lib/api";
 
@@ -44,6 +45,7 @@ function StatCard({
 }
 
 export function VaultAudit() {
+  const { t, i18n } = useTranslation("kb");
   const { data: stats, isLoading, isError } = useQuery({
     queryKey: ["vaultStats"],
     queryFn: () => api.getVaultStats(),
@@ -71,14 +73,14 @@ export function VaultAudit() {
   }
 
   const lastIngested = stats.last_ingested_at
-    ? new Date(stats.last_ingested_at).toLocaleString([], {
+    ? new Date(stats.last_ingested_at).toLocaleString(i18n.language, {
         month: "short",
         day: "numeric",
         year: "numeric",
         hour: "2-digit",
         minute: "2-digit",
       })
-    : "Never";
+    : t("vault.never");
 
   const indexSizeLabel =
     stats.index_size_kb >= 1024
@@ -95,10 +97,10 @@ export function VaultAudit() {
           </div>
           <div>
             <h3 className="text-base font-semibold text-ink-strong">
-              Privacy Vault Audit
+              {t("vault.title")}
             </h3>
             <p className="text-xs text-ink-muted">
-              All inference runs on your hardware
+              {t("vault.subtitle")}
             </p>
           </div>
         </div>
@@ -106,7 +108,7 @@ export function VaultAudit() {
         {/* 100% Local badge */}
         <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700/50 text-emerald-700 dark:text-emerald-400 text-xs font-semibold">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          🔒 100% Local
+          {t("vault.localBadge")}
         </div>
       </div>
 
@@ -114,24 +116,24 @@ export function VaultAudit() {
       <div className="grid grid-cols-2 gap-3">
         <StatCard
           icon={<Database size={18} />}
-          label="Documents"
+          label={t("vault.documents")}
           value={stats.total_documents.toLocaleString()}
-          sub={`${stats.total_chunks.toLocaleString()} chunks indexed`}
+          sub={t("vault.chunksIndexed", { count: stats.total_chunks })}
         />
         <StatCard
           icon={<HardDrive size={18} />}
-          label="Index Size"
+          label={t("vault.indexSize")}
           value={indexSizeLabel}
-          sub={`FAISS IndexFlatIP (cosine)`}
+          sub={t("vault.indexType")}
         />
         <StatCard
           icon={<Clock size={18} />}
-          label="Last Ingested"
+          label={t("vault.lastIngested")}
           value={lastIngested}
         />
         <StatCard
           icon={<Server size={18} />}
-          label="Model Host"
+          label={t("vault.modelHost")}
           value="Ollama"
           sub={stats.ollama_host}
         />
@@ -141,10 +143,8 @@ export function VaultAudit() {
       <div className="flex items-center gap-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700/40 px-4 py-3">
         <span className="text-lg">🛡️</span>
         <p className="text-xs text-emerald-800 dark:text-emerald-300 font-medium">
-          <span className="font-bold">Zero external API calls.</span> Every
-          embedding, retrieval, and generation step runs locally on{" "}
-          <span className="font-bold">{stats.ollama_host}</span>. Your documents
-          never leave your machine.
+          <span className="font-bold">{t("vault.zeroCallsStrong")}</span>{" "}
+          {t("vault.zeroCallsBody", { host: stats.ollama_host })}
         </p>
       </div>
     </div>

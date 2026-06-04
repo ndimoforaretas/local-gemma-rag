@@ -11,6 +11,7 @@
  */
 
 import { useId, useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { VaultAudit } from "./VaultAudit";
 import { ConfirmationModal } from "./ConfirmationModal";
@@ -19,14 +20,15 @@ import { UploadDropZone } from "./knowledgeSync/UploadDropZone";
 import { SyncProgressPanel } from "./knowledgeSync/SyncProgressPanel";
 import { KBFolderCard } from "./knowledgeSync/KBFolderCard";
 import { useKBSync } from "./knowledgeSync/useKBSync";
-import { getSortLabel, type SortOption } from "./knowledgeSync/kbSortUtils";
+import { getSortLabelKey, type SortOption } from "./knowledgeSync/kbSortUtils";
 import { api } from "../lib/api";
 import type { KBFolder } from "../types/api";
 
 export function KnowledgeSync() {
+  const { t } = useTranslation("kb");
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(() => new Set());
   const [sortOption, setSortOption] = useState<SortOption>("name-asc");
-  const [sortAnnouncement, setSortAnnouncement] = useState("Files sorted by Name A-Z.");
+  const [sortAnnouncement, setSortAnnouncement] = useState("");
   const sortSelectLabelId = useId();
   const sortStatusId = useId();
 
@@ -46,8 +48,10 @@ export function KnowledgeSync() {
   const kb = useKBSync(refetchKB);
 
   useEffect(() => {
-    setSortAnnouncement(`Files sorted by ${getSortLabel(sortOption)}.`);
-  }, [sortOption]);
+    setSortAnnouncement(
+      t("sync.sortedBy", { label: t(`sort.${getSortLabelKey(sortOption)}`) }),
+    );
+  }, [sortOption, t]);
 
   const toggleFolder = (name: string) =>
     setCollapsedFolders((prev) => {
@@ -106,10 +110,10 @@ export function KnowledgeSync() {
         <div className="max-w-5xl mx-auto mt-8 flex flex-col gap-4 sm:gap-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h3 className="text-xl sm:text-2xl font-semibold text-ink-strong">
-              Current Libraries
+              {t("sync.currentLibraries")}
             </h3>
             <label className="inline-flex items-center gap-2 text-sm font-medium text-ink-muted">
-              <span id={sortSelectLabelId}>Sort files</span>
+              <span id={sortSelectLabelId}>{t("sync.sortFiles")}</span>
               <select
                 value={sortOption}
                 onChange={(e) => setSortOption(e.target.value as SortOption)}
@@ -117,10 +121,10 @@ export function KnowledgeSync() {
                 aria-describedby={sortStatusId}
                 className="min-w-[220px] rounded-lg border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#272a31] px-3 py-2 text-sm text-ink-strong focus:outline-none focus:ring-2 focus:ring-[#0058be]/20 dark:focus:ring-[#a855f7]/30"
               >
-                <option value="name-asc">Name A-Z</option>
-                <option value="name-desc">Name Z-A</option>
-                <option value="date-newest">Date newest first</option>
-                <option value="size-largest">File size largest first</option>
+                <option value="name-asc">{t("sort.nameAsc")}</option>
+                <option value="name-desc">{t("sort.nameDesc")}</option>
+                <option value="date-newest">{t("sort.dateNewest")}</option>
+                <option value="size-largest">{t("sort.sizeLargest")}</option>
               </select>
             </label>
             <p id={sortStatusId} className="sr-only" aria-live="polite">{sortAnnouncement}</p>
@@ -145,9 +149,9 @@ export function KnowledgeSync() {
       {showEmpty && (
         <div className="max-w-5xl mx-auto mt-8">
           <div className="rounded-2xl border border-dashed border-[#c2c6d6] dark:border-[#424754] bg-[#ffffff] dark:bg-[#1d2027] p-6 sm:p-8 text-center">
-            <h4 className="text-lg sm:text-xl font-semibold text-ink-strong">No documents yet</h4>
+            <h4 className="text-lg sm:text-xl font-semibold text-ink-strong">{t("sync.noDocsTitle")}</h4>
             <p className="mt-2 text-sm sm:text-base text-ink-muted">
-              Upload documents to build your knowledge base and enable document-grounded answers.
+              {t("sync.noDocsBody")}
             </p>
           </div>
         </div>
@@ -155,10 +159,10 @@ export function KnowledgeSync() {
 
       <ConfirmationModal
         isOpen={kb.isDeleteModalOpen}
-        title="Remove Document"
-        message={`Are you sure you want to remove "${kb.fileToDelete}" from the knowledge base? This action cannot be undone.`}
-        confirmLabel="Remove"
-        cancelLabel="Cancel"
+        title={t("sync.removeTitle")}
+        message={t("sync.removeMessage", { file: kb.fileToDelete })}
+        confirmLabel={t("sync.remove")}
+        cancelLabel={t("sync.cancel")}
         type="destructive"
         onConfirm={kb.confirmDeleteFile}
         onCancel={kb.cancelDeleteFile}

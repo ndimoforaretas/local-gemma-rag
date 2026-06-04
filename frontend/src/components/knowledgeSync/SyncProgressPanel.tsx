@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { CheckCircle2, Circle, Database, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { timelineDefs, getStepInfo, type SyncStatus } from "./syncTimeline";
@@ -10,6 +11,7 @@ interface SyncProgressPanelProps {
 }
 
 export function SyncProgressPanel({ syncStatus, steps, largeFileWarning }: SyncProgressPanelProps) {
+  const { t } = useTranslation("kb");
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -26,10 +28,10 @@ export function SyncProgressPanel({ syncStatus, steps, largeFileWarning }: SyncP
         </div>
         <div>
           <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-ink-strong">
-            {syncStatus === "SUCCESS" ? "Knowledge Sync Complete" : "Processing Engine Active..."}
+            {syncStatus === "SUCCESS" ? t("progress.completeTitle") : t("progress.activeTitle")}
           </h3>
           <p className="text-ink-muted text-sm sm:text-base">
-            DBOS Durable Workflow is safely processing your documents.
+            {t("progress.subtitle")}
           </p>
         </div>
       </div>
@@ -38,25 +40,27 @@ export function SyncProgressPanel({ syncStatus, steps, largeFileWarning }: SyncP
         <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-300/70 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
           <span className="text-lg leading-none">⏳</span>
           <span>
-            <strong>Large file detected.</strong> Indexing may take several minutes — the app is working in the background and has not frozen. Grab a coffee!
+            <strong>{t("progress.largeFileStrong")}</strong> {t("progress.largeFileBody")}
           </span>
         </div>
       )}
 
       <div className="relative pl-5 sm:pl-6 ml-2 sm:ml-4 border-l-2 border-[#c2c6d6] dark:border-[#424754] flex flex-col gap-6 sm:gap-8">
-        {timelineDefs.map(({ id, label }) => {
+        {timelineDefs.map(({ id, labelKey }) => {
           const { stepData, isComp, isActive, allSteps } = getStepInfo(id, steps, syncStatus);
-          let subtext = isComp ? "Process verified" : isActive ? "Running..." : "Waiting...";
+          let subtext = isComp ? t("progress.verified") : isActive ? t("progress.running") : t("progress.waiting");
 
           if (id === "process_single_document" && stepData) {
             try {
               const output = typeof stepData.output === "string" ? JSON.parse(stepData.output) : stepData.output;
-              const filename = output?.length > 0 ? output[0].source : "Checking file...";
-              subtext = isComp ? `Extracted ${filename}` : `Reading pages... (${allSteps.indexOf(stepData) + 1} of ${allSteps.length})`;
+              const filename = output?.length > 0 ? output[0].source : t("progress.checkingFile");
+              subtext = isComp
+                ? t("progress.extracted", { filename })
+                : t("progress.readingPages", { current: allSteps.indexOf(stepData) + 1, total: allSteps.length });
             } catch { /* ignore */ }
           }
           if (id === "embed_batch" && stepData && isActive) {
-            subtext = `Calibrating batch ${allSteps.indexOf(stepData) + 1} of ${allSteps.length}...`;
+            subtext = t("progress.calibratingBatch", { current: allSteps.indexOf(stepData) + 1, total: allSteps.length });
           }
 
           return (
@@ -74,7 +78,7 @@ export function SyncProgressPanel({ syncStatus, steps, largeFileWarning }: SyncP
                   isComp ? "text-ink-strong"
                     : isActive ? "text-[#0058be] dark:text-[#adc6ff]"
                     : "text-ink-muted"
-                }`}>{label}</h4>
+                }`}>{t(`timeline.${labelKey}`)}</h4>
                 <p className="text-sm sm:text-base text-ink-muted">{subtext}</p>
               </div>
             </div>

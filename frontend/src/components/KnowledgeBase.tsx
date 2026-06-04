@@ -9,6 +9,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChatMessageList } from "./ChatMessageList";
 import { ChatInput } from "./ChatInput";
@@ -27,6 +28,7 @@ import type { MemoryPayload } from "./knowledgeBase/ragStream";
 import type { ChatSession, ContextItem, Message } from "../types/api";
 
 export function KnowledgeBase({ onOpenHelp }: { onOpenHelp: () => void }) {
+  const { t } = useTranslation("chat");
   const queryClient = useQueryClient();
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
@@ -62,7 +64,7 @@ export function KnowledgeBase({ onOpenHelp }: { onOpenHelp: () => void }) {
             return [
               {
                 id: "legacy-1",
-                title: "Previous Chat",
+                title: t("session.previousChat"),
                 updatedAt: Date.now(),
                 messages: data as unknown as Message[],
               },
@@ -306,10 +308,10 @@ export function KnowledgeBase({ onOpenHelp }: { onOpenHelp: () => void }) {
 
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
-        title="Delete Chat Session"
-        message={`Delete session "${sessionToDelete?.title}"? This action cannot be undone.`}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
+        title={t("session.deleteTitle")}
+        message={t("session.deleteMessage", { title: sessionToDelete?.title })}
+        confirmLabel={t("session.delete")}
+        cancelLabel={t("session.cancel")}
         type="destructive"
         onConfirm={confirmDeleteSession}
         onCancel={() => {

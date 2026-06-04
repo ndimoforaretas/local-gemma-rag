@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Trash2 } from "lucide-react";
 import { Tooltip } from "../Tooltip";
 import type { KBFile } from "../../types/api";
@@ -9,6 +10,7 @@ interface KBFileCardProps {
 }
 
 export function KBFileCard({ file, isDeleting, onDelete }: KBFileCardProps) {
+  const { t } = useTranslation("kb");
   return (
     <div
       role="listitem"
@@ -23,19 +25,19 @@ export function KBFileCard({ file, isDeleting, onDelete }: KBFileCardProps) {
             {file.name}
           </span>
         </div>
-        <Tooltip content="Remove this document from knowledge base" position="top">
+        <Tooltip content={t("file.removeTip")} position="top">
           <button
             onClick={(e) => onDelete(e, file.name)}
             disabled={isDeleting}
             className="text-ink-muted hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors p-1 shrink-0"
-            aria-label={`Delete ${file.name}`}
+            aria-label={t("file.deleteAria", { name: file.name })}
           >
             <Trash2 size={16} />
           </button>
         </Tooltip>
       </div>
       <div className="flex items-center justify-between text-xs text-ink-muted">
-        <span>{isDeleting ? "Removing..." : file.size}</span>
+        <span>{isDeleting ? t("file.removing") : file.size}</span>
         <span>{file.modified}</span>
       </div>
     </div>

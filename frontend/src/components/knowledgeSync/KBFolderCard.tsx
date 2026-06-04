@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { ChevronDown, Database } from "lucide-react";
 import { KBFileCard } from "./KBFileCard";
 import { sortFiles, type SortOption } from "./kbSortUtils";
@@ -16,6 +17,7 @@ interface KBFolderCardProps {
 export function KBFolderCard({
   folder: f, index, isExpanded, sortOption, deletingFilename, onToggle, onDelete,
 }: KBFolderCardProps) {
+  const { t } = useTranslation("kb");
   const allFiles = f.subfolders?.flatMap((s) => s.files) ?? [];
   const sortedFiles = sortFiles(allFiles, sortOption);
   const folderPanelId = `folder-files-${index}`;
@@ -43,7 +45,7 @@ export function KBFolderCard({
                 : "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500/60 text-emerald-700 dark:text-emerald-400 group-hover/toggle:bg-emerald-100 dark:group-hover/toggle:bg-emerald-500/20 group-hover/toggle:border-emerald-500"
             }`}
           >
-            {isExpanded ? "Hide files" : "Show files"}
+            {isExpanded ? t("folder.hideFiles") : t("folder.showFiles")}
             <ChevronDown
               size={14}
               className={`transition-transform duration-200 ${isExpanded ? "rotate-180" : "rotate-0"}`}
@@ -52,7 +54,7 @@ export function KBFolderCard({
         </div>
         <p className="text-sm sm:text-base text-ink-muted mb-4 sm:mb-5">{f.description}</p>
         <div className="flex items-center justify-between text-sm text-ink-muted font-medium">
-          <span>{allFiles.length} Documents</span>
+          <span>{t("folder.documents", { count: allFiles.length })}</span>
           <span>{f.updated}</span>
         </div>
       </button>
@@ -61,11 +63,11 @@ export function KBFolderCard({
         <div
           id={folderPanelId}
           role="region"
-          aria-label={`${f.name} files`}
+          aria-label={t("folder.filesAria", { name: f.name })}
           className="mt-4 pt-4 border-t border-[#c2c6d6] dark:border-[#424754]"
         >
           {allFiles.length === 0 ? (
-            <p className="text-sm text-ink-muted">No files in this library yet.</p>
+            <p className="text-sm text-ink-muted">{t("folder.noFiles")}</p>
           ) : (
             <div role="list" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
               {sortedFiles.map((file, idx) => (

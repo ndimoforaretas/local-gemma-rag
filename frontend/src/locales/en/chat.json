@@ -49,5 +49,31 @@
   "scope": {
     "documents_one": "{{count}} document",
     "documents_other": "{{count}} documents"
+  },
+  "session": {
+    "previousChat": "Previous Chat",
+    "deleteTitle": "Delete Chat Session",
+    "deleteMessage": "Delete session \"{{title}}\"? This action cannot be undone.",
+    "delete": "Delete",
+    "cancel": "Cancel"
+  },
+  "bridge": {
+    "done": "✅ \"{{file}}\" indexed and ready",
+    "indexing": "⚙️ Indexing \"{{file}}\"…",
+    "error": "❌ Failed to save \"{{file}}\" — try again",
+    "prompt": "Add \"{{file}}\" to Knowledge Base?",
+    "add": "Add to KB"
+  },
+  "context": {
+    "title": "Context Used",
+    "referenced": "Referenced Sources",
+    "closeAria": "Close sources panel",
+    "retrievedChunk": "Retrieved chunk",
+    "collapseAria": "Collapse chunk preview",
+    "viewAria": "View chunk text",
+    "hide": "Hide",
+    "viewChunk": "View chunk",
+    "openTip": "Open source file",
+    "open": "Open"
   }
 }

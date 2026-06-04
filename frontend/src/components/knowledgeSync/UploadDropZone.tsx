@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { useTranslation } from "react-i18next";
 import { Loader2, UploadCloud } from "lucide-react";
 import { Tooltip } from "../Tooltip";
 import type { SyncStatus } from "./syncTimeline";
@@ -19,18 +20,19 @@ export interface UploadDropZoneProps {
 }
 
 export function UploadDropZone(p: UploadDropZoneProps) {
+  const { t } = useTranslation("kb");
   const dropZoneHintId = useId();
   return (
     <div className="bg-[#eceef0] dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-4 sm:p-6 lg:p-8 flex flex-col gap-5 transition-colors duration-300">
       <div className="min-w-0">
         <h3 className="text-xl sm:text-2xl font-semibold mb-1.5 sm:mb-2 text-ink-strong">
-          Knowledge Base Management
+          {t("upload.title")}
         </h3>
         <p className="text-sm sm:text-base text-ink-muted">
-          Upload documents and sync them into your local vector store.
+          {t("upload.subtitle")}
         </p>
         <div className="mt-3 inline-flex items-center text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#d0e1fb] dark:bg-[#32353c] text-[#0058be] dark:text-[#adc6ff]">
-          Status: {p.syncStatus}
+          {t("upload.statusLabel")} {p.syncStatus}
         </div>
       </div>
 
@@ -49,7 +51,7 @@ export function UploadDropZone(p: UploadDropZoneProps) {
         onKeyDown={p.onKeyDown}
         tabIndex={0}
         role="group"
-        aria-label="File upload drop zone"
+        aria-label={t("upload.dropZoneAria")}
         aria-describedby={dropZoneHintId}
         aria-disabled={!p.canUpload}
         className={`rounded-2xl border-2 border-dashed px-4 py-8 sm:px-6 sm:py-10 text-center transition-all duration-300 ${
@@ -64,21 +66,21 @@ export function UploadDropZone(p: UploadDropZoneProps) {
             : <UploadCloud className="text-ink-muted" size={46} />
           }
           <p className="text-2xl sm:text-3xl font-semibold text-ink-muted tracking-tight">
-            {p.isDragActive ? "Drop Files to Upload" : "Drag & Drop Files Here"}
+            {p.isDragActive ? t("upload.dropActive") : t("upload.dropIdle")}
           </p>
-          <p className="text-sm sm:text-base text-ink-muted">or</p>
-          <Tooltip content="Select files to add to your knowledge base" position="top">
+          <p className="text-sm sm:text-base text-ink-muted">{t("upload.or")}</p>
+          <Tooltip content={t("upload.selectTip")} position="top">
             <button
               onClick={() => p.fileInputRef.current?.click()}
               disabled={!p.canUpload}
               className="inline-flex items-center justify-center gap-2 border border-[#0058be] dark:border-[#adc6ff] text-[#0058be] dark:text-[#adc6ff] bg-transparent hover:bg-[#d0e1fb] dark:hover:bg-[#32353c] disabled:opacity-50 disabled:cursor-not-allowed px-5 py-2.5 rounded-lg font-semibold transition-colors"
             >
               {p.syncStatus === "UPLOADING" && <Loader2 className="animate-spin" size={18} />}
-              {p.syncStatus === "UPLOADING" ? "Uploading..." : "Browse Files"}
+              {p.syncStatus === "UPLOADING" ? t("upload.uploading") : t("upload.browse")}
             </button>
           </Tooltip>
           <p id={dropZoneHintId} className="text-xs sm:text-sm text-ink-muted">
-            PDF · DOCX · MD · TXT · CSV · PPTX · XLSX · HTML — up to 500 MB
+            {t("upload.formats")}
           </p>
         </div>
       </div>

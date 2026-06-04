@@ -1,0 +1,113 @@
+{
+  "scope": {
+    "all": "Alle Dokumente",
+    "documents_one": "{{count}} Dokument",
+    "documents_other": "{{count}} Dokumente",
+    "searching_one": "{{count}} Dokument wird durchsucht",
+    "searching_other": "{{count}} Dokumente werden durchsucht",
+    "filterAria": "Nach Kategorie oder Dokument filtern",
+    "clearAria": "Dokumentfilter zurücksetzen",
+    "clear": "Zurücksetzen",
+    "title": "Suchbereich",
+    "clearAll": "Alle zurücksetzen",
+    "hintActive": "Der Agent durchsucht nur die ausgewählten Dokumente.",
+    "hintInactive": "Wähle eine Kategorie oder einzelne Dokumente, um den Suchbereich einzuschränken.",
+    "dialogAria": "Kategorien oder Dokumente zum Durchsuchen auswählen",
+    "files_one": "{{count}} Datei",
+    "files_other": "{{count}} Dateien",
+    "chunks_one": "{{count}} Abschnitt",
+    "chunks_other": "{{count}} Abschnitte",
+    "done": "Fertig"
+  },
+  "sync": {
+    "currentLibraries": "Aktuelle Bibliotheken",
+    "sortFiles": "Dateien sortieren",
+    "sortedBy": "Dateien sortiert nach {{label}}.",
+    "noDocsTitle": "Noch keine Dokumente",
+    "noDocsBody": "Lade Dokumente hoch, um deine Wissensdatenbank aufzubauen und dokumentgestützte Antworten zu ermöglichen.",
+    "removeTitle": "Dokument entfernen",
+    "removeMessage": "Möchtest du „{{file}}“ wirklich aus der Wissensdatenbank entfernen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "remove": "Entfernen",
+    "cancel": "Abbrechen"
+  },
+  "sort": {
+    "nameAsc": "Name A-Z",
+    "nameDesc": "Name Z-A",
+    "dateNewest": "Datum, neueste zuerst",
+    "sizeLargest": "Dateigröße, größte zuerst"
+  },
+  "upload": {
+    "title": "Verwaltung der Wissensdatenbank",
+    "subtitle": "Lade Dokumente hoch und synchronisiere sie in deinen lokalen Vektorspeicher.",
+    "statusLabel": "Status:",
+    "dropActive": "Dateien zum Hochladen ablegen",
+    "dropIdle": "Dateien hierher ziehen & ablegen",
+    "or": "oder",
+    "selectTip": "Dateien auswählen, um sie zu deiner Wissensdatenbank hinzuzufügen",
+    "uploading": "Wird hochgeladen...",
+    "browse": "Dateien durchsuchen",
+    "dropZoneAria": "Ablagebereich für Datei-Uploads",
+    "formats": "PDF · DOCX · MD · TXT · CSV · PPTX · XLSX · HTML — bis zu 500 MB"
+  },
+  "progress": {
+    "completeTitle": "Wissens-Synchronisierung abgeschlossen",
+    "activeTitle": "Verarbeitungs-Engine aktiv...",
+    "subtitle": "Der DBOS-Durable-Workflow verarbeitet deine Dokumente sicher.",
+    "largeFileStrong": "Große Datei erkannt.",
+    "largeFileBody": "Die Indizierung kann einige Minuten dauern — die App arbeitet im Hintergrund und ist nicht eingefroren. Hol dir einen Kaffee!",
+    "verified": "Prozess verifiziert",
+    "running": "Läuft...",
+    "waiting": "Wartet...",
+    "extracted": "{{filename}} extrahiert",
+    "readingPages": "Seiten werden gelesen... ({{current}} von {{total}})",
+    "checkingFile": "Datei wird geprüft...",
+    "calibratingBatch": "Stapel {{current}} von {{total}} wird kalibriert..."
+  },
+  "timeline": {
+    "scanningLibrary": "Bibliothek wird durchsucht",
+    "gatheringDocument": "Dokument wird erfasst",
+    "calibratingEmbeddings": "Neuronale Embeddings werden kalibriert",
+    "committingStore": "Wissensspeicher wird gesichert"
+  },
+  "folder": {
+    "hideFiles": "Dateien ausblenden",
+    "showFiles": "Dateien anzeigen",
+    "documents_one": "{{count}} Dokument",
+    "documents_other": "{{count}} Dokumente",
+    "filesAria": "Dateien von {{name}}",
+    "noFiles": "Noch keine Dateien in dieser Bibliothek."
+  },
+  "file": {
+    "removeTip": "Dieses Dokument aus der Wissensdatenbank entfernen",
+    "deleteAria": "{{name}} löschen",
+    "removing": "Wird entfernt..."
+  },
+  "vault": {
+    "title": "Datenschutz-Vault-Audit",
+    "subtitle": "Alle Berechnungen laufen auf deiner Hardware",
+    "localBadge": "🔒 100% lokal",
+    "documents": "Dokumente",
+    "chunksIndexed": "{{count}} Abschnitte indiziert",
+    "indexSize": "Indexgröße",
+    "indexType": "FAISS IndexFlatIP (Kosinus)",
+    "lastIngested": "Zuletzt importiert",
+    "never": "Nie",
+    "modelHost": "Modell-Host",
+    "zeroCallsStrong": "Null externe API-Aufrufe.",
+    "zeroCallsBody": "Jeder Embedding-, Abruf- und Generierungsschritt läuft lokal auf {{host}}. Deine Dokumente verlassen niemals deinen Rechner."
+  },
+  "category": {
+    "title": "Dateien kategorisieren",
+    "subtitle": "Gruppiere diese Dateien, damit du die Aufmerksamkeit der KI im Chat nach Thema filtern kannst.",
+    "filesSelected_one": "{{count}} Datei ausgewählt",
+    "filesSelected_other": "{{count}} Dateien ausgewählt",
+    "label": "Kategorie",
+    "createNew": "＋ Neue Kategorie erstellen…",
+    "placeholder": "z. B. Gesundheit, Finanzen, Forschung…",
+    "backAria": "Zurück zur Kategorieliste",
+    "storedUnder": "Dateien werden gespeichert unter",
+    "cancel": "Abbrechen",
+    "upload": "Hochladen & Synchronisieren",
+    "close": "Schließen"
+  }
+}

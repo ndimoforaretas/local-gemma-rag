@@ -1,0 +1,113 @@
+{
+  "scope": {
+    "all": "All documents",
+    "documents_one": "{{count}} document",
+    "documents_other": "{{count}} documents",
+    "searching_one": "Searching {{count}} document",
+    "searching_other": "Searching {{count}} documents",
+    "filterAria": "Filter by category or document",
+    "clearAria": "Clear document filter",
+    "clear": "Clear",
+    "title": "Search scope",
+    "clearAll": "Clear all",
+    "hintActive": "Agent searches only the selected documents.",
+    "hintInactive": "Select a category or individual documents to restrict the search scope.",
+    "dialogAria": "Select categories or documents to search",
+    "files_one": "{{count}} file",
+    "files_other": "{{count}} files",
+    "chunks_one": "{{count}} chunk",
+    "chunks_other": "{{count}} chunks",
+    "done": "Done"
+  },
+  "sync": {
+    "currentLibraries": "Current Libraries",
+    "sortFiles": "Sort files",
+    "sortedBy": "Files sorted by {{label}}.",
+    "noDocsTitle": "No documents yet",
+    "noDocsBody": "Upload documents to build your knowledge base and enable document-grounded answers.",
+    "removeTitle": "Remove Document",
+    "removeMessage": "Are you sure you want to remove \"{{file}}\" from the knowledge base? This action cannot be undone.",
+    "remove": "Remove",
+    "cancel": "Cancel"
+  },
+  "sort": {
+    "nameAsc": "Name A-Z",
+    "nameDesc": "Name Z-A",
+    "dateNewest": "Date newest first",
+    "sizeLargest": "File size largest first"
+  },
+  "upload": {
+    "title": "Knowledge Base Management",
+    "subtitle": "Upload documents and sync them into your local vector store.",
+    "statusLabel": "Status:",
+    "dropActive": "Drop Files to Upload",
+    "dropIdle": "Drag & Drop Files Here",
+    "or": "or",
+    "selectTip": "Select files to add to your knowledge base",
+    "uploading": "Uploading...",
+    "browse": "Browse Files",
+    "dropZoneAria": "File upload drop zone",
+    "formats": "PDF · DOCX · MD · TXT · CSV · PPTX · XLSX · HTML — up to 500 MB"
+  },
+  "progress": {
+    "completeTitle": "Knowledge Sync Complete",
+    "activeTitle": "Processing Engine Active...",
+    "subtitle": "DBOS Durable Workflow is safely processing your documents.",
+    "largeFileStrong": "Large file detected.",
+    "largeFileBody": "Indexing may take several minutes — the app is working in the background and has not frozen. Grab a coffee!",
+    "verified": "Process verified",
+    "running": "Running...",
+    "waiting": "Waiting...",
+    "extracted": "Extracted {{filename}}",
+    "readingPages": "Reading pages... ({{current}} of {{total}})",
+    "checkingFile": "Checking file...",
+    "calibratingBatch": "Calibrating batch {{current}} of {{total}}..."
+  },
+  "timeline": {
+    "scanningLibrary": "Scanning Library",
+    "gatheringDocument": "Gathering Document",
+    "calibratingEmbeddings": "Calibrating Neural Embeddings",
+    "committingStore": "Committing Knowledge Store"
+  },
+  "folder": {
+    "hideFiles": "Hide files",
+    "showFiles": "Show files",
+    "documents_one": "{{count}} Document",
+    "documents_other": "{{count}} Documents",
+    "filesAria": "{{name}} files",
+    "noFiles": "No files in this library yet."
+  },
+  "file": {
+    "removeTip": "Remove this document from knowledge base",
+    "deleteAria": "Delete {{name}}",
+    "removing": "Removing..."
+  },
+  "vault": {
+    "title": "Privacy Vault Audit",
+    "subtitle": "All inference runs on your hardware",
+    "localBadge": "🔒 100% Local",
+    "documents": "Documents",
+    "chunksIndexed": "{{count}} chunks indexed",
+    "indexSize": "Index Size",
+    "indexType": "FAISS IndexFlatIP (cosine)",
+    "lastIngested": "Last Ingested",
+    "never": "Never",
+    "modelHost": "Model Host",
+    "zeroCallsStrong": "Zero external API calls.",
+    "zeroCallsBody": "Every embedding, retrieval, and generation step runs locally on {{host}}. Your documents never leave your machine."
+  },
+  "category": {
+    "title": "Categorize Files",
+    "subtitle": "Group these files so you can filter the AI's attention by topic during chat.",
+    "filesSelected_one": "{{count}} file selected",
+    "filesSelected_other": "{{count}} files selected",
+    "label": "Category",
+    "createNew": "＋ Create new category…",
+    "placeholder": "e.g. Health, Finance, Research…",
+    "backAria": "Back to category list",
+    "storedUnder": "Files will be stored under",
+    "cancel": "Cancel",
+    "upload": "Upload & Sync",
+    "close": "Close"
+  }
+}

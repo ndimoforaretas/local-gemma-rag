@@ -4,14 +4,15 @@ export type SyncStatus = "IDLE" | "UPLOADING" | "SYNCING" | "SUCCESS" | "ERROR";
 
 export interface TimelineDef {
   id: string;
-  label: string;
+  /** Translation-key suffix under kb.timeline.* */
+  labelKey: string;
 }
 
 export const timelineDefs: TimelineDef[] = [
-  { id: "list_document_files", label: "Scanning Library" },
-  { id: "process_single_document", label: "Gathering Document" },
-  { id: "embed_batch", label: "Calibrating Neural Embeddings" },
-  { id: "save_vector_store", label: "Committing Knowledge Store" },
+  { id: "list_document_files", labelKey: "scanningLibrary" },
+  { id: "process_single_document", labelKey: "gatheringDocument" },
+  { id: "embed_batch", labelKey: "calibratingEmbeddings" },
+  { id: "save_vector_store", labelKey: "committingStore" },
 ];
 
 export interface StepInfo {

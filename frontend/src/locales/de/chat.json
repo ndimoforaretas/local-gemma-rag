@@ -49,5 +49,31 @@
   "scope": {
     "documents_one": "{{count}} Dokument",
     "documents_other": "{{count}} Dokumente"
+  },
+  "session": {
+    "previousChat": "Vorheriger Chat",
+    "deleteTitle": "Chat-Sitzung löschen",
+    "deleteMessage": "Sitzung „{{title}}“ löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "delete": "Löschen",
+    "cancel": "Abbrechen"
+  },
+  "bridge": {
+    "done": "✅ „{{file}}“ indiziert und bereit",
+    "indexing": "⚙️ „{{file}}“ wird indiziert…",
+    "error": "❌ Speichern von „{{file}}“ fehlgeschlagen — versuche es erneut",
+    "prompt": "„{{file}}“ zur Wissensdatenbank hinzufügen?",
+    "add": "Zur WDB hinzufügen"
+  },
+  "context": {
+    "title": "Verwendeter Kontext",
+    "referenced": "Referenzierte Quellen",
+    "closeAria": "Quellenbereich schließen",
+    "retrievedChunk": "Abgerufener Abschnitt",
+    "collapseAria": "Abschnittsvorschau einklappen",
+    "viewAria": "Abschnittstext anzeigen",
+    "hide": "Ausblenden",
+    "viewChunk": "Abschnitt anzeigen",
+    "openTip": "Quelldatei öffnen",
+    "open": "Öffnen"
   }
 }

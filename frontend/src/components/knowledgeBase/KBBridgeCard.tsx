@@ -4,6 +4,8 @@
  * successful indexing run.
  */
 
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { CheckCircle2, FolderPlus, Loader2, X } from "lucide-react";
 import type { SaveToKBFile } from "../../types/api";
 import type { KBSaveStatus } from "./useKBBridge";
@@ -15,17 +17,17 @@ export interface KBBridgeCardProps {
   onDismiss: () => void;
 }
 
-function statusMessage(status: KBSaveStatus, firstFile?: string): string {
+function statusMessage(status: KBSaveStatus, t: TFunction, firstFile?: string): string {
   if (!firstFile) return "";
   switch (status) {
     case "done":
-      return `✅ "${firstFile}" indexed and ready`;
+      return t("bridge.done", { file: firstFile });
     case "indexing":
-      return `⚙️ Indexing "${firstFile}"…`;
+      return t("bridge.indexing", { file: firstFile });
     case "error":
-      return `❌ Failed to save "${firstFile}" — try again`;
+      return t("bridge.error", { file: firstFile });
     default:
-      return `Add "${firstFile}" to Knowledge Base?`;
+      return t("bridge.prompt", { file: firstFile });
   }
 }
 
@@ -35,6 +37,7 @@ export function KBBridgeCard({
   onSave,
   onDismiss,
 }: KBBridgeCardProps) {
+  const { t } = useTranslation("chat");
   if (files.length === 0) return null;
   const firstFile = files[0]?.name;
   const isWorking = status === "saving" || status === "indexing";
@@ -47,7 +50,7 @@ export function KBBridgeCard({
           className="text-emerald-600 dark:text-emerald-400 shrink-0"
         />
         <span className="text-sm text-ink font-medium truncate">
-          {statusMessage(status, firstFile)}
+          {statusMessage(status, t, firstFile)}
         </span>
       </div>
 
@@ -57,7 +60,7 @@ export function KBBridgeCard({
             onClick={onSave}
             className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors"
           >
-            Add to KB
+            {t("bridge.add")}
           </button>
           <button
             onClick={onDismiss}

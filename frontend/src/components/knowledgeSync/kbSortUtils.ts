@@ -2,13 +2,14 @@ import type { KBFile } from "../../types/api";
 
 export type SortOption = "name-asc" | "name-desc" | "date-newest" | "size-largest";
 
-export function getSortLabel(value: SortOption): string {
+/** Translation-key suffix (under kb.sort.*) for a sort option. */
+export function getSortLabelKey(value: SortOption): string {
   switch (value) {
-    case "name-asc": return "Name A-Z";
-    case "name-desc": return "Name Z-A";
-    case "date-newest": return "Date newest first";
-    case "size-largest": return "File size largest first";
-    default: return "Name A-Z";
+    case "name-asc": return "nameAsc";
+    case "name-desc": return "nameDesc";
+    case "date-newest": return "dateNewest";
+    case "size-largest": return "sizeLargest";
+    default: return "nameAsc";
   }
 }
 
