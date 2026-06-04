@@ -20,6 +20,8 @@ export interface LanguageDef {
   label: string;
   /** Endonym — how speakers write the language's own name. */
   nativeName: string;
+  /** Flag emoji shown in the language switcher. */
+  flag: string;
   dir: "ltr" | "rtl";
 }
 
@@ -28,8 +30,8 @@ export interface LanguageDef {
  * Add a new one here AFTER its `src/locales/<code>/*.json` files exist.
  */
 export const SUPPORTED_LANGUAGES: LanguageDef[] = [
-  { code: "en", label: "English", nativeName: "English", dir: "ltr" },
-  { code: "de", label: "German", nativeName: "Deutsch", dir: "ltr" },
+  { code: "en", label: "English", nativeName: "English", flag: "🇬🇧", dir: "ltr" },
+  { code: "de", label: "German", nativeName: "Deutsch", flag: "🇩🇪", dir: "ltr" },
 ];
 
 // Auto-build the resources map from every locale JSON file.

@@ -137,7 +137,9 @@ export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: Sid
       {/* Bottom: language picker (expanded) + user chip + theme toggle */}
       <div className="flex flex-col gap-3">
         <div className="h-px bg-[#c2c6d6] dark:bg-[#424754]" />
-        {!collapsed && <LanguageSwitcher />}
+        <div className={collapsed ? "flex justify-center" : ""}>
+          <LanguageSwitcher collapsed={collapsed} />
+        </div>
         <div className={`flex items-center gap-2 ${collapsed ? "flex-col" : "px-1"}`}>
           <div className="w-8 h-8 rounded-full bg-[#d0e1fb] text-[#0058be] dark:bg-[#32353c] dark:text-[#adc6ff] flex items-center justify-center font-bold text-sm shrink-0">
             U
