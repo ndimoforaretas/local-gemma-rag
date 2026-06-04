@@ -1,0 +1,19 @@
+{
+  "menu": "Menu",
+  "newChat": "New Chat",
+  "browseSessions": "Browse Past Sessions",
+  "collapse": "Collapse sidebar",
+  "expand": "Expand sidebar",
+  "lightMode": "Light mode",
+  "darkMode": "Dark mode",
+  "online": "Online",
+  "localUser": "Local User",
+  "nav": {
+    "home": "Home",
+    "chat": "Chat",
+    "sync": "Knowledge Base",
+    "study": "Study Hub",
+    "dashboard": "Dashboard",
+    "help": "Help"
+  }
+}

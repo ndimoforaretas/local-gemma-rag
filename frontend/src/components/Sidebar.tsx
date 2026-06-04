@@ -15,7 +15,9 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Tooltip } from "./Tooltip";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useChatChrome } from "./ChatChromeContext";
 
 export type AppView = "home" | "chat" | "sync" | "study" | "dashboard" | "help";
@@ -29,17 +31,19 @@ interface SidebarProps {
 
 const COLLAPSE_KEY = "sidebar-collapsed";
 
-const NAV_ITEMS: { id: AppView; label: string; icon: LucideIcon }[] = [
-  { id: "home", label: "Home", icon: HomeIcon },
-  { id: "chat", label: "Chat", icon: MessageSquare },
-  { id: "sync", label: "Knowledge Base", icon: Database },
-  { id: "study", label: "Study Hub", icon: GraduationCap },
-  { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-  { id: "help", label: "Help", icon: LifeBuoy },
+// Labels come from translations (t(`nav.${id}`)); only id + icon live here.
+const NAV_ITEMS: { id: AppView; icon: LucideIcon }[] = [
+  { id: "home", icon: HomeIcon },
+  { id: "chat", icon: MessageSquare },
+  { id: "sync", icon: Database },
+  { id: "study", icon: GraduationCap },
+  { id: "dashboard", icon: BarChart3 },
+  { id: "help", icon: LifeBuoy },
 ];
 
 export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: SidebarProps) {
   const chrome = useChatChrome();
+  const { t } = useTranslation("sidebar");
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem(COLLAPSE_KEY) === "1";
@@ -64,10 +68,10 @@ export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: Sid
       {/* Collapse toggle sits ABOVE the brand so it never crowds the name. */}
       <div className="flex flex-col gap-2">
         <div className={`flex ${collapsed ? "justify-center" : "justify-end"}`}>
-          <Tooltip content={collapsed ? "Expand sidebar" : "Collapse sidebar"} position="right">
+          <Tooltip content={collapsed ? t("expand") : t("collapse")} position="right">
             <button
               onClick={() => setCollapsed((c) => !c)}
-              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label={collapsed ? t("expand") : t("collapse")}
               className="p-1.5 rounded-lg text-ink-muted hover:text-ink-strong hover:bg-[#e0e3e5] dark:hover:bg-[#272a31] transition-colors"
             >
               {collapsed ? <PanelLeftOpen size={24} /> : <PanelLeftClose size={24} />}
@@ -82,7 +86,7 @@ export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: Sid
           />
           {!collapsed && (
             <h1 className="text-base font-bold tracking-tight text-ink-strong truncate">
-              Gemma CogniVault
+              {t("appName", { ns: "common" })}
             </h1>
           )}
         </div>
@@ -93,14 +97,14 @@ export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: Sid
         <div className={`flex flex-col gap-2 ${collapsed ? "items-center" : ""}`}>
           <RailButton
             icon={Plus}
-            label="New Chat"
+            label={t("newChat")}
             onClick={chrome.newChat}
             collapsed={collapsed}
             variant="primary"
           />
           <RailButton
             icon={History}
-            label="Browse Past Sessions"
+            label={t("browseSessions")}
             onClick={chrome.toggleHistory}
             collapsed={collapsed}
             active={chrome.isHistoryOpen}
@@ -115,14 +119,14 @@ export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: Sid
       >
         {!collapsed && (
           <div className="text-xs uppercase tracking-wider text-ink-muted font-semibold mb-2 px-3">
-            Menu
+            {t("menu")}
           </div>
         )}
-        {NAV_ITEMS.map(({ id, label, icon }) => (
+        {NAV_ITEMS.map(({ id, icon }) => (
           <NavItem
             key={id}
             icon={icon}
-            label={label}
+            label={t(`nav.${id}`)}
             active={activeView === id}
             collapsed={collapsed}
             onClick={() => setActiveView(id)}
@@ -130,9 +134,10 @@ export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: Sid
         ))}
       </nav>
 
-      {/* Bottom: user chip + theme toggle */}
+      {/* Bottom: language picker (expanded) + user chip + theme toggle */}
       <div className="flex flex-col gap-3">
         <div className="h-px bg-[#c2c6d6] dark:bg-[#424754]" />
+        {!collapsed && <LanguageSwitcher />}
         <div className={`flex items-center gap-2 ${collapsed ? "flex-col" : "px-1"}`}>
           <div className="w-8 h-8 rounded-full bg-[#d0e1fb] text-[#0058be] dark:bg-[#32353c] dark:text-[#adc6ff] flex items-center justify-center font-bold text-sm shrink-0">
             U
@@ -140,18 +145,18 @@ export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: Sid
           {!collapsed && (
             <div className="flex flex-col flex-1 min-w-0">
               <span className="text-sm font-medium text-ink-strong truncate leading-tight">
-                Local User
+                {t("localUser")}
               </span>
               <div className="flex items-center gap-1 text-xs text-emerald-500 dark:text-emerald-400">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shrink-0" />
-                Online
+                {t("online")}
               </div>
             </div>
           )}
-          <Tooltip content={isDark ? "Light mode" : "Dark mode"} position="right">
+          <Tooltip content={isDark ? t("lightMode") : t("darkMode")} position="right">
             <button
               onClick={onToggleDark}
-              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              aria-label={isDark ? t("lightMode") : t("darkMode")}
               className="p-1.5 rounded-lg border transition-colors shrink-0 bg-[#e0e3e5] border-[#c2c6d6] text-ink-muted hover:text-ink-strong dark:bg-[#272a31] dark:border-[#424754]"
             >
               {isDark ? <Sun size={18} /> : <Moon size={18} />}
