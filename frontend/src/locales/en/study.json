@@ -285,5 +285,64 @@
       "back": "Back to workshop outline",
       "backToWorkshop": "Back to workshop"
     }
+  },
+  "mindmap": {
+    "crumbs": {
+      "mindmaps": "Mindmaps",
+      "newMindmap": "New Mindmap"
+    },
+    "list": {
+      "yourMindmaps": "Your mindmaps",
+      "yourMindmapsCount": "Your mindmaps ({{count}})",
+      "newMindmap": "New Mindmap",
+      "emptyTitle": "Map a concept",
+      "emptyBody": "Mindmaps render the central themes and sub-topics of your scoped documents as an interactive radial diagram you can pan, zoom, and export as Markdown, PNG, or PDF.",
+      "emptyHintPre": "Click",
+      "emptyHintPost": "above to get started.",
+      "deleteTitle": "Delete this mindmap?",
+      "deleteMessage": "\"{{title}}\" will be permanently removed.",
+      "delete": "Delete",
+      "keep": "Keep"
+    },
+    "card": {
+      "deleteAria": "Delete mindmap",
+      "depth": "Depth {{depth}}",
+      "created": "Created {{date}}"
+    },
+    "config": {
+      "title": "New Mindmap",
+      "subtitle": "Pick the documents you want mapped. The mindmap will render the main themes and sub-topics it finds.",
+      "scopeLabel": "Document scope (required)",
+      "scopeHintHas": "The mindmap will summarise these documents.",
+      "scopeHintEmpty": "Pick at least one category or file. Mindmaps work best when scoped to a single coherent topic.",
+      "generating": "Generating…",
+      "generate": "Generate Mindmap"
+    },
+    "gen": {
+      "title": "Drawing your mindmap",
+      "body": "Gemma is reading your documents and structuring the concepts. This usually takes 15–40 seconds.",
+      "elapsed": "{{time}} elapsed",
+      "stage0": "Reading your documents…",
+      "stage1": "Identifying central themes…",
+      "stage2": "Mapping sub-topics under each theme…",
+      "stage3": "Laying out the radial structure…",
+      "stage4": "Almost there — finalising your mindmap…"
+    },
+    "view": {
+      "meta": "{{themes}} themes · {{subtopics}} sub-topics",
+      "hint": "Drag nodes to rearrange · scroll to zoom · drag the background to pan",
+      "resetLayout": "Reset layout"
+    },
+    "layout": {
+      "label": "Layout",
+      "leftRight": "Left-right",
+      "topDown": "Top-down"
+    },
+    "export": {
+      "markdown": "Markdown",
+      "image": "Image",
+      "pdf": "PDF",
+      "exportAs": "Export as {{format}}"
+    }
   }
 }

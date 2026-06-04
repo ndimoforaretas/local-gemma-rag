@@ -285,5 +285,64 @@
       "back": "Zurück zur Workshop-Gliederung",
       "backToWorkshop": "Zurück zum Workshop"
     }
+  },
+  "mindmap": {
+    "crumbs": {
+      "mindmaps": "Mindmaps",
+      "newMindmap": "Neue Mindmap"
+    },
+    "list": {
+      "yourMindmaps": "Deine Mindmaps",
+      "yourMindmapsCount": "Deine Mindmaps ({{count}})",
+      "newMindmap": "Neue Mindmap",
+      "emptyTitle": "Ein Konzept abbilden",
+      "emptyBody": "Mindmaps stellen die zentralen Themen und Unterthemen deiner ausgewählten Dokumente als interaktives radiales Diagramm dar, das du verschieben, zoomen und als Markdown, PNG oder PDF exportieren kannst.",
+      "emptyHintPre": "Klicke oben auf",
+      "emptyHintPost": "um loszulegen.",
+      "deleteTitle": "Diese Mindmap löschen?",
+      "deleteMessage": "„{{title}}“ wird dauerhaft entfernt.",
+      "delete": "Löschen",
+      "keep": "Behalten"
+    },
+    "card": {
+      "deleteAria": "Mindmap löschen",
+      "depth": "Tiefe {{depth}}",
+      "created": "Erstellt {{date}}"
+    },
+    "config": {
+      "title": "Neue Mindmap",
+      "subtitle": "Wähle die Dokumente aus, die abgebildet werden sollen. Die Mindmap stellt die wichtigsten Themen und Unterthemen dar, die sie findet.",
+      "scopeLabel": "Dokumentbereich (erforderlich)",
+      "scopeHintHas": "Die Mindmap fasst diese Dokumente zusammen.",
+      "scopeHintEmpty": "Wähle mindestens eine Kategorie oder Datei. Mindmaps funktionieren am besten, wenn sie auf ein einzelnes zusammenhängendes Thema beschränkt sind.",
+      "generating": "Wird erstellt…",
+      "generate": "Mindmap erstellen"
+    },
+    "gen": {
+      "title": "Deine Mindmap wird gezeichnet",
+      "body": "Gemma liest deine Dokumente und strukturiert die Konzepte. Das dauert normalerweise 15–40 Sekunden.",
+      "elapsed": "{{time}} vergangen",
+      "stage0": "Deine Dokumente werden gelesen…",
+      "stage1": "Zentrale Themen werden identifiziert…",
+      "stage2": "Unterthemen werden den Themen zugeordnet…",
+      "stage3": "Die radiale Struktur wird angelegt…",
+      "stage4": "Fast geschafft — deine Mindmap wird finalisiert…"
+    },
+    "view": {
+      "meta": "{{themes}} Themen · {{subtopics}} Unterthemen",
+      "hint": "Knoten ziehen zum Anordnen · scrollen zum Zoomen · Hintergrund ziehen zum Verschieben",
+      "resetLayout": "Layout zurücksetzen"
+    },
+    "layout": {
+      "label": "Layout",
+      "leftRight": "Links-rechts",
+      "topDown": "Oben-unten"
+    },
+    "export": {
+      "markdown": "Markdown",
+      "image": "Bild",
+      "pdf": "PDF",
+      "exportAs": "Als {{format}} exportieren"
+    }
   }
 }

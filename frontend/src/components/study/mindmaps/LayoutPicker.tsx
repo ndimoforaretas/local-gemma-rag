@@ -3,12 +3,13 @@
  * layout: Top-down, Left-right, or Radial. Persists per-map.
  */
 
+import { useTranslation } from "react-i18next";
 import { ArrowDown, ArrowRight } from "lucide-react";
 import type { MindmapLayout } from "./types";
 
-const OPTIONS: { id: MindmapLayout; label: string; icon: typeof ArrowDown }[] = [
-  { id: "LR", label: "Left-right", icon: ArrowRight },
-  { id: "TD", label: "Top-down", icon: ArrowDown },
+const OPTIONS: { id: MindmapLayout; key: string; icon: typeof ArrowDown }[] = [
+  { id: "LR", key: "leftRight", icon: ArrowRight },
+  { id: "TD", key: "topDown", icon: ArrowDown },
 ];
 
 export function LayoutPicker({
@@ -18,12 +19,13 @@ export function LayoutPicker({
   value: MindmapLayout;
   onChange: (next: MindmapLayout) => void;
 }) {
+  const { t } = useTranslation("study");
   return (
     <div className="inline-flex items-center gap-0.5 p-0.5 rounded-xl border border-[#c2c6d6] dark:border-[#424754]">
       <span className="px-2 text-[11px] font-semibold uppercase tracking-wider text-ink-faint">
-        Layout
+        {t("mindmap.layout.label")}
       </span>
-      {OPTIONS.map(({ id, label, icon: Icon }) => {
+      {OPTIONS.map(({ id, key, icon: Icon }) => {
         const active = value === id;
         return (
           <button
@@ -38,7 +40,7 @@ export function LayoutPicker({
             }`}
           >
             <Icon size={14} />
-            {label}
+            {t(`mindmap.layout.${key}`)}
           </button>
         );
       })}

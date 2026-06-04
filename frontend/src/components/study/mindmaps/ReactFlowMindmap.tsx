@@ -10,6 +10,7 @@
 import "@xyflow/react/dist/style.css";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Background,
   Controls,
@@ -80,6 +81,7 @@ function Inner({
   onPositionsChange: (positions: NodePositions) => void;
   onExported: () => void;
 }) {
+  const { t } = useTranslation("study");
   const isDark = useIsDark();
   const wrapRef = useRef<HTMLDivElement>(null);
   const rf = useReactFlow();
@@ -143,13 +145,29 @@ function Inner({
         <Background gap={20} color={isDark ? "#2a2f3a" : "#e2e6ee"} />
         <Controls showInteractive={false} />
         <Panel position="top-right" className="flex gap-2">
-          <ExportBtn label="Markdown" busy={busy === "md"} onClick={() => runExport("md")}>
+          <ExportBtn
+            label={t("mindmap.export.markdown")}
+            title={t("mindmap.export.exportAs", { format: t("mindmap.export.markdown") })}
+            busy={busy === "md"}
+            onClick={() => runExport("md")}
+          >
             <FileText size={14} />
           </ExportBtn>
-          <ExportBtn label="Image" busy={busy === "png"} onClick={() => runExport("png")}>
+          <ExportBtn
+            label={t("mindmap.export.image")}
+            title={t("mindmap.export.exportAs", { format: t("mindmap.export.image") })}
+            busy={busy === "png"}
+            onClick={() => runExport("png")}
+          >
             <ImageIcon size={14} />
           </ExportBtn>
-          <ExportBtn label="PDF" busy={busy === "pdf"} onClick={() => runExport("pdf")} primary>
+          <ExportBtn
+            label={t("mindmap.export.pdf")}
+            title={t("mindmap.export.exportAs", { format: t("mindmap.export.pdf") })}
+            busy={busy === "pdf"}
+            onClick={() => runExport("pdf")}
+            primary
+          >
             <Printer size={14} />
           </ExportBtn>
         </Panel>
@@ -160,12 +178,14 @@ function Inner({
 
 function ExportBtn({
   label,
+  title,
   busy,
   onClick,
   primary,
   children,
 }: {
   label: string;
+  title: string;
   busy: boolean;
   onClick: () => void;
   primary?: boolean;
@@ -176,7 +196,7 @@ function ExportBtn({
       type="button"
       onClick={onClick}
       disabled={busy}
-      title={`Export as ${label}`}
+      title={title}
       className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 ${
         primary
           ? "bg-[#a855f7] hover:bg-[#9333ea] text-white"

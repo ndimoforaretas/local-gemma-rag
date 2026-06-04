@@ -2,6 +2,7 @@
  * Config form for a new mindmap. Scope mandatory; depth locked at 2 for MVP.
  */
 
+import { useTranslation } from "react-i18next";
 import { Network, Loader2, AlertCircle } from "lucide-react";
 import { DocScopeFilter } from "../../DocScopeFilter";
 import { Section } from "../quiz/QuizPrimitives";
@@ -15,6 +16,7 @@ export interface MindmapsConfigPanelProps {
 }
 
 export function MindmapsConfigPanel(p: MindmapsConfigPanelProps) {
+  const { t } = useTranslation("study");
   const hasScope = p.scope.length > 0;
   const canStart = hasScope && !p.isLoading;
 
@@ -22,21 +24,20 @@ export function MindmapsConfigPanel(p: MindmapsConfigPanelProps) {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-ink-strong mb-1">
-          New Mindmap
+          {t("mindmap.config.title")}
         </h2>
         <p className="text-sm text-ink-muted">
-          Pick the documents you want mapped. The mindmap will render the main
-          themes and sub-topics it finds.
+          {t("mindmap.config.subtitle")}
         </p>
       </div>
 
       <div className="bg-white dark:bg-[#191b23] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-6 sm:p-8 space-y-7">
         <Section
-          label="Document scope (required)"
+          label={t("mindmap.config.scopeLabel")}
           hint={
             hasScope
-              ? "The mindmap will summarise these documents."
-              : "Pick at least one category or file. Mindmaps work best when scoped to a single coherent topic."
+              ? t("mindmap.config.scopeHintHas")
+              : t("mindmap.config.scopeHintEmpty")
           }
         >
           <DocScopeFilter selected={p.scope} onChange={p.setScope} />
@@ -59,11 +60,11 @@ export function MindmapsConfigPanel(p: MindmapsConfigPanelProps) {
         >
           {p.isLoading ? (
             <>
-              <Loader2 size={16} className="animate-spin" /> Generating…
+              <Loader2 size={16} className="animate-spin" /> {t("mindmap.config.generating")}
             </>
           ) : (
             <>
-              <Network size={16} /> Generate Mindmap
+              <Network size={16} /> {t("mindmap.config.generate")}
             </>
           )}
         </button>

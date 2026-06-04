@@ -3,6 +3,8 @@
  * Layout matches WorkshopMode (top-aligned, wide container, breadcrumbs).
  */
 
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Breadcrumbs, type Crumb } from "../Breadcrumbs";
 import { MindmapsConfigPanel } from "./mindmaps/MindmapsConfigPanel";
 import { MindmapsGeneratingCard } from "./mindmaps/MindmapsGeneratingCard";
@@ -12,7 +14,8 @@ import { useMindmaps } from "./mindmaps/useMindmaps";
 
 export function MindmapsMode({ onExit }: { onExit: () => void }) {
   const m = useMindmaps();
-  const crumbs = buildCrumbs(m, onExit);
+  const { t } = useTranslation("study");
+  const crumbs = buildCrumbs(m, onExit, t);
 
   return (
     <div className="h-full overflow-y-auto">
@@ -70,16 +73,17 @@ export function MindmapsMode({ onExit }: { onExit: () => void }) {
 function buildCrumbs(
   m: ReturnType<typeof useMindmaps>,
   onExit: () => void,
+  t: TFunction,
 ): Crumb[] {
   const crumbs: Crumb[] = [
-    { label: "Study Hub", onClick: onExit },
+    { label: t("hub.title"), onClick: onExit },
     {
-      label: "Mindmaps",
+      label: t("mindmap.crumbs.mindmaps"),
       onClick: m.phase === "list" ? undefined : m.backToList,
     },
   ];
   if (m.phase === "config") {
-    crumbs.push({ label: "New Mindmap" });
+    crumbs.push({ label: t("mindmap.crumbs.newMindmap") });
   } else if (m.phase === "view" && m.active.data) {
     crumbs.push({ label: m.active.data.title });
   }

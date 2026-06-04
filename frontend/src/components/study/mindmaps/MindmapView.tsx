@@ -4,6 +4,7 @@
  * persist; "Reset layout" returns to the auto (dagre) layout.
  */
 
+import { useTranslation } from "react-i18next";
 import type { Mindmap, MindmapLayout } from "./types";
 import type { NodePositions } from "./ReactFlowMindmap";
 import { ReactFlowMindmap } from "./ReactFlowMindmap";
@@ -22,6 +23,7 @@ export function MindmapView({
   /** Persist (positions) or reset (null) the manual node layout. */
   onSavePositions: (positions: NodePositions | null) => void;
 }) {
+  const { t } = useTranslation("study");
   // Default to the recommended LR (coerce any legacy 'radial' value).
   const layout: MindmapLayout = mindmap.layout === "TD" ? "TD" : "LR";
   const hasManual = !!mindmap.node_positions;
@@ -31,8 +33,10 @@ export function MindmapView({
       <header className="flex items-start justify-between gap-4 flex-wrap">
         <div className="min-w-0">
           <div className="text-xs uppercase tracking-wider font-semibold inline-block px-2 py-0.5 rounded-full bg-[#a855f7]/15 text-[#a855f7] dark:text-[#ddb7ff] mb-2">
-            {mindmap.tree.children.length} themes ·{" "}
-            {mindmap.tree.children.reduce((a, c) => a + (c.children?.length ?? 0), 0)} sub-topics
+            {t("mindmap.view.meta", {
+              themes: mindmap.tree.children.length,
+              subtopics: mindmap.tree.children.reduce((a, c) => a + (c.children?.length ?? 0), 0),
+            })}
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-ink-strong">
             {mindmap.title}
@@ -42,7 +46,7 @@ export function MindmapView({
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-ink-muted">
-          Drag nodes to rearrange · scroll to zoom · drag the background to pan
+          {t("mindmap.view.hint")}
         </p>
         <div className="flex items-center gap-2">
           {hasManual && (
@@ -51,7 +55,7 @@ export function MindmapView({
               onClick={() => onSavePositions(null)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#c2c6d6] dark:border-[#424754] hover:bg-[#a855f7]/10 hover:border-[#a855f7]/50 text-ink-strong text-sm font-medium transition-colors"
             >
-              <RotateCcw size={14} /> Reset layout
+              <RotateCcw size={14} /> {t("mindmap.view.resetLayout")}
             </button>
           )}
           <LayoutPicker value={layout} onChange={onSaveLayout} />
