@@ -8,6 +8,7 @@
  */
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Download, FileText, FileDown } from "lucide-react";
 import {
   downloadMarkdown,
@@ -16,13 +17,14 @@ import {
 } from "./quizExport";
 import type { QuizQuestion } from "./types";
 
-const LEVELS: { id: ExportContent; label: string }[] = [
-  { id: "questions", label: "Questions only" },
-  { id: "answers", label: "+ correct answers" },
-  { id: "explanations", label: "+ answers & explanations" },
+const LEVELS: { id: ExportContent; key: string }[] = [
+  { id: "questions", key: "levelQuestions" },
+  { id: "answers", key: "levelAnswers" },
+  { id: "explanations", key: "levelExplanations" },
 ];
 
 export function QuizExportMenu({ questions }: { questions: QuizQuestion[] }) {
+  const { t } = useTranslation("study");
   const [content, setContent] = useState<ExportContent>("explanations");
 
   return (
@@ -30,12 +32,10 @@ export function QuizExportMenu({ questions }: { questions: QuizQuestion[] }) {
       <div className="flex items-center gap-2 mb-1">
         <Download size={16} className="text-[#a855f7]" />
         <h3 className="text-sm font-semibold text-ink-strong">
-          Export this quiz
+          {t("quiz.export.title")}
         </h3>
       </div>
-      <p className="text-xs text-ink-muted mb-3">
-        Pick what to include, then choose a format.
-      </p>
+      <p className="text-xs text-ink-muted mb-3">{t("quiz.export.subtitle")}</p>
 
       <div className="flex flex-wrap gap-2 mb-4">
         {LEVELS.map((l) => {
@@ -52,7 +52,7 @@ export function QuizExportMenu({ questions }: { questions: QuizQuestion[] }) {
                   : "bg-transparent border-[#c2c6d6] dark:border-[#424754] text-ink-muted hover:border-[#a855f7]/50"
               }`}
             >
-              {l.label}
+              {t(`quiz.export.${l.key}`)}
             </button>
           );
         })}
@@ -65,20 +65,20 @@ export function QuizExportMenu({ questions }: { questions: QuizQuestion[] }) {
             // Fire-and-forget: saveBlob handles its own errors / user cancels.
             void downloadMarkdown(questions, content);
           }}
-          title="Download as Markdown (.md) — opens a Save As dialog where you can rename and choose a folder"
-          aria-label="Download as Markdown — opens a Save As dialog"
+          title={t("quiz.export.markdownTip")}
+          aria-label={t("quiz.export.markdownAria")}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#c2c6d6] dark:border-[#424754] hover:border-[#a855f7]/50 text-sm font-medium text-ink-strong transition-colors"
         >
-          <FileText size={14} /> Markdown
+          <FileText size={14} /> {t("quiz.export.markdown")}
         </button>
         <button
           type="button"
           onClick={() => void downloadPdf(questions, content)}
-          title="Download as a PDF file"
-          aria-label="Download as a PDF file"
+          title={t("quiz.export.pdfTip")}
+          aria-label={t("quiz.export.pdfTip")}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#a855f7] hover:bg-[#9333ea] text-white text-sm font-medium transition-colors"
         >
-          <FileDown size={14} /> PDF
+          <FileDown size={14} /> {t("quiz.export.pdf")}
         </button>
       </div>
     </div>

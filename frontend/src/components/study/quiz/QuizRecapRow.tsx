@@ -5,6 +5,7 @@
  * the correct answer text below.
  */
 
+import { useTranslation } from "react-i18next";
 import { Check, X as XIcon } from "lucide-react";
 import type { QuizQuestion } from "./types";
 
@@ -15,6 +16,7 @@ export function QuizRecapRow({
   question: QuizQuestion;
   userIdx: number | null;
 }) {
+  const { t } = useTranslation("study");
   const correct = userIdx === question.correct_index;
   return (
     <div
@@ -37,7 +39,7 @@ export function QuizRecapRow({
           <p className="font-medium">{question.question}</p>
           {!correct && (
             <p className="text-xs mt-1 text-ink-muted">
-              Correct answer:{" "}
+              {t("quiz.results.correctAnswer")}{" "}
               <strong>{question.options[question.correct_index]}</strong>
             </p>
           )}

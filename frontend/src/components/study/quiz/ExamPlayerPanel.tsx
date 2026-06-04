@@ -7,6 +7,7 @@
  */
 
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { ChevronLeft, ChevronRight, Flag, Timer } from "lucide-react";
 import { QuizOption } from "./QuizOption";
 import { QuestionNavigator } from "./QuestionNavigator";
@@ -49,6 +50,7 @@ export function ExamPlayerPanel({
   onToggleFlag,
   onSubmit,
 }: ExamPlayerPanelProps) {
+  const { t } = useTranslation("study");
   const selected = answers[current] ?? null;
   const isFlagged = flagged.has(current);
   const unanswered = answers.filter((a) => a === null).length;
@@ -59,7 +61,7 @@ export function ExamPlayerPanel({
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm font-medium text-ink-muted">
-          Question {current + 1} of {total}
+          {t("quiz.play.questionOf", { current: current + 1, total })}
         </span>
         <div className="flex items-center gap-2">
           {remainingMs != null && (
@@ -84,7 +86,7 @@ export function ExamPlayerPanel({
             }`}
           >
             <Flag size={14} className={isFlagged ? "fill-amber-500" : ""} />
-            {isFlagged ? "Flagged" : "Flag"}
+            {isFlagged ? t("quiz.play.flagged") : t("quiz.play.flag")}
           </button>
         </div>
       </div>
@@ -124,7 +126,7 @@ export function ExamPlayerPanel({
           disabled={current === 0}
           className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-[#c2c6d6] dark:border-[#424754] text-ink-strong font-medium hover:bg-[#a855f7]/10 hover:border-[#a855f7]/50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
         >
-          <ChevronLeft size={16} /> Back
+          <ChevronLeft size={16} /> {t("quiz.play.back")}
         </button>
 
         {isLast ? (
@@ -133,7 +135,7 @@ export function ExamPlayerPanel({
             onClick={onSubmit}
             className="px-5 py-2.5 rounded-xl bg-[#a855f7] hover:bg-[#9333ea] text-white font-medium transition-colors"
           >
-            Submit exam
+            {t("quiz.play.submitExam")}
           </button>
         ) : (
           <button
@@ -141,7 +143,7 @@ export function ExamPlayerPanel({
             onClick={onNext}
             className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#a855f7] hover:bg-[#9333ea] text-white font-medium transition-colors"
           >
-            Next <ChevronRight size={16} />
+            {t("quiz.play.next")} <ChevronRight size={16} />
           </button>
         )}
       </div>
@@ -157,7 +159,7 @@ export function ExamPlayerPanel({
       <div className="flex flex-col items-end gap-2">
         {unanswered > 0 && (
           <p className="text-xs text-ink-muted">
-            {unanswered} question{unanswered === 1 ? "" : "s"} still blank
+            {t("quiz.play.stillBlank", { count: unanswered })}
           </p>
         )}
         <button
@@ -165,7 +167,7 @@ export function ExamPlayerPanel({
           onClick={onSubmit}
           className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg shadow-emerald-600/20 transition-colors"
         >
-          Submit exam &amp; see results
+          {t("quiz.play.submitExamSee")}
         </button>
       </div>
     </div>

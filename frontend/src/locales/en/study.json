@@ -94,6 +94,49 @@
       "agoMinutes": "{{count}}m ago",
       "agoHours": "{{count}}h ago",
       "agoDays": "{{count}}d ago"
+    },
+    "play": {
+      "why": "Why:",
+      "submitAnswer": "Submit answer",
+      "nextQuestion": "Next question",
+      "seeResults": "See results",
+      "questionOf": "Question {{current}} of {{total}}",
+      "flag": "Flag",
+      "flagged": "Flagged",
+      "back": "Back",
+      "next": "Next",
+      "submitExam": "Submit exam",
+      "submitExamSee": "Submit exam & see results",
+      "stillBlank_one": "{{count}} question still blank",
+      "stillBlank_other": "{{count}} questions still blank"
+    },
+    "nav": {
+      "questions": "Questions",
+      "answered": "{{answered}}/{{total}} answered",
+      "legendAnswered": "Answered",
+      "legendBlank": "Blank",
+      "legendFlagged": "Flagged"
+    },
+    "results": {
+      "retake": "Retake this quiz",
+      "library": "Quiz library",
+      "backToHub": "Back to Study Hub",
+      "correctOfTotal": "{{correct}} of {{total}} correct",
+      "newAchievements_one": "🏅 {{count}} new achievement unlocked",
+      "newAchievements_other": "🏅 {{count}} new achievements unlocked",
+      "correctAnswer": "Correct answer:"
+    },
+    "export": {
+      "title": "Export this quiz",
+      "subtitle": "Pick what to include, then choose a format.",
+      "levelQuestions": "Questions only",
+      "levelAnswers": "+ correct answers",
+      "levelExplanations": "+ answers & explanations",
+      "markdown": "Markdown",
+      "pdf": "PDF",
+      "markdownTip": "Download as Markdown (.md) — opens a Save As dialog where you can rename and choose a folder",
+      "markdownAria": "Download as Markdown — opens a Save As dialog",
+      "pdfTip": "Download as a PDF file"
     }
   }
 }

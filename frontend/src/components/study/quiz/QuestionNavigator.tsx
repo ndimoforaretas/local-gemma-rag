@@ -5,6 +5,7 @@
  * see at a glance what's answered, flagged, or still blank. Stateless.
  */
 
+import { useTranslation } from "react-i18next";
 import { Flag } from "lucide-react";
 
 export interface QuestionNavigatorProps {
@@ -22,12 +23,13 @@ export function QuestionNavigator({
   flagged,
   onJump,
 }: QuestionNavigatorProps) {
+  const { t } = useTranslation("study");
   return (
     <div className="p-4 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23]">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-semibold text-ink-strong">Questions</span>
+        <span className="text-sm font-semibold text-ink-strong">{t("quiz.nav.questions")}</span>
         <span className="text-xs text-ink-muted tabular-nums">
-          {answers.filter((a) => a !== null).length}/{total} answered
+          {t("quiz.nav.answered", { answered: answers.filter((a) => a !== null).length, total })}
         </span>
       </div>
 
@@ -76,15 +78,15 @@ export function QuestionNavigator({
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted">
         <span className="inline-flex items-center gap-1.5">
           <span className="w-3 h-3 rounded bg-[#a855f7]/15 border border-[#a855f7]/40" />
-          Answered
+          {t("quiz.nav.legendAnswered")}
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="w-3 h-3 rounded border border-[#c2c6d6] dark:border-[#424754]" />
-          Blank
+          {t("quiz.nav.legendBlank")}
         </span>
         <span className="inline-flex items-center gap-1.5">
           <Flag size={11} className="text-amber-500 fill-amber-500" />
-          Flagged
+          {t("quiz.nav.legendFlagged")}
         </span>
       </div>
     </div>

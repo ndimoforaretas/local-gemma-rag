@@ -94,6 +94,49 @@
       "agoMinutes": "vor {{count}} Min.",
       "agoHours": "vor {{count}} Std.",
       "agoDays": "vor {{count}} Tg."
+    },
+    "play": {
+      "why": "Warum:",
+      "submitAnswer": "Antwort abschicken",
+      "nextQuestion": "Nächste Frage",
+      "seeResults": "Ergebnisse ansehen",
+      "questionOf": "Frage {{current}} von {{total}}",
+      "flag": "Markieren",
+      "flagged": "Markiert",
+      "back": "Zurück",
+      "next": "Weiter",
+      "submitExam": "Prüfung abschicken",
+      "submitExamSee": "Prüfung abschicken & Ergebnisse ansehen",
+      "stillBlank_one": "{{count}} Frage noch unbeantwortet",
+      "stillBlank_other": "{{count}} Fragen noch unbeantwortet"
+    },
+    "nav": {
+      "questions": "Fragen",
+      "answered": "{{answered}}/{{total}} beantwortet",
+      "legendAnswered": "Beantwortet",
+      "legendBlank": "Leer",
+      "legendFlagged": "Markiert"
+    },
+    "results": {
+      "retake": "Dieses Quiz wiederholen",
+      "library": "Quiz-Bibliothek",
+      "backToHub": "Zurück zum Lernzentrum",
+      "correctOfTotal": "{{correct}} von {{total}} richtig",
+      "newAchievements_one": "🏅 {{count}} neuer Erfolg freigeschaltet",
+      "newAchievements_other": "🏅 {{count}} neue Erfolge freigeschaltet",
+      "correctAnswer": "Richtige Antwort:"
+    },
+    "export": {
+      "title": "Dieses Quiz exportieren",
+      "subtitle": "Wählen Sie, was enthalten sein soll, und dann ein Format.",
+      "levelQuestions": "Nur Fragen",
+      "levelAnswers": "+ richtige Antworten",
+      "levelExplanations": "+ Antworten & Erklärungen",
+      "markdown": "Markdown",
+      "pdf": "PDF",
+      "markdownTip": "Als Markdown (.md) herunterladen – öffnet einen Speichern-unter-Dialog zum Umbenennen und Ordnerwählen",
+      "markdownAria": "Als Markdown herunterladen – öffnet einen Speichern-unter-Dialog",
+      "pdfTip": "Als PDF-Datei herunterladen"
     }
   }
 }

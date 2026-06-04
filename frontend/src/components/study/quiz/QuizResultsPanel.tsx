@@ -9,6 +9,7 @@
  *   - inline footer buttons
  */
 
+import { useTranslation } from "react-i18next";
 import { LayoutGrid, RotateCcw } from "lucide-react";
 import { QuizExportMenu } from "./QuizExportMenu";
 import { QuizRecapRow } from "./QuizRecapRow";
@@ -25,7 +26,7 @@ export interface QuizResultsPanelProps {
   onRetake?: () => void;
   /** Back to the saved-quiz library. Omit to hide the button. */
   onLibrary?: () => void;
-  /** Custom label for the exit button (defaults to "Back to Study Hub"). */
+  /** Custom label for the exit button (defaults to the translated "Back to Study Hub"). */
   exitLabel?: string;
   onExit: () => void;
 }
@@ -38,9 +39,10 @@ export function QuizResultsPanel({
   newlyEarned,
   onRetake,
   onLibrary,
-  exitLabel = "Back to Study Hub",
+  exitLabel,
   onExit,
 }: QuizResultsPanelProps) {
+  const { t } = useTranslation("study");
   const pct =
     finalScore ??
     (questions.length ? Math.round((100 * correctCount) / questions.length) : 0);
@@ -66,7 +68,7 @@ export function QuizResultsPanel({
               className="w-full py-2.5 rounded-xl bg-[#a855f7] hover:bg-[#9333ea] text-white font-medium transition-colors flex items-center justify-center gap-2"
             >
               <RotateCcw size={16} />
-              Retake this quiz
+              {t("quiz.results.retake")}
             </button>
           )}
           {onLibrary && (
@@ -76,7 +78,7 @@ export function QuizResultsPanel({
               className="w-full py-2.5 rounded-xl border border-[#c2c6d6] dark:border-[#424754] hover:bg-[#a855f7]/10 hover:border-[#a855f7]/50 text-ink-strong font-medium transition-colors flex items-center justify-center gap-2"
             >
               <LayoutGrid size={16} />
-              Quiz library
+              {t("quiz.results.library")}
             </button>
           )}
           <button
@@ -84,7 +86,7 @@ export function QuizResultsPanel({
             onClick={onExit}
             className="w-full py-2.5 rounded-xl border border-[#c2c6d6] dark:border-[#424754] hover:bg-[#a855f7]/10 hover:border-[#a855f7]/50 text-ink-strong font-medium transition-colors"
           >
-            {exitLabel}
+            {exitLabel ?? t("quiz.results.backToHub")}
           </button>
         </div>
       </aside>

@@ -4,6 +4,7 @@
  */
 
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Timer } from "lucide-react";
 import { QuizOption } from "./QuizOption";
 import type { QuizQuestion } from "./types";
@@ -39,6 +40,7 @@ export function QuizPlayerPanel({
   onSubmit,
   onNext,
 }: QuizPlayerPanelProps) {
+  const { t } = useTranslation("study");
   const progressPct = ((current + (revealed ? 1 : 0)) / total) * 100;
   const urgent = remainingMs != null && remainingMs <= 60_000;
 
@@ -58,7 +60,10 @@ export function QuizPlayerPanel({
         </div>
       )}
 
-      <ProgressBar current={current + 1} total={total} pct={progressPct} />
+      <ProgressBar
+        label={t("quiz.play.questionOf", { current: current + 1, total })}
+        pct={progressPct}
+      />
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -92,7 +97,7 @@ export function QuizPlayerPanel({
               animate={{ opacity: 1, height: "auto" }}
               className="mt-4 p-3 rounded-xl bg-[#a855f7]/5 border border-[#a855f7]/20 text-sm text-ink-muted"
             >
-              <span className="font-semibold text-[#a855f7]">Why: </span>
+              <span className="font-semibold text-[#a855f7]">{t("quiz.play.why")} </span>
               {question.explanation}
             </motion.div>
           )}
@@ -107,7 +112,7 @@ export function QuizPlayerPanel({
             disabled={selected === null}
             className="px-5 py-2.5 rounded-xl bg-[#a855f7] hover:bg-[#9333ea] disabled:bg-[#a855f7]/40 disabled:cursor-not-allowed text-white font-medium transition-colors"
           >
-            Submit answer
+            {t("quiz.play.submitAnswer")}
           </button>
         ) : (
           <button
@@ -115,7 +120,7 @@ export function QuizPlayerPanel({
             onClick={onNext}
             className="px-5 py-2.5 rounded-xl bg-[#a855f7] hover:bg-[#9333ea] text-white font-medium transition-colors"
           >
-            {current + 1 < total ? "Next question" : "See results"}
+            {current + 1 < total ? t("quiz.play.nextQuestion") : t("quiz.play.seeResults")}
           </button>
         )}
       </div>
@@ -123,21 +128,11 @@ export function QuizPlayerPanel({
   );
 }
 
-function ProgressBar({
-  current,
-  total,
-  pct,
-}: {
-  current: number;
-  total: number;
-  pct: number;
-}) {
+function ProgressBar({ label, pct }: { label: string; pct: number }) {
   return (
     <div>
       <div className="flex items-center justify-between text-xs mb-1 text-ink-muted">
-        <span>
-          Question {current} of {total}
-        </span>
+        <span>{label}</span>
         <span>{Math.round(pct)}%</span>
       </div>
       <div className="h-1.5 bg-[#c2c6d6]/40 dark:bg-[#424754]/40 rounded-full overflow-hidden">
