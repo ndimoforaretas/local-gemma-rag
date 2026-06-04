@@ -22,6 +22,7 @@
     "chars": "{{count}} Zeichen"
   },
   "message": {
+    "conversationAria": "Unterhaltungsnachrichten",
     "copy": "Kopieren",
     "copied": "Kopiert",
     "copyTip": "Antwort in die Zwischenablage kopieren",
@@ -75,5 +76,15 @@
     "viewChunk": "Abschnitt anzeigen",
     "openTip": "Quelldatei öffnen",
     "open": "Öffnen"
+  },
+  "history": {
+    "title": "Chat-Verlauf",
+    "recent": "Letzte Sitzungen",
+    "msgs": "{{count}} Nachr.",
+    "deleteAria": "Sitzung {{title}} löschen",
+    "deleteTitle": "Sitzung löschen",
+    "empty": "Keine früheren Sitzungen",
+    "today": "Heute, {{time}}",
+    "yesterday": "Gestern, {{time}}"
   }
 }

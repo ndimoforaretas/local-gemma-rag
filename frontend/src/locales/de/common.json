@@ -1,4 +1,14 @@
 {
   "appName": "Gemma CogniVault",
-  "language": "Sprache"
+  "language": "Sprache",
+  "confirm": "Bestätigen",
+  "cancel": "Abbrechen",
+  "closeDialog": "Dialog schließen",
+  "breadcrumb": "Brotkrümelnavigation",
+  "errorBoundary": {
+    "title": "Etwas ist schiefgelaufen",
+    "body": "Ein unerwarteter Fehler ist aufgetreten. Du kannst die Seite neu laden oder den Anwendungszustand zurücksetzen.",
+    "tryAgain": "Erneut versuchen",
+    "reload": "Seite neu laden"
+  }
 }

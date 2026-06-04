@@ -1,4 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { History, Loader2, Trash2 } from "lucide-react";
 import type { ChatSession } from "../types/api";
 
@@ -11,22 +13,23 @@ interface HistorySidebarProps {
   deletingSessionId: string | null;
 }
 
-function formatRecency(ts: number): string {
+function formatRecency(ts: number, t: TFunction, locale: string): string {
   const d = new Date(ts);
   const now = new Date();
+  const time = d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
   const isToday = d.toDateString() === now.toDateString();
 
   if (isToday) {
-    return `Today, ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    return t("history.today", { time });
   }
 
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
   if (d.toDateString() === yesterday.toDateString()) {
-    return `Yesterday, ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    return t("history.yesterday", { time });
   }
 
-  return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+  return `${d.toLocaleDateString(locale)} ${time}`;
 }
 
 export function HistorySidebar({
@@ -37,6 +40,7 @@ export function HistorySidebar({
   onDeleteSession,
   deletingSessionId,
 }: HistorySidebarProps) {
+  const { t, i18n } = useTranslation("chat");
   return (
     <AnimatePresence>
       {isOpen && (
@@ -49,7 +53,7 @@ export function HistorySidebar({
             <History size={16} className="text-[#0058be] dark:text-[#adc6ff]" />
             <div className="flex items-center justify-between w-full gap-2">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-ink-muted">
-                Chat History
+                {t("history.title")}
               </h3>
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#e0e3e5] dark:bg-[#272a31] text-ink-muted">
                 {sessions.length}
@@ -57,7 +61,7 @@ export function HistorySidebar({
             </div>
           </div>
           <div className="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-ink-muted">
-            Recent Sessions
+            {t("history.recent")}
           </div>
           <div className="flex-1 overflow-y-auto px-4 pb-4 flex flex-col gap-2">
             {sessions.map((s) => (
@@ -79,16 +83,16 @@ export function HistorySidebar({
                       {s.title}
                     </h4>
                     <div className="mt-1.5 flex items-center justify-between gap-3 text-xs text-ink-muted">
-                      <p className="truncate">{formatRecency(s.updatedAt)}</p>
-                      <span className="shrink-0">{s.messages.length} msgs</span>
+                      <p className="truncate">{formatRecency(s.updatedAt, t, i18n.language)}</p>
+                      <span className="shrink-0">{t("history.msgs", { count: s.messages.length })}</span>
                     </div>
                   </button>
                   <button
                     type="button"
                     onClick={() => onDeleteSession(s.id)}
                     disabled={deletingSessionId === s.id}
-                    aria-label={`Delete session ${s.title}`}
-                    title="Delete session"
+                    aria-label={t("history.deleteAria", { title: s.title })}
+                    title={t("history.deleteTitle")}
                     className="absolute right-2 top-2 p-2 rounded-lg text-ink-muted hover:text-[#8b1d2c] hover:bg-[#f3d9dd] dark:hover:text-[#ffb4ab] dark:hover:bg-[#3b2129] transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
                     {deletingSessionId === s.id ? (
                       <Loader2 size={16} className="animate-spin" />
@@ -103,7 +107,7 @@ export function HistorySidebar({
               <div className="flex flex-col items-center justify-center h-40 opacity-50">
                 <History size={24} className="mb-2 text-ink-muted" />
                 <p className="text-sm text-center text-ink-muted">
-                  No past sessions
+                  {t("history.empty")}
                 </p>
               </div>
             )}

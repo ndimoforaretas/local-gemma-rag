@@ -8,6 +8,7 @@
  */
 
 import { Fragment } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronRight } from "lucide-react";
 
 export interface Crumb {
@@ -17,10 +18,11 @@ export interface Crumb {
 }
 
 export function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
+  const { t } = useTranslation("common");
   return (
     <nav
       className="flex items-center flex-wrap gap-1.5 text-sm min-w-0"
-      aria-label="Breadcrumb"
+      aria-label={t("breadcrumb")}
     >
       {crumbs.map((crumb, i) => (
         <Fragment key={i}>

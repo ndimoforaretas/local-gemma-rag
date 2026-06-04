@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, Trash2, Info, X } from "lucide-react";
 
@@ -17,12 +18,13 @@ export function ConfirmationModal({
   isOpen,
   title,
   message,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  confirmLabel,
+  cancelLabel,
   type = "info",
   onConfirm,
   onCancel,
 }: ConfirmationModalProps) {
+  const { t } = useTranslation("common");
   // Listen for Escape key to close the modal
   useEffect(() => {
     if (!isOpen) return;
@@ -102,7 +104,7 @@ export function ConfirmationModal({
             <button
               onClick={onCancel}
               className="absolute top-4 right-4 p-1.5 rounded-lg text-ink-muted hover:text-ink-strong hover:bg-[#eceef0] dark:hover:bg-[#272a31] transition-colors"
-              aria-label="Close dialog"
+              aria-label={t("closeDialog")}
             >
               <X className="w-5 h-5" />
             </button>
@@ -133,14 +135,14 @@ export function ConfirmationModal({
                   onClick={onCancel}
                   className="px-4 py-2 rounded-xl bg-[#e0e3e5] hover:bg-[#c2c6d6] dark:bg-[#272a31] dark:hover:bg-[#32353c] text-ink text-sm font-medium transition-colors cursor-pointer"
                 >
-                  {cancelLabel}
+                  {cancelLabel ?? t("cancel")}
                 </button>
                 <button
                   type="button"
                   onClick={onConfirm}
                   className={`px-5 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${confirmBtnClass}`}
                 >
-                  {confirmLabel}
+                  {confirmLabel ?? t("confirm")}
                 </button>
               </div>
             </div>

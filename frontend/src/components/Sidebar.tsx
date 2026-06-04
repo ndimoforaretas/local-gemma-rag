@@ -115,7 +115,7 @@ export function Sidebar({ activeView, setActiveView, isDark, onToggleDark }: Sid
       {/* Navigation */}
       <nav
         className={`flex flex-col gap-1 flex-1 ${collapsed ? "items-center" : ""}`}
-        aria-label="Primary navigation"
+        aria-label={t("primaryNav")}
       >
         {!collapsed && (
           <div className="text-xs uppercase tracking-wider text-ink-muted font-semibold mb-2 px-3">

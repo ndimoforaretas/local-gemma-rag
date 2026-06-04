@@ -22,6 +22,7 @@
     "chars": "{{count}} chars"
   },
   "message": {
+    "conversationAria": "Conversation messages",
     "copy": "Copy",
     "copied": "Copied",
     "copyTip": "Copy response to clipboard",
@@ -75,5 +76,15 @@
     "viewChunk": "View chunk",
     "openTip": "Open source file",
     "open": "Open"
+  },
+  "history": {
+    "title": "Chat History",
+    "recent": "Recent Sessions",
+    "msgs": "{{count}} msgs",
+    "deleteAria": "Delete session {{title}}",
+    "deleteTitle": "Delete session",
+    "empty": "No past sessions",
+    "today": "Today, {{time}}",
+    "yesterday": "Yesterday, {{time}}"
   }
 }
