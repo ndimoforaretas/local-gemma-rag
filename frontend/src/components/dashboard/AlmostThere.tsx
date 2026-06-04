@@ -8,6 +8,7 @@
  * Clicking a row opens the shared detail modal via `onSelect`.
  */
 
+import { useTranslation } from "react-i18next";
 import { Zap } from "lucide-react";
 import type { AchievementItem } from "../../types/api";
 import { inProgressBadges } from "./achievementHelpers";
@@ -23,13 +24,14 @@ export function AlmostThere({
   items: AchievementItem[];
   onSelect: (code: string) => void;
 }) {
+  const { t } = useTranslation("dashboard");
   const closest = inProgressBadges(items).slice(0, MAX_NUDGES);
 
   if (closest.length === 0) return null;
 
   return (
     <section>
-      <SectionHeading icon={Zap} title="Almost there" />
+      <SectionHeading icon={Zap} title={t("almostThere.title")} />
 
       <div className="space-y-3">
         {closest.map((item) => (

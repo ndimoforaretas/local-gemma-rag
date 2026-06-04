@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { ChevronRight } from "lucide-react";
 import type { AchievementItem } from "../../types/api";
 
@@ -9,6 +10,7 @@ export function NextLevelCard({
   next: AchievementItem;
   onNavigate: (code: string) => void;
 }) {
+  const { t } = useTranslation("dashboard");
   return (
     <button
       type="button"
@@ -18,7 +20,7 @@ export function NextLevelCard({
       <span className="text-2xl shrink-0">{next.icon}</span>
       <span className="min-w-0 flex-1">
         <span className="block text-xs uppercase tracking-wider text-ink-muted">
-          Next level
+          {t("nextLevel.label")}
         </span>
         <span className="block text-sm font-semibold text-ink-strong truncate">
           {next.name}

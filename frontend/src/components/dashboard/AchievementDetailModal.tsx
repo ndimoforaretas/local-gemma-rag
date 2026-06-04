@@ -7,14 +7,15 @@
  */
 
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Lock, X } from "lucide-react";
 import type { AchievementItem } from "../../types/api";
 import { findNext, hasProgress } from "./achievementHelpers";
 import { AchievementProgressBar } from "./AchievementProgressBar";
 import { NextLevelCard } from "./NextLevelCard";
 
-function earnedDate(ts: number): string {
-  return new Date(ts * 1000).toLocaleDateString(undefined, {
+function earnedDate(ts: number, locale: string): string {
+  return new Date(ts * 1000).toLocaleDateString(locale, {
     month: "long",
     day: "numeric",
     year: "numeric",
@@ -32,6 +33,7 @@ export function AchievementDetailModal({
   onClose: () => void;
   onNavigate: (code: string) => void;
 }) {
+  const { t, i18n } = useTranslation("dashboard");
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
@@ -68,14 +70,16 @@ export function AchievementDetailModal({
             <div className="min-w-0">
               <h2 className="text-xl font-bold text-ink-strong truncate">{item.name}</h2>
               <p className={`text-sm font-medium ${earned ? "text-emerald-600 dark:text-emerald-400" : "text-ink-muted"}`}>
-                {earned ? (item.earned_at ? `Earned ${earnedDate(item.earned_at)}` : "Earned") : "Locked"}
+                {earned
+                  ? (item.earned_at ? t("detail.earnedOn", { date: earnedDate(item.earned_at, i18n.language) }) : t("detail.earned"))
+                  : t("detail.locked")}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("detail.close")}
             className="p-1.5 rounded-lg hover:bg-[#f2f4f6] dark:hover:bg-[#272a31] text-ink-muted shrink-0"
           >
             <X size={16} />
@@ -85,7 +89,7 @@ export function AchievementDetailModal({
         <div className="p-6 space-y-5">
           <div>
             <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">
-              How to earn it
+              {t("detail.howToEarn")}
             </div>
             <p className="text-sm text-ink">{item.description}</p>
           </div>

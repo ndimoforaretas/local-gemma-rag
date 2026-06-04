@@ -9,6 +9,7 @@
  * there" nudges), so this component just reports clicks via `onSelect`.
  */
 
+import { useTranslation } from "react-i18next";
 import { Trophy } from "lucide-react";
 import type { AchievementItem } from "../../types/api";
 import { AchievementBadge } from "./AchievementBadge";
@@ -28,16 +29,17 @@ export function AchievementGrid({
     return 0;
   });
 
+  const { t } = useTranslation("dashboard");
   const earnedCount = items.filter((i) => i.is_earned).length;
 
   return (
     <section>
       <SectionHeading
         icon={Trophy}
-        title="Achievements"
+        title={t("achievements.title")}
         right={
           <span className="text-sm font-semibold text-ink-muted">
-            {earnedCount} / {items.length} earned
+            {t("achievements.earnedCount", { earned: earnedCount, total: items.length })}
           </span>
         }
       />

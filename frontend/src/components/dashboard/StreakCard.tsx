@@ -6,6 +6,7 @@
  * best!" when the current run ties or beats the record.
  */
 
+import { useTranslation } from "react-i18next";
 import { Flame } from "lucide-react";
 
 export function StreakCard({
@@ -15,17 +16,20 @@ export function StreakCard({
   current: number;
   best: number;
 }) {
+  const { t } = useTranslation("dashboard");
   const active = current > 0;
   const isRecord = active && current >= best;
-  const dayLabel = (n: number) => `${n} day${n === 1 ? "" : "s"}`;
+  const dayLabel = (n: number) => t("streak.days", { count: n });
 
   let sublabel: string;
   if (!active) {
-    sublabel = best > 0 ? `Personal best: ${dayLabel(best)}` : "Study today to start a streak";
+    sublabel = best > 0
+      ? t("streak.personalBest", { streak: dayLabel(best) })
+      : t("streak.startToday");
   } else if (isRecord) {
-    sublabel = "🔥 Personal best — keep it going!";
+    sublabel = t("streak.recordSublabel");
   } else {
-    sublabel = `Personal best: ${dayLabel(best)}`;
+    sublabel = t("streak.personalBest", { streak: dayLabel(best) });
   }
 
   return (
@@ -36,7 +40,7 @@ export function StreakCard({
           className={`text-amber-500 ${active ? "animate-pulse" : "opacity-60"}`}
         />
         <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
-          Current streak
+          {t("streak.current")}
         </span>
       </div>
       <div className="flex items-baseline gap-2">
@@ -45,7 +49,7 @@ export function StreakCard({
         </span>
         {isRecord && (
           <span className="text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
-            Best
+            {t("streak.best")}
           </span>
         )}
       </div>

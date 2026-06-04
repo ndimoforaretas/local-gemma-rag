@@ -4,6 +4,7 @@
  * adds no network cost. Hidden entirely when there's no activity yet.
  */
 
+import { useTranslation } from "react-i18next";
 import { TrendingUp } from "lucide-react";
 import type { DailyActivityEntry } from "../../types/api";
 import { formatDuration } from "./dashboardHelpers";
@@ -11,7 +12,8 @@ import { weeklyTotals } from "./trendHelpers";
 import { SectionHeading } from "./SectionHeading";
 
 export function StudyTrendChart({ days }: { days: DailyActivityEntry[] }) {
-  const weeks = weeklyTotals(days, 12);
+  const { t, i18n } = useTranslation("dashboard");
+  const weeks = weeklyTotals(days, 12, i18n.language);
   const max = Math.max(...weeks.map((w) => w.seconds), 1);
   const total = weeks.reduce((sum, w) => sum + w.seconds, 0);
 
@@ -21,10 +23,10 @@ export function StudyTrendChart({ days }: { days: DailyActivityEntry[] }) {
     <section>
       <SectionHeading
         icon={TrendingUp}
-        title="Study time"
+        title={t("trend.title")}
         right={
           <span className="text-sm font-medium text-ink-muted">
-            {formatDuration(total)} · last {weeks.length} weeks
+            {t("trend.summary", { total: formatDuration(total), count: weeks.length })}
           </span>
         }
       />
@@ -37,7 +39,7 @@ export function StudyTrendChart({ days }: { days: DailyActivityEntry[] }) {
             <div
               key={w.weekStart}
               className="flex-1 h-full flex flex-col justify-end"
-              title={`Week of ${w.label}: ${formatDuration(w.seconds)}`}
+              title={t("trend.weekOf", { label: w.label, duration: formatDuration(w.seconds) })}
             >
               <div
                 className={`rounded-t-md transition-colors ${
@@ -54,7 +56,7 @@ export function StudyTrendChart({ days }: { days: DailyActivityEntry[] }) {
 
       <div className="flex justify-between mt-2 text-xs text-ink-faint">
         <span>{weeks[0]?.label}</span>
-        <span>This week</span>
+        <span>{t("trend.thisWeek")}</span>
       </div>
     </section>
   );

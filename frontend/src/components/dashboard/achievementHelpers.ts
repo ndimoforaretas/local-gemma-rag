@@ -6,6 +6,7 @@
  * progress fraction, with special handling for time and percentage metrics.
  */
 
+import type { TFunction } from "i18next";
 import type { AchievementItem } from "../../types/api";
 
 // Metrics whose values are seconds → render as whole minutes.
@@ -13,8 +14,8 @@ const SECONDS_METRICS = new Set(["total_seconds", "longest_session_seconds"]);
 // Metrics that are already a percentage.
 const PERCENT_METRICS = new Set(["best_quiz_score"]);
 
-// Friendly unit noun per metric (count-style metrics).
-const METRIC_UNITS: Record<string, string> = {
+// Unit translation key (under dashboard.units.*) per count-style metric.
+const METRIC_UNIT_KEYS: Record<string, string> = {
   total_messages: "messages",
   messages_today: "today",
   current_streak_days: "days",
@@ -37,22 +38,23 @@ export function hasProgress(item: AchievementItem): boolean {
 }
 
 /** Format one metric value for display ("45 min", "80%", "3"). */
-function formatValue(metric: string, value: number): string {
-  if (SECONDS_METRICS.has(metric)) return `${Math.round(value / 60)} min`;
+function formatValue(metric: string, value: number, t: TFunction): string {
+  if (SECONDS_METRICS.has(metric)) return `${Math.round(value / 60)} ${t("units.min")}`;
   if (PERCENT_METRICS.has(metric)) return `${value}%`;
   return String(value);
 }
 
 /** "3 / 7 days" style progress label, or null when the badge has no metric. */
-export function progressText(item: AchievementItem): string | null {
+export function progressText(item: AchievementItem, t: TFunction): string | null {
   if (!hasProgress(item)) return null;
   const metric = item.metric as string;
   const target = item.target as number;
   const current = item.current ?? 0;
   if (SECONDS_METRICS.has(metric) || PERCENT_METRICS.has(metric)) {
-    return `${formatValue(metric, current)} / ${formatValue(metric, target)}`;
+    return `${formatValue(metric, current, t)} / ${formatValue(metric, target, t)}`;
   }
-  const unit = METRIC_UNITS[metric] ?? "";
+  const unitKey = METRIC_UNIT_KEYS[metric];
+  const unit = unitKey ? t(`units.${unitKey}`) : "";
   return `${current} / ${target}${unit ? " " + unit : ""}`;
 }
 

@@ -13,6 +13,7 @@
  */
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { BarChart3, Loader2, AlertCircle } from "lucide-react";
 import type { DailyActivityEntry } from "../../types/api";
 import { AchievementGrid } from "./AchievementGrid";
@@ -115,38 +116,38 @@ export function ProgressDashboard() {
 }
 
 function Hero() {
+  const { t } = useTranslation("dashboard");
   return (
     <div className="text-center">
       <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#a855f7]/15 text-[#a855f7] mb-5 shadow-lg shadow-[#a855f7]/10">
         <BarChart3 size={36} strokeWidth={2.2} />
       </div>
       <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-ink-strong mb-3">
-        Your Progress
+        {t("hero.title")}
       </h1>
       <p className="text-base sm:text-lg text-ink-muted max-w-2xl mx-auto">
-        Total study time, daily activity, and the achievements you've unlocked.
+        {t("hero.subtitle")}
       </p>
     </div>
   );
 }
 
 function LoadingState() {
+  const { t } = useTranslation("dashboard");
   return (
     <div className="flex flex-col items-center justify-center py-16 text-ink-muted">
       <Loader2 size={28} className="animate-spin mb-3" />
-      <p className="text-sm">Loading your progress…</p>
+      <p className="text-sm">{t("loading")}</p>
     </div>
   );
 }
 
 function ErrorState() {
+  const { t } = useTranslation("dashboard");
   return (
     <div className="flex items-start gap-2 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-sm">
       <AlertCircle size={16} className="mt-0.5 shrink-0" />
-      <span>
-        Couldn't load your progress data. Check that the backend is running and
-        try refreshing the page.
-      </span>
+      <span>{t("error")}</span>
     </div>
   );
 }

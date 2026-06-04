@@ -10,11 +10,12 @@
  * earned state also carries a check icon, the locked state a lock.
  */
 
+import { useTranslation } from "react-i18next";
 import { Check, Lock } from "lucide-react";
 import type { AchievementItem } from "../../types/api";
 
-function earnedDate(ts: number): string {
-  return new Date(ts * 1000).toLocaleDateString(undefined, {
+function earnedDate(ts: number, locale: string): string {
+  return new Date(ts * 1000).toLocaleDateString(locale, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -28,10 +29,15 @@ export function AchievementBadge({
   item: AchievementItem;
   onSelect?: (item: AchievementItem) => void;
 }) {
+  const { t, i18n } = useTranslation("dashboard");
   const earned = item.is_earned;
   const title = earned
-    ? `${item.name} — earned ${item.earned_at ? earnedDate(item.earned_at) : ""}\n${item.description}`
-    : `${item.name} (locked)\n${item.description}`;
+    ? t("badge.titleEarned", {
+        name: item.name,
+        date: item.earned_at ? earnedDate(item.earned_at, i18n.language) : "",
+        description: item.description,
+      })
+    : t("badge.titleLocked", { name: item.name, description: item.description });
 
   return (
     <button

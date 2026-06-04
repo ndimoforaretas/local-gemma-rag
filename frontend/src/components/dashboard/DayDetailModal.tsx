@@ -6,6 +6,7 @@
  */
 
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Clock, Layers, MessageSquare, Award } from "lucide-react";
 import type {
   AchievementItem,
@@ -22,6 +23,7 @@ export function DayDetailModal({
   achievements: AchievementItem[];
   onClose: () => void;
 }) {
+  const { t, i18n } = useTranslation("dashboard");
   // Close on Esc and lock body scroll for the modal's lifetime.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -49,18 +51,18 @@ export function DayDetailModal({
         <header className="flex items-start justify-between px-5 py-4 border-b border-[#c2c6d6] dark:border-[#424754]">
           <div>
             <h2 className="text-xl font-bold text-ink-strong">
-              {formatLongDate(entry.date)}
+              {formatLongDate(entry.date, i18n.language)}
             </h2>
             {!empty && (
               <p className="text-sm text-ink-muted mt-0.5">
-                {formatDuration(entry.seconds)} of study activity
+                {t("dayModal.studyActivity", { duration: formatDuration(entry.seconds) })}
               </p>
             )}
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("dayModal.close")}
             className="p-1.5 rounded-lg hover:bg-[#f2f4f6] dark:hover:bg-[#272a31] text-ink-muted"
           >
             <X size={16} />
@@ -70,13 +72,13 @@ export function DayDetailModal({
         <div className="p-6 space-y-4">
           {empty ? (
             <p className="text-sm text-ink-muted text-center py-4">
-              No study activity recorded for this day.
+              {t("dayModal.noActivity")}
             </p>
           ) : (
             <div className="grid grid-cols-3 gap-3">
-              <StatBlock icon={Clock} label="Time" value={formatDuration(entry.seconds)} />
-              <StatBlock icon={Layers} label="Sessions" value={String(entry.session_count)} />
-              <StatBlock icon={MessageSquare} label="Messages" value={String(entry.message_count)} />
+              <StatBlock icon={Clock} label={t("dayModal.time")} value={formatDuration(entry.seconds)} />
+              <StatBlock icon={Layers} label={t("dayModal.sessions")} value={String(entry.session_count)} />
+              <StatBlock icon={MessageSquare} label={t("dayModal.messages")} value={String(entry.message_count)} />
             </div>
           )}
 
@@ -84,7 +86,7 @@ export function DayDetailModal({
             <div>
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-ink-muted mb-2">
                 <Award size={12} />
-                Achievements earned
+                {t("dayModal.achievementsEarned")}
               </div>
               <ul className="space-y-1.5">
                 {earnedThisDay.map((a) => (

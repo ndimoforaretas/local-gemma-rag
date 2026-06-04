@@ -6,35 +6,39 @@
  * Hidden entirely until the user has generated at least one artefact.
  */
 
+import { useTranslation } from "react-i18next";
 import { Layers } from "lucide-react";
 import type { ModeBreakdown as ModeBreakdownData } from "../../types/api";
 import { SectionHeading } from "./SectionHeading";
 
 export function ModeBreakdown({ data }: { data: ModeBreakdownData }) {
+  const { t } = useTranslation("dashboard");
   const cards = [
     {
       icon: "🧠",
-      label: "Quizzes",
+      label: t("breakdown.quizzes"),
       primary: data.quizzes.count,
-      detail: data.quizzes.count > 0 ? `avg ${data.quizzes.avg_score}%` : "none yet",
+      detail: data.quizzes.count > 0
+        ? t("breakdown.avgScore", { score: data.quizzes.avg_score })
+        : t("breakdown.noneYet"),
     },
     {
       icon: "📋",
-      label: "Workshops",
+      label: t("breakdown.workshops"),
       primary: data.workshops.created,
-      detail: `${data.workshops.completed} completed`,
+      detail: t("breakdown.completed", { count: data.workshops.completed }),
     },
     {
       icon: "🃏",
-      label: "Flashcards",
+      label: t("breakdown.flashcards"),
       primary: data.flashcards.decks,
-      detail: `${data.flashcards.mastered} mastered`,
+      detail: t("breakdown.mastered", { count: data.flashcards.mastered }),
     },
     {
       icon: "🗺️",
-      label: "Mindmaps",
+      label: t("breakdown.mindmaps"),
       primary: data.mindmaps.created,
-      detail: `${data.mindmaps.exports} exports`,
+      detail: t("breakdown.exports", { count: data.mindmaps.exports }),
     },
   ];
 
@@ -47,7 +51,7 @@ export function ModeBreakdown({ data }: { data: ModeBreakdownData }) {
 
   return (
     <section>
-      <SectionHeading icon={Layers} title="Study Hub activity" />
+      <SectionHeading icon={Layers} title={t("breakdown.title")} />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {cards.map((c) => (

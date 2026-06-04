@@ -31,6 +31,7 @@ function isoOf(d: Date): string {
 export function weeklyTotals(
   days: DailyActivityEntry[],
   maxWeeks = 12,
+  locale?: string,
 ): WeekBucket[] {
   const byWeek = new Map<string, number>();
   for (const entry of days) {
@@ -47,7 +48,7 @@ export function weeklyTotals(
     .map(([weekStart, seconds]) => ({
       weekStart,
       seconds,
-      label: parseISODate(weekStart).toLocaleDateString(undefined, {
+      label: parseISODate(weekStart).toLocaleDateString(locale, {
         month: "short",
         day: "numeric",
       }),

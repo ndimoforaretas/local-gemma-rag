@@ -1,0 +1,138 @@
+{
+  "hero": {
+    "title": "Your Progress",
+    "subtitle": "Total study time, daily activity, and the achievements you've unlocked."
+  },
+  "loading": "Loading your progress…",
+  "error": "Couldn't load your progress data. Check that the backend is running and try refreshing the page.",
+  "summary": {
+    "totalTime": "Total study time",
+    "sessions": "Study sessions",
+    "messagesSent_one": "{{count}} message sent",
+    "messagesSent_other": "{{count}} messages sent"
+  },
+  "streak": {
+    "current": "Current streak",
+    "best": "Best",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "personalBest": "Personal best: {{streak}}",
+    "startToday": "Study today to start a streak",
+    "recordSublabel": "🔥 Personal best — keep it going!"
+  },
+  "trend": {
+    "title": "Study time",
+    "summary": "{{total}} · last {{count}} weeks",
+    "weekOf": "Week of {{label}}: {{duration}}",
+    "thisWeek": "This week"
+  },
+  "breakdown": {
+    "title": "Study Hub activity",
+    "quizzes": "Quizzes",
+    "workshops": "Workshops",
+    "flashcards": "Flashcards",
+    "mindmaps": "Mindmaps",
+    "avgScore": "avg {{score}}%",
+    "noneYet": "none yet",
+    "completed": "{{count}} completed",
+    "mastered": "{{count}} mastered",
+    "exports": "{{count}} exports"
+  },
+  "almostThere": {
+    "title": "Almost there"
+  },
+  "achievements": {
+    "title": "Achievements",
+    "earnedCount": "{{earned}} / {{total}} earned"
+  },
+  "progress": {
+    "complete": "Complete",
+    "progress": "Progress"
+  },
+  "badge": {
+    "titleEarned": "{{name}} — earned {{date}}\n{{description}}",
+    "titleLocked": "{{name}} (locked)\n{{description}}"
+  },
+  "detail": {
+    "earnedOn": "Earned {{date}}",
+    "earned": "Earned",
+    "locked": "Locked",
+    "close": "Close",
+    "howToEarn": "How to earn it"
+  },
+  "nextLevel": {
+    "label": "Next level"
+  },
+  "heatmap": {
+    "title": "Activity heatmap",
+    "hint": "last {{count}} days · click any day for details",
+    "mostActiveDay": "📅 Your most active day:"
+  },
+  "day": {
+    "noActivity": "No study activity",
+    "sessions_one": "{{duration}} · {{count}} session",
+    "sessions_other": "{{duration}} · {{count}} sessions"
+  },
+  "dayModal": {
+    "studyActivity": "{{duration}} of study activity",
+    "close": "Close",
+    "noActivity": "No study activity recorded for this day.",
+    "time": "Time",
+    "sessions": "Sessions",
+    "messages": "Messages",
+    "achievementsEarned": "Achievements earned"
+  },
+  "legend": {
+    "less": "Less",
+    "more": "More",
+    "l0": "None",
+    "l1": "<15m",
+    "l2": "15–60m",
+    "l3": "1–3h",
+    "l4": "3h+"
+  },
+  "empty": {
+    "intro": "Nothing here yet — your stats, charts, and badges will appear once you start studying. Here's how to get going:",
+    "step1": {
+      "title": "Chat with your documents",
+      "description": "Upload a file to the Knowledge Base, then ask questions about it in Chat. Every message and study session gets recorded here."
+    },
+    "step2": {
+      "title": "Generate study artefacts",
+      "description": "Head to the Study Hub to create quizzes, workshops, flashcard decks, and mindmaps from your scoped documents."
+    },
+    "step3": {
+      "title": "Unlock achievements",
+      "description": "25 badges spanning every activity type — first question, streaks, perfect scores, mastered decks, and more. Your progress lives here."
+    }
+  },
+  "units": {
+    "min": "min",
+    "messages": "messages",
+    "today": "today",
+    "days": "days",
+    "uses": "uses",
+    "quizzes": "quizzes",
+    "passes": "passes",
+    "workshops": "workshops",
+    "lessons": "lessons",
+    "decks": "decks",
+    "flips": "flips",
+    "mindmaps": "mindmaps",
+    "exports": "exports"
+  },
+  "weekdaysFull": {
+    "0": "Monday",
+    "1": "Tuesday",
+    "2": "Wednesday",
+    "3": "Thursday",
+    "4": "Friday",
+    "5": "Saturday",
+    "6": "Sunday"
+  },
+  "weekdaysShort": {
+    "mon": "Mon",
+    "wed": "Wed",
+    "fri": "Fri"
+  }
+}

@@ -7,6 +7,7 @@
  * to the correct weekday, mirroring how GitHub aligns its weeks.
  */
 
+import { useTranslation } from "react-i18next";
 import { Calendar } from "lucide-react";
 import type { DailyActivityEntry } from "../../types/api";
 import { DayCell } from "./DayCell";
@@ -14,13 +15,11 @@ import { MonthLabels } from "./MonthLabels";
 import { HeatmapLegend } from "./HeatmapLegend";
 import { SectionHeading } from "./SectionHeading";
 import {
-  busyWeekday,
+  busyWeekdayIdx,
   computeMonthLabels,
   getWeekdayIdx,
   parseISODate,
 } from "./dashboardHelpers";
-
-const WEEKDAY_LABELS = ["Mon", "", "Wed", "", "Fri", "", ""];
 
 export function ActivityHeatmap({
   days,
@@ -29,17 +28,19 @@ export function ActivityHeatmap({
   days: DailyActivityEntry[];
   onSelectDay: (entry: DailyActivityEntry) => void;
 }) {
+  const { t, i18n } = useTranslation("dashboard");
+  const weekdayLabels = [t("weekdaysShort.mon"), "", t("weekdaysShort.wed"), "", t("weekdaysShort.fri"), "", ""];
   const todayIso = new Date().toISOString().slice(0, 10);
   const padBefore = days.length > 0 ? getWeekdayIdx(parseISODate(days[0].date)) : 0;
-  const monthLabels = computeMonthLabels(days.map((d) => d.date), padBefore);
-  const bestDay = busyWeekday(days);
+  const monthLabels = computeMonthLabels(days.map((d) => d.date), padBefore, i18n.language);
+  const bestDayIdx = busyWeekdayIdx(days);
 
   return (
     <section>
       <SectionHeading
         icon={Calendar}
-        title="Activity heatmap"
-        hint={`last ${days.length} days · click any day for details`}
+        title={t("heatmap.title")}
+        hint={t("heatmap.hint", { count: days.length })}
         right={<HeatmapLegend />}
       />
 
@@ -49,7 +50,7 @@ export function ActivityHeatmap({
           <div className="grid grid-rows-7 gap-1 text-xs text-ink-faint">
             {/* Spacer to align weekday labels below the month-label row */}
             <div className="h-5 mb-1" />
-            {WEEKDAY_LABELS.map((label, i) => (
+            {weekdayLabels.map((label, i) => (
               <div key={i} className="h-[14px] leading-[14px] pr-1">{label}</div>
             ))}
           </div>
@@ -73,10 +74,10 @@ export function ActivityHeatmap({
           </div>
         </div>
 
-        {bestDay && (
+        {bestDayIdx !== null && (
           <p className="mt-4 text-sm text-ink-muted">
-            📅 Your most active day:{" "}
-            <span className="font-semibold text-ink-strong">{bestDay}</span>
+            {t("heatmap.mostActiveDay")}{" "}
+            <span className="font-semibold text-ink-strong">{t(`weekdaysFull.${bestDayIdx}`)}</span>
           </p>
         )}
       </div>

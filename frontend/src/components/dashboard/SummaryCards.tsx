@@ -4,6 +4,7 @@
  * Pure presentational — parent owns the data, this just lays out the cards.
  */
 
+import { useTranslation } from "react-i18next";
 import { Clock, Layers } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ProgressSummary } from "../../types/api";
@@ -11,19 +12,20 @@ import { formatDuration } from "./dashboardHelpers";
 import { StreakCard } from "./StreakCard";
 
 export function SummaryCards({ data }: { data: ProgressSummary }) {
+  const { t } = useTranslation("dashboard");
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <StatCard
         icon={Clock}
-        label="Total study time"
+        label={t("summary.totalTime")}
         value={formatDuration(data.total_seconds)}
         accent="text-[#a855f7]"
       />
       <StatCard
         icon={Layers}
-        label="Study sessions"
+        label={t("summary.sessions")}
         value={String(data.total_sessions)}
-        sublabel={`${data.total_messages} messages sent`}
+        sublabel={t("summary.messagesSent", { count: data.total_messages })}
         accent="text-emerald-500"
       />
       <StreakCard

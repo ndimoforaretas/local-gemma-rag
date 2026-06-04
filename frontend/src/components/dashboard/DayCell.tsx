@@ -9,6 +9,7 @@
  * "rest day" — that's information too.
  */
 
+import { useTranslation } from "react-i18next";
 import type { DailyActivityEntry } from "../../types/api";
 import {
   INTENSITY_COLORS,
@@ -28,14 +29,18 @@ export function DayCell({
   isToday: boolean;
   onClick: (entry: DailyActivityEntry) => void;
 }) {
+  const { t, i18n } = useTranslation("dashboard");
   const level = intensityLevel(entry.seconds);
   const color = INTENSITY_COLORS[level];
   const empty = level === 0;
   const tooltip =
-    `${formatLongDate(entry.date)}\n` +
+    `${formatLongDate(entry.date, i18n.language)}\n` +
     (empty
-      ? "No study activity"
-      : `${formatDuration(entry.seconds)} · ${entry.session_count} session${entry.session_count === 1 ? "" : "s"}`);
+      ? t("day.noActivity")
+      : t("day.sessions", {
+          duration: formatDuration(entry.seconds),
+          count: entry.session_count,
+        }));
 
   return (
     <button
