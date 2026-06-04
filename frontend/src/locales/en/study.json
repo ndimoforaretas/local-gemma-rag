@@ -21,5 +21,79 @@
         "desc": "Visual concept maps with PDF, PNG and Markdown export."
       }
     }
+  },
+  "difficulty": {
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced"
+  },
+  "quiz": {
+    "crumbs": { "quizMode": "Quiz Mode", "newQuiz": "New Quiz" },
+    "config": {
+      "title": "Set up your quiz",
+      "subtitle": "Choose what to study, how challenging it should be, and how many questions you want.",
+      "scopeLabel": "Document scope (required)",
+      "scopeHintHas": "Quizzes are most accurate when scoped to a single category or a few related files.",
+      "scopeHintEmpty": "Pick at least one category or file. Whole-KB quizzes give scattered, lower-quality results.",
+      "difficultyLabel": "Difficulty",
+      "countLabel": "Number of questions",
+      "questionsN": "{{count}} questions",
+      "modeLabel": "Mode",
+      "modeHintExam": "Exam — answers stay hidden until you submit. Jump between questions, change answers, and flag ones to revisit.",
+      "modeHintPractice": "Practice — see whether each answer is right the moment you submit it, with the explanation.",
+      "practice": "Practice",
+      "exam": "Exam",
+      "timeLabel": "Time limit",
+      "timeHint": "Optional — race the clock. The quiz auto-submits when time runs out.",
+      "noLimit": "No limit",
+      "minutes": "{{count}} min",
+      "typesLabel": "Question types",
+      "typesHint": "Pick at least one question type.",
+      "mcq": "Multiple choice",
+      "trueFalse": "True / False",
+      "start": "Start Quiz",
+      "generating": "Generating…"
+    },
+    "list": {
+      "yourQuizzes": "Your quizzes",
+      "yourQuizzesCount": "Your quizzes ({{count}})",
+      "newQuiz": "New Quiz",
+      "emptyTitle": "Take your first quiz",
+      "emptyBody": "Quizzes turn your scoped documents into multiple-choice and true/false questions with instant feedback — and every quiz is saved here so you can retake it anytime.",
+      "emptyHint": "Click ‘New Quiz’ above to get started.",
+      "deleteTitle": "Delete this quiz?",
+      "deleteMessage": "“{{title}}” ({{count}} questions) will be permanently removed.",
+      "delete": "Delete",
+      "keep": "Keep"
+    },
+    "card": {
+      "deleteAria": "Delete quiz",
+      "inProgress": "In progress",
+      "answeredResume": "{{answered}} / {{total}} answered · Resume",
+      "viewResults": "{{count}} questions · View results",
+      "questions": "{{count}} questions"
+    },
+    "gen": {
+      "title": "Generating your quiz",
+      "body": "Gemma is reading your selected documents and writing questions just for you. This usually takes 10–40 seconds.",
+      "elapsed": "{{time}} elapsed",
+      "stage0": "Scanning your documents…",
+      "stage1": "Identifying key concepts…",
+      "stage2": "Drafting questions…",
+      "stage3": "Crafting plausible answer options…",
+      "stage4": "Polishing wording and explanations…",
+      "stage5": "Almost there — finalising your quiz…"
+    },
+    "resume": {
+      "title": "Resume your in-progress quiz?",
+      "progress": "Question {{current}} of {{total}}",
+      "savedAgo": "saved {{ago}}",
+      "resume": "Resume",
+      "discard": "Discard",
+      "agoNow": "just now",
+      "agoMinutes": "{{count}}m ago",
+      "agoHours": "{{count}}h ago",
+      "agoDays": "{{count}}d ago"
+    }
   }
 }

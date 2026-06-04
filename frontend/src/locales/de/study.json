@@ -21,5 +21,79 @@
         "desc": "Visuelle Konzeptkarten mit PDF-, PNG- und Markdown-Export."
       }
     }
+  },
+  "difficulty": {
+    "beginner": "Anfänger",
+    "intermediate": "Fortgeschritten",
+    "advanced": "Experte"
+  },
+  "quiz": {
+    "crumbs": { "quizMode": "Quiz-Modus", "newQuiz": "Neues Quiz" },
+    "config": {
+      "title": "Quiz einrichten",
+      "subtitle": "Wählen Sie, was Sie lernen möchten, wie anspruchsvoll es sein soll und wie viele Fragen Sie möchten.",
+      "scopeLabel": "Dokumentbereich (erforderlich)",
+      "scopeHintHas": "Quizze sind am genauesten, wenn sie auf eine einzelne Kategorie oder wenige verwandte Dateien beschränkt sind.",
+      "scopeHintEmpty": "Wählen Sie mindestens eine Kategorie oder Datei. Quizze über die gesamte Wissensdatenbank liefern verstreute, qualitativ schlechtere Ergebnisse.",
+      "difficultyLabel": "Schwierigkeit",
+      "countLabel": "Anzahl der Fragen",
+      "questionsN": "{{count}} Fragen",
+      "modeLabel": "Modus",
+      "modeHintExam": "Prüfung – Antworten bleiben verborgen, bis Sie abschicken. Springen Sie zwischen Fragen, ändern Sie Antworten und markieren Sie Fragen zur Wiedervorlage.",
+      "modeHintPractice": "Übung – Sie sehen sofort beim Abschicken, ob jede Antwort richtig ist, mit Erklärung.",
+      "practice": "Übung",
+      "exam": "Prüfung",
+      "timeLabel": "Zeitlimit",
+      "timeHint": "Optional – gegen die Uhr. Das Quiz wird automatisch abgeschickt, wenn die Zeit abläuft.",
+      "noLimit": "Kein Limit",
+      "minutes": "{{count}} Min.",
+      "typesLabel": "Fragetypen",
+      "typesHint": "Wählen Sie mindestens einen Fragetyp.",
+      "mcq": "Multiple Choice",
+      "trueFalse": "Wahr / Falsch",
+      "start": "Quiz starten",
+      "generating": "Wird generiert …"
+    },
+    "list": {
+      "yourQuizzes": "Ihre Quizze",
+      "yourQuizzesCount": "Ihre Quizze ({{count}})",
+      "newQuiz": "Neues Quiz",
+      "emptyTitle": "Machen Sie Ihr erstes Quiz",
+      "emptyBody": "Quizze verwandeln Ihre ausgewählten Dokumente in Multiple-Choice- und Wahr/Falsch-Fragen mit sofortigem Feedback – und jedes Quiz wird hier gespeichert, sodass Sie es jederzeit wiederholen können.",
+      "emptyHint": "Klicken Sie oben auf „Neues Quiz“, um zu beginnen.",
+      "deleteTitle": "Dieses Quiz löschen?",
+      "deleteMessage": "„{{title}}“ ({{count}} Fragen) wird dauerhaft entfernt.",
+      "delete": "Löschen",
+      "keep": "Behalten"
+    },
+    "card": {
+      "deleteAria": "Quiz löschen",
+      "inProgress": "In Bearbeitung",
+      "answeredResume": "{{answered}} / {{total}} beantwortet · Fortsetzen",
+      "viewResults": "{{count}} Fragen · Ergebnisse ansehen",
+      "questions": "{{count}} Fragen"
+    },
+    "gen": {
+      "title": "Ihr Quiz wird generiert",
+      "body": "Gemma liest Ihre ausgewählten Dokumente und schreibt Fragen nur für Sie. Das dauert in der Regel 10–40 Sekunden.",
+      "elapsed": "{{time}} vergangen",
+      "stage0": "Ihre Dokumente werden gescannt …",
+      "stage1": "Schlüsselkonzepte werden erkannt …",
+      "stage2": "Fragen werden entworfen …",
+      "stage3": "Plausible Antwortoptionen werden erstellt …",
+      "stage4": "Formulierungen und Erklärungen werden verfeinert …",
+      "stage5": "Fast geschafft – Ihr Quiz wird fertiggestellt …"
+    },
+    "resume": {
+      "title": "Ihr laufendes Quiz fortsetzen?",
+      "progress": "Frage {{current}} von {{total}}",
+      "savedAgo": "gespeichert {{ago}}",
+      "resume": "Fortsetzen",
+      "discard": "Verwerfen",
+      "agoNow": "gerade eben",
+      "agoMinutes": "vor {{count}} Min.",
+      "agoHours": "vor {{count}} Std.",
+      "agoDays": "vor {{count}} Tg."
+    }
   }
 }

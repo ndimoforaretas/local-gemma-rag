@@ -2,6 +2,7 @@
  * Config form for a new flashcard deck. Mirrors the Workshop/Quiz layout.
  */
 
+import { useTranslation } from "react-i18next";
 import { Layers, Loader2, AlertCircle, ArrowLeft } from "lucide-react";
 import { DocScopeFilter } from "../../DocScopeFilter";
 import { PillButton, Section } from "../quiz/QuizPrimitives";
@@ -22,6 +23,7 @@ export interface FlashcardsConfigPanelProps {
 }
 
 export function FlashcardsConfigPanel(p: FlashcardsConfigPanelProps) {
+  const { t } = useTranslation("study");
   const hasScope = p.scope.length > 0;
   const canStart = hasScope && !p.isLoading;
 
@@ -65,7 +67,7 @@ export function FlashcardsConfigPanel(p: FlashcardsConfigPanelProps) {
                 active={p.difficulty === d.id}
                 onClick={() => p.setDifficulty(d.id)}
               >
-                <span className={d.tone}>●</span> {d.label}
+                <span className={d.tone}>●</span> {t(`difficulty.${d.id}`)}
               </PillButton>
             ))}
           </div>

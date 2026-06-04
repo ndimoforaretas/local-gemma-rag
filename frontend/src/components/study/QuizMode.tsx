@@ -5,6 +5,7 @@
  * just layout: top bar, then one of four panels based on phase + loading.
  */
 
+import { useTranslation } from "react-i18next";
 import { Breadcrumbs, type Crumb } from "../Breadcrumbs";
 import { QuizConfigPanel } from "./quiz/QuizConfigPanel";
 import { QuizGeneratingCard } from "./quiz/QuizGeneratingCard";
@@ -17,12 +18,13 @@ import { useQuiz } from "./quiz/useQuiz";
 
 export function QuizMode({ onExit }: { onExit: () => void }) {
   const q = useQuiz();
+  const { t } = useTranslation("study");
 
   const crumbs: Crumb[] = [
-    { label: "Study Hub", onClick: onExit },
-    { label: "Quiz Mode", onClick: q.phase === "library" ? undefined : q.backToLibrary },
+    { label: t("hub.title"), onClick: onExit },
+    { label: t("quiz.crumbs.quizMode"), onClick: q.phase === "library" ? undefined : q.backToLibrary },
   ];
-  if (q.phase === "config") crumbs.push({ label: "New Quiz" });
+  if (q.phase === "config") crumbs.push({ label: t("quiz.crumbs.newQuiz") });
 
   // The results recap uses a two-column layout, so it gets a wider container.
   const wide = q.phase === "results";

@@ -3,6 +3,7 @@
  * picker. Pattern mirrors QuizConfigPanel for visual consistency.
  */
 
+import { useTranslation } from "react-i18next";
 import { BookOpen, Loader2, AlertCircle, ArrowLeft } from "lucide-react";
 import { DocScopeFilter } from "../../DocScopeFilter";
 import { PillButton, Section } from "../quiz/QuizPrimitives";
@@ -23,6 +24,7 @@ export interface WorkshopConfigPanelProps {
 }
 
 export function WorkshopConfigPanel(p: WorkshopConfigPanelProps) {
+  const { t } = useTranslation("study");
   const hasScope = p.scope.length > 0;
   const canStart = hasScope && !p.isLoading;
 
@@ -66,7 +68,7 @@ export function WorkshopConfigPanel(p: WorkshopConfigPanelProps) {
                 active={p.difficulty === d.id}
                 onClick={() => p.setDifficulty(d.id)}
               >
-                <span className={d.tone}>●</span> {d.label}
+                <span className={d.tone}>●</span> {t(`difficulty.${d.id}`)}
               </PillButton>
             ))}
           </div>

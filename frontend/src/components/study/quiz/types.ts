@@ -29,10 +29,11 @@ export interface SavedQuizListItem {
   last_score: number | null;
 }
 
-export const DIFFICULTIES: { id: Difficulty; label: string; tone: string }[] = [
-  { id: "beginner", label: "Beginner", tone: "text-emerald-500" },
-  { id: "intermediate", label: "Intermediate", tone: "text-amber-500" },
-  { id: "advanced", label: "Advanced", tone: "text-rose-500" },
+// Labels come from translations (study:quiz.difficulty.<id>).
+export const DIFFICULTIES: { id: Difficulty; tone: string }[] = [
+  { id: "beginner", tone: "text-emerald-500" },
+  { id: "intermediate", tone: "text-amber-500" },
+  { id: "advanced", tone: "text-rose-500" },
 ];
 
 export const COUNTS = [5, 10, 20] as const;

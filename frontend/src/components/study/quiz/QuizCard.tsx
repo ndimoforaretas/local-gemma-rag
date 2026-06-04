@@ -2,6 +2,7 @@
  * Single saved-quiz card in the quiz library. Click to replay; trash to delete.
  */
 
+import { useTranslation } from "react-i18next";
 import { Trash2, ListChecks, Play, CheckCircle2 } from "lucide-react";
 import type { SavedQuizListItem } from "./types";
 
@@ -22,13 +23,14 @@ export function QuizCard({
   onOpen: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation("study");
   return (
     <div className="relative p-5 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23] hover:border-[#a855f7]/50 transition-colors">
       <button
         type="button"
         onClick={onDelete}
-        aria-label="Delete quiz"
-        title="Delete quiz"
+        aria-label={t("quiz.card.deleteAria")}
+        title={t("quiz.card.deleteAria")}
         className="absolute top-3 right-3 p-1.5 rounded-lg text-ink-muted hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
       >
         <Trash2 size={14} />
@@ -37,7 +39,7 @@ export function QuizCard({
       <button type="button" onClick={onOpen} className="text-left w-full">
         <div className="flex items-center gap-2 mb-2 flex-wrap">
           <span className="text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-[#a855f7]/15 text-[#a855f7] dark:text-[#ddb7ff]">
-            {item.difficulty}
+            {t(`difficulty.${item.difficulty}`)}
           </span>
           {item.completed && (
             <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
@@ -46,7 +48,7 @@ export function QuizCard({
           )}
           {item.in_progress && (
             <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
-              <Play size={9} className="fill-current" /> In progress
+              <Play size={9} className="fill-current" /> {t("quiz.card.inProgress")}
             </span>
           )}
         </div>
@@ -57,10 +59,10 @@ export function QuizCard({
           <span className="inline-flex items-center gap-1.5">
             <ListChecks size={13} className="text-[#a855f7]" />
             {item.in_progress
-              ? `${item.answered_count} / ${item.question_count} answered · Resume`
+              ? t("quiz.card.answeredResume", { answered: item.answered_count, total: item.question_count })
               : item.completed
-                ? `${item.question_count} questions · View results`
-                : `${item.question_count} questions`}
+                ? t("quiz.card.viewResults", { count: item.question_count })
+                : t("quiz.card.questions", { count: item.question_count })}
           </span>
           <span>{formatDate(item.created_at)}</span>
         </div>
