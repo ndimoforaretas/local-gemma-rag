@@ -5,6 +5,7 @@
  */
 
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
   MessageSquare,
   Database,
@@ -17,14 +18,16 @@ import {
 } from "lucide-react";
 import type { AppView } from "./Sidebar";
 
-const CARDS: { icon: LucideIcon; title: string; desc: string; view: AppView }[] = [
-  { icon: MessageSquare, title: "Chat with your documents", desc: "Ask questions and get answers with citations.", view: "chat" },
-  { icon: Database, title: "Build your library", desc: "Upload and organise your private documents.", view: "sync" },
-  { icon: GraduationCap, title: "Create quizzes & mindmaps", desc: "Turn documents into quizzes, flashcards & mindmaps.", view: "study" },
-  { icon: BarChart3, title: "Track your activity", desc: "Time spent, streaks, and achievements.", view: "dashboard" },
+// Card text comes from translations (cards.<view>.*); only icon + view here.
+const CARDS: { icon: LucideIcon; view: AppView }[] = [
+  { icon: MessageSquare, view: "chat" },
+  { icon: Database, view: "sync" },
+  { icon: GraduationCap, view: "study" },
+  { icon: BarChart3, view: "dashboard" },
 ];
 
 export function Home({ onNavigate }: { onNavigate: (view: AppView) => void }) {
+  const { t } = useTranslation("home");
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-4xl mx-auto w-full px-6 sm:px-8 py-12 flex flex-col items-center">
@@ -34,15 +37,14 @@ export function Home({ onNavigate }: { onNavigate: (view: AppView) => void }) {
           className="w-20 h-20 mb-6 drop-shadow-[0_4px_20px_rgba(167,139,250,0.4)]"
         />
         <h1 className="text-3xl sm:text-4xl font-bold text-ink-strong text-center">
-          Welcome to Gemma CogniVault
+          {t("title")}
         </h1>
         <p className="text-base text-ink-muted text-center max-w-md leading-relaxed mt-3">
-          Your private AI companion for any documents. Pick where you'd like to
-          start — every card below is clickable.
+          {t("subtitle")}
         </p>
 
         <div className="grid sm:grid-cols-2 gap-4 w-full mt-10">
-          {CARDS.map(({ icon: Icon, title, desc, view }, i) => (
+          {CARDS.map(({ icon: Icon, view }, i) => (
             <motion.button
               key={view}
               type="button"
@@ -57,13 +59,15 @@ export function Home({ onNavigate }: { onNavigate: (view: AppView) => void }) {
               </span>
               <span className="flex-1 min-w-0">
                 <span className="flex items-center gap-1.5 text-base font-bold text-ink-strong">
-                  {title}
+                  {t(`cards.${view}.title`)}
                   <ArrowRight
                     size={16}
                     className="text-[#a855f7] dark:text-[#ddb7ff] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all"
                   />
                 </span>
-                <span className="block text-sm text-ink-muted mt-0.5">{desc}</span>
+                <span className="block text-sm text-ink-muted mt-0.5">
+                  {t(`cards.${view}.desc`)}
+                </span>
               </span>
             </motion.button>
           ))}
@@ -72,14 +76,14 @@ export function Home({ onNavigate }: { onNavigate: (view: AppView) => void }) {
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-8">
           <span className="inline-flex items-center gap-1.5 text-sm text-ink-muted">
             <ShieldCheck size={15} className="text-emerald-500" />
-            100% local &amp; private — nothing leaves your machine.
+            {t("privacy")}
           </span>
           <button
             type="button"
             onClick={() => onNavigate("help")}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-[#a855f7] dark:text-[#ddb7ff] hover:underline"
           >
-            <LifeBuoy size={15} /> Browse all help
+            <LifeBuoy size={15} /> {t("browseHelp")}
           </button>
         </div>
       </div>

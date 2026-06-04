@@ -29,6 +29,7 @@ export interface LanguageDef {
  */
 export const SUPPORTED_LANGUAGES: LanguageDef[] = [
   { code: "en", label: "English", nativeName: "English", dir: "ltr" },
+  { code: "de", label: "German", nativeName: "Deutsch", dir: "ltr" },
 ];
 
 // Auto-build the resources map from every locale JSON file.
