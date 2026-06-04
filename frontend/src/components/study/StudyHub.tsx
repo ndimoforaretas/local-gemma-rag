@@ -6,6 +6,7 @@
  * to come back to this picker.
  */
 
+import { useTranslation } from "react-i18next";
 import { GraduationCap } from "lucide-react";
 import { FlashcardsMode } from "./FlashcardsMode";
 import { MindmapsMode } from "./MindmapsMode";
@@ -27,6 +28,7 @@ export function StudyHub({
   mode: ActiveStudyMode;
   onChangeMode: (m: ActiveStudyMode) => void;
 }) {
+  const { t } = useTranslation("study");
   if (mode === "quiz") {
     return <QuizMode onExit={() => onChangeMode("hub")} />;
   }
@@ -54,11 +56,10 @@ export function StudyHub({
               <GraduationCap size={36} strokeWidth={2.2} />
             </div>
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-ink-strong mb-3">
-              Study Hub
+              {t("hub.title")}
             </h1>
             <p className="text-base sm:text-lg text-ink-muted max-w-2xl mx-auto">
-              Turn your knowledge base into an active learning experience. Pick
-              a mode to get started.
+              {t("hub.subtitle")}
             </p>
           </div>
 
@@ -66,8 +67,8 @@ export function StudyHub({
             {STUDY_MODES.map((m) => (
               <ModeCard
                 key={m.id}
-                label={m.label}
-                description={m.description}
+                label={t(`hub.modes.${m.id}.label`)}
+                description={t(`hub.modes.${m.id}.desc`)}
                 icon={m.icon}
                 available={m.available}
                 onClick={() => onChangeMode(m.id)}

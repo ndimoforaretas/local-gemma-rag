@@ -23,41 +23,14 @@ export function isActiveStudyMode(value: unknown): value is ActiveStudyMode {
 
 export interface StudyModeDef {
   id: StudyModeId;
-  label: string;
-  description: string;
+  // Label + description come from translations (study:hub.modes.<id>.*).
   icon: LucideIcon;
   available: boolean;
 }
 
 export const STUDY_MODES: StudyModeDef[] = [
-  {
-    id: "quiz",
-    label: "Quiz Mode",
-    description:
-      "Test your recall with auto-generated quizzes at three difficulty levels.",
-    icon: Brain,
-    available: true,
-  },
-  {
-    id: "workshop",
-    label: "Workshop Creator",
-    description:
-      "Multi-lesson workshops built from your knowledge base, lesson-by-lesson.",
-    icon: BookOpen,
-    available: true,
-  },
-  {
-    id: "flashcards",
-    label: "Flashcards",
-    description: "Scrollable flip-cards generated from your documents.",
-    icon: Layers,
-    available: true,
-  },
-  {
-    id: "mindmaps",
-    label: "Mindmaps",
-    description: "Visual concept maps with PDF, PNG and Markdown export.",
-    icon: Network,
-    available: true,
-  },
+  { id: "quiz", icon: Brain, available: true },
+  { id: "workshop", icon: BookOpen, available: true },
+  { id: "flashcards", icon: Layers, available: true },
+  { id: "mindmaps", icon: Network, available: true },
 ];

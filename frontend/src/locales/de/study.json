@@ -1,0 +1,25 @@
+{
+  "hub": {
+    "title": "Lernzentrum",
+    "subtitle": "Verwandeln Sie Ihre Wissensdatenbank in ein aktives Lernerlebnis. Wählen Sie einen Modus, um zu beginnen.",
+    "comingSoon": "Demnächst",
+    "modes": {
+      "quiz": {
+        "label": "Quiz-Modus",
+        "desc": "Testen Sie Ihr Wissen mit automatisch erstellten Quizzen in drei Schwierigkeitsgraden."
+      },
+      "workshop": {
+        "label": "Workshop-Ersteller",
+        "desc": "Mehrteilige Workshops aus Ihrer Wissensdatenbank, Lektion für Lektion."
+      },
+      "flashcards": {
+        "label": "Lernkarten",
+        "desc": "Scrollbare Klappkarten, generiert aus Ihren Dokumenten."
+      },
+      "mindmaps": {
+        "label": "Mindmaps",
+        "desc": "Visuelle Konzeptkarten mit PDF-, PNG- und Markdown-Export."
+      }
+    }
+  }
+}

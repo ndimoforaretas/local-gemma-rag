@@ -7,6 +7,7 @@
 
 import type { LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 export interface ModeCardProps {
   label: string;
@@ -23,6 +24,7 @@ export function ModeCard({
   available,
   onClick,
 }: ModeCardProps) {
+  const { t } = useTranslation("study");
   return (
     <motion.button
       type="button"
@@ -58,7 +60,7 @@ export function ModeCard({
         </h2>
         {!available && (
           <span className="ml-auto text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-[#c2c6d6]/40 dark:bg-[#424754]/40 text-ink-muted">
-            Coming Soon
+            {t("hub.comingSoon")}
           </span>
         )}
       </div>

@@ -1,0 +1,25 @@
+{
+  "hub": {
+    "title": "Study Hub",
+    "subtitle": "Turn your knowledge base into an active learning experience. Pick a mode to get started.",
+    "comingSoon": "Coming Soon",
+    "modes": {
+      "quiz": {
+        "label": "Quiz Mode",
+        "desc": "Test your recall with auto-generated quizzes at three difficulty levels."
+      },
+      "workshop": {
+        "label": "Workshop Creator",
+        "desc": "Multi-lesson workshops built from your knowledge base, lesson-by-lesson."
+      },
+      "flashcards": {
+        "label": "Flashcards",
+        "desc": "Scrollable flip-cards generated from your documents."
+      },
+      "mindmaps": {
+        "label": "Mindmaps",
+        "desc": "Visual concept maps with PDF, PNG and Markdown export."
+      }
+    }
+  }
+}
