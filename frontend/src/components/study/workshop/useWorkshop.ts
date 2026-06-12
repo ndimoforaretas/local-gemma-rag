@@ -16,6 +16,7 @@ import type {
   WorkshopPhase,
 } from "./types";
 import { type LessonCount } from "./types";
+import { useLessonPrefetch } from "./useLessonPrefetch";
 
 export function useWorkshop() {
   const qc = useQueryClient();
@@ -48,6 +49,18 @@ export function useWorkshop() {
       api.getOrGenerateLesson(activeWorkshopId!, activeLessonIdx!),
     enabled: activeWorkshopId !== null && activeLessonIdx !== null,
     staleTime: Infinity, // generated lesson content doesn't change
+    // A failed generation is surfaced as an error (with a Retry affordance) —
+    // never auto-retried, which on a slow local model would pile up requests.
+    retry: false,
+  });
+
+  // Warm the next ungenerated lesson in the background while the user reads
+  // (sequential, pauses while their own lesson is generating).
+  useLessonPrefetch({
+    workshop: active.data,
+    phase,
+    activeLessonIdx,
+    activeLessonLoading: lesson.isFetching,
   });
 
   // ── Mutations ────────────────────────────────────────────────────────

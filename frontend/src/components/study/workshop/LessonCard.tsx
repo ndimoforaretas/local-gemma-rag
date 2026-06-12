@@ -3,7 +3,7 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { Clock, CheckCircle2, Circle, ChevronRight } from "lucide-react";
+import { Clock, CheckCircle2, Zap, ChevronRight } from "lucide-react";
 import type { WorkshopLesson } from "./types";
 
 export function LessonCard({
@@ -15,7 +15,8 @@ export function LessonCard({
 }) {
   const { t } = useTranslation("study");
   const done = lesson.completed_at != null;
-  const started = lesson.has_content && !done;
+  // Content already generated (read or background-prefetched) → opens instantly.
+  const ready = lesson.has_content && !done;
 
   return (
     <button
@@ -34,15 +35,15 @@ export function LessonCard({
           {done && (
             <CheckCircle2 size={14} className="shrink-0 text-emerald-500" />
           )}
-          {started && (
-            <Circle size={12} className="shrink-0 text-amber-500 fill-current" />
+          {ready && (
+            <Zap size={12} className="shrink-0 text-sky-500" />
           )}
         </div>
         <div className="flex items-center gap-1 text-xs text-ink-muted">
           <Clock size={11} />
           <span>{t("workshop.lessonCard.minRead", { count: lesson.est_minutes })}</span>
           {done && <span>· {t("workshop.lessonCard.completed")}</span>}
-          {started && <span>· {t("workshop.lessonCard.inProgress")}</span>}
+          {ready && <span>· {t("workshop.lessonCard.ready")}</span>}
         </div>
       </div>
       <ChevronRight size={16} className="shrink-0 text-ink-muted" />

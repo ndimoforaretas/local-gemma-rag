@@ -317,7 +317,9 @@ def get_or_generate_lesson(workshop_id: int, lesson_idx: int) -> LessonContentRe
         raise HTTPException(status_code=404, detail="Lesson index out of range.")
 
     lesson = ws["lessons"][lesson_idx]
-    if lesson["content_md"]:
+    # Self-heal: only serve cached content that's actually substantive. Garbage
+    # persisted by an older/concurrent generation falls through to regenerate.
+    if workshop_generator.is_substantive_lesson(lesson["content_md"]):
         return LessonContentResponse(
             lesson_idx=lesson_idx,
             title=lesson["title"],
@@ -400,7 +402,7 @@ def _workshop_to_response(ws: dict | None) -> WorkshopOut:
                 title=l["title"],
                 est_minutes=l["est_minutes"],
                 completed_at=l["completed_at"],
-                has_content=bool(l["content_md"]),
+                has_content=workshop_generator.is_substantive_lesson(l["content_md"]),
             )
             for l in ws["lessons"]
         ],

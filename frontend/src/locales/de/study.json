@@ -251,14 +251,17 @@
     "lessonCard": {
       "minRead": "{{count}} Min. Lesezeit",
       "completed": "Abgeschlossen",
-      "inProgress": "In Bearbeitung"
+      "ready": "Bereit"
     },
     "lesson": {
       "back": "Zurück zu den Lektionen",
       "loading": "Lektion wird geladen…",
       "saving": "Wird gespeichert…",
       "completed": "Lektion abgeschlossen",
-      "markComplete": "Als erledigt markieren"
+      "markComplete": "Als erledigt markieren",
+      "errorTitle": "Lektion konnte nicht erstellt werden",
+      "errorBody": "Das Modell hat unvollständigen Inhalt geliefert. Das kann gelegentlich passieren — bitte erneut versuchen.",
+      "retry": "Erneut versuchen"
     },
     "toc": {
       "onThisPage": "Auf dieser Seite"

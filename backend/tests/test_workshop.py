@@ -44,6 +44,21 @@ VALID_OUTLINE_JSON = {
     ],
 }
 
+# A realistic lesson body — comfortably over the substantive-content floor.
+SUBSTANTIVE_LESSON = (
+    "# Variables\n\n"
+    "## Introduction\n\n"
+    "Variables are named containers for values your program works with. "
+    "Choosing clear names makes code easier to read and reason about.\n\n"
+    "## Core content\n\n"
+    "In Python you create a variable simply by assigning to it: `x = 5`. "
+    "The type is inferred from the value, and you can reassign freely. "
+    "Common types include integers, floats, strings, and booleans.\n\n"
+    "## Key takeaways\n\n"
+    "- Variables bind names to values.\n- Names should describe intent.\n\n"
+    "## Self-check\n\nWhat type does `x = 3.0` produce?"
+)
+
 
 # ── Outline parsing ──────────────────────────────────────────────────────────
 
@@ -277,10 +292,10 @@ def test_get_lesson_returns_cached_when_present(client):
         key_points=["k"], objectives=["o"],
         lessons=[{"title": "L1"}, {"title": "L2"}],
     )
-    progress_tracker.save_lesson_content(ws_id, 0, "# Cached\n\nbody")
+    progress_tracker.save_lesson_content(ws_id, 0, SUBSTANTIVE_LESSON)
     resp = client.post(f"/api/study/workshop/{ws_id}/lesson/0")
     assert resp.status_code == 200
-    assert resp.json()["content_md"] == "# Cached\n\nbody"
+    assert resp.json()["content_md"] == SUBSTANTIVE_LESSON
 
 
 def test_get_lesson_generates_when_missing(client):
@@ -293,13 +308,118 @@ def test_get_lesson_generates_when_missing(client):
         workshop_generator.vector_db, "search"
     ) as mock_search:
         mock_search.return_value = [{"source": "x.txt", "content": "ctx"}]
-        mock_oll.chat.return_value = {"message": {"content": "# Variables\n\nHello."}}
+        mock_oll.chat.return_value = {"message": {"content": SUBSTANTIVE_LESSON}}
         resp = client.post(f"/api/study/workshop/{ws_id}/lesson/0")
     assert resp.status_code == 200
     assert "Variables" in resp.json()["content_md"]
     # Should now be cached.
     ws = progress_tracker.get_workshop(ws_id)
     assert ws["lessons"][0]["content_md"] is not None
+
+
+# ── Lesson content validation / self-heal (concurrency-corruption guard) ──────
+
+
+def test_is_substantive_lesson_rejects_garbage():
+    # The two real-world corruption shapes seen from concurrent local-Ollama runs.
+    assert workshop_generator.is_substantive_lesson("#") is False
+    assert workshop_generator.is_substantive_lesson(
+        "# Designing Simple Objects and Interfaces\n\n## Introduction\nAs"
+    ) is False
+    assert workshop_generator.is_substantive_lesson("") is False
+    assert workshop_generator.is_substantive_lesson(None) is False
+    # Heading-only (no prose body) is rejected even when the title is long.
+    assert workshop_generator.is_substantive_lesson(
+        "# A Reasonably Long Lesson Title That Still Has No Body Whatsoever Here"
+    ) is False
+    # A real lesson passes.
+    assert workshop_generator.is_substantive_lesson(SUBSTANTIVE_LESSON) is True
+
+
+def test_clean_lesson_keeps_body_when_outro_is_near_start():
+    # A degenerate response whose body IS an outro must NOT be gutted to a stub;
+    # the greedy strip only applies once substantial content precedes the outro.
+    degenerate = "# Topic\n\nIf you have any questions, let me know!"
+    cleaned = workshop_generator._clean_lesson_content(degenerate)
+    assert "If you have" in cleaned  # not stripped to "# Topic"
+    # And a real lesson with a trailing outro DOES get the outro removed.
+    trimmed = workshop_generator._clean_lesson_content(
+        SUBSTANTIVE_LESSON + "\n\nIf you have any questions, feel free to ask!"
+    )
+    assert "feel free to ask" not in trimmed.lower()
+    assert "Self-check" in trimmed
+
+
+def test_generate_lesson_raises_on_truncated_output():
+    with patch.object(workshop_generator, "ollama") as mock_oll, patch.object(
+        workshop_generator.vector_db, "search"
+    ) as mock_search:
+        mock_search.return_value = [{"source": "x.txt", "content": "ctx"}]
+        mock_oll.chat.return_value = {"message": {"content": "#"}}
+        with pytest.raises(ValueError):
+            workshop_generator.generate_lesson(
+                workshop_title="T", workshop_summary="S",
+                key_points=["k"], objectives=["o"],
+                all_lesson_titles=["L1"], lesson_idx=0,
+                difficulty="beginner", source_filter=["a.txt"],
+            )
+
+
+def test_generate_lesson_retries_then_succeeds():
+    # First attempt degenerates to "#", second returns a real lesson → recovers.
+    with patch.object(workshop_generator, "ollama") as mock_oll, patch.object(
+        workshop_generator.vector_db, "search"
+    ) as mock_search:
+        mock_search.return_value = [{"source": "x.txt", "content": "ctx"}]
+        mock_oll.chat.side_effect = [
+            {"message": {"content": "#"}},
+            {"message": {"content": SUBSTANTIVE_LESSON}},
+        ]
+        out = workshop_generator.generate_lesson(
+            workshop_title="T", workshop_summary="S",
+            key_points=["k"], objectives=["o"],
+            all_lesson_titles=["Variables"], lesson_idx=0,
+            difficulty="beginner", source_filter=["a.txt"],
+        )
+    assert "Variables" in out
+    assert mock_oll.chat.call_count == 2
+
+
+def test_get_lesson_does_not_cache_garbage(client):
+    ws_id = progress_tracker.create_workshop(
+        difficulty="beginner", scope=["a.txt"], title="T", summary="S",
+        key_points=["k"], objectives=["o"], lessons=[{"title": "L1"}],
+    )
+    with patch.object(workshop_generator, "ollama") as mock_oll, patch.object(
+        workshop_generator.vector_db, "search"
+    ) as mock_search:
+        mock_search.return_value = [{"source": "x.txt", "content": "ctx"}]
+        mock_oll.chat.return_value = {"message": {"content": "#"}}
+        resp = client.post(f"/api/study/workshop/{ws_id}/lesson/0")
+    assert resp.status_code == 422
+    # Nothing persisted → can be retried.
+    ws = progress_tracker.get_workshop(ws_id)
+    assert ws["lessons"][0]["content_md"] is None
+
+
+def test_corrupt_cached_lesson_self_heals(client):
+    """Garbage already in the DB is treated as not-generated and regenerated."""
+    ws_id = progress_tracker.create_workshop(
+        difficulty="beginner", scope=["a.txt"], title="T", summary="S",
+        key_points=["k"], objectives=["o"], lessons=[{"title": "L1"}],
+    )
+    progress_tracker.save_lesson_content(ws_id, 0, "#")  # simulate prior corruption
+    # has_content reflects substantive content, not mere presence.
+    assert client.get(f"/api/study/workshop/{ws_id}").json()["lessons"][0]["has_content"] is False
+    # Fetching regenerates instead of serving the garbage.
+    with patch.object(workshop_generator, "ollama") as mock_oll, patch.object(
+        workshop_generator.vector_db, "search"
+    ) as mock_search:
+        mock_search.return_value = [{"source": "x.txt", "content": "ctx"}]
+        mock_oll.chat.return_value = {"message": {"content": SUBSTANTIVE_LESSON}}
+        resp = client.post(f"/api/study/workshop/{ws_id}/lesson/0")
+    assert resp.status_code == 200
+    assert "Variables" in resp.json()["content_md"]
 
 
 def test_complete_lesson_endpoint_unlocks_badges(client):

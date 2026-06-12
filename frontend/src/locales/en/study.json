@@ -251,14 +251,17 @@
     "lessonCard": {
       "minRead": "{{count}} min read",
       "completed": "Completed",
-      "inProgress": "In progress"
+      "ready": "Ready"
     },
     "lesson": {
       "back": "Back to lessons",
       "loading": "Loading lesson…",
       "saving": "Saving…",
       "completed": "Lesson completed",
-      "markComplete": "Mark complete"
+      "markComplete": "Mark complete",
+      "errorTitle": "Couldn't generate this lesson",
+      "errorBody": "The model returned incomplete content. This can happen occasionally — try again.",
+      "retry": "Retry"
     },
     "toc": {
       "onThisPage": "On this page"

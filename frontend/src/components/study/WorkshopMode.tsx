@@ -88,6 +88,8 @@ export function WorkshopMode({ onExit }: { onExit: () => void }) {
           <LessonView
             lesson={w.lesson.data}
             isLoading={false}
+            isError={w.lesson.isError}
+            onRetry={() => w.lesson.refetch()}
             isCompleted={
               w.active.data?.lessons[w.activeLessonIdx ?? 0]?.completed_at != null
             }

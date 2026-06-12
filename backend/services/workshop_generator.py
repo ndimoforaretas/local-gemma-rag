@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import threading
 from dataclasses import dataclass
 from typing import Literal, Optional
 
@@ -36,8 +37,40 @@ logger = logging.getLogger("cognivault.workshop")
 Difficulty = Literal["beginner", "intermediate", "advanced"]
 
 _MAX_CHUNKS = 20             # outlines benefit from wider material than quizzes
+# The lesson pass uses far fewer chunks: ~20 chunks (≈24k chars) of context
+# overwhelms the model and triggers degenerate single-token (`#`) output. 8 is
+# ample grounding and generates reliably across lesson topics.
+_MAX_LESSON_CHUNKS = 8
 _MAX_CHUNK_CHARS = 1200
 _RETRIEVAL_PROBE = "key concepts, definitions, important facts, main ideas, examples"
+
+# A real lesson body is well over 1k chars (Intro/Core/Takeaways/Self-check).
+# These floors reject empty/heading-only/truncated generations so they're never
+# cached — and let us self-heal any garbage already in the DB.
+_MIN_LESSON_CHARS = 200
+_MIN_BODY_CHARS = 120
+
+# The local Ollama serializes poorly under concurrent generation (truncated /
+# garbage output). One in-flight generation at a time across the whole module
+# — prefetch and user-clicks queue rather than racing.
+_GENERATION_LOCK = threading.Lock()
+
+
+def is_substantive_lesson(text: Optional[str]) -> bool:
+    """
+    True if `text` is a real lesson body — not empty, a bare heading, or a
+    truncated stub. Used both to reject bad generations before caching and to
+    self-heal corrupt content already persisted (treat it as not-yet-generated).
+    """
+    if not text:
+        return False
+    text = text.strip()
+    if len(text) < _MIN_LESSON_CHARS:
+        return False
+    prose = "\n".join(
+        ln for ln in text.splitlines() if not ln.lstrip().startswith("#")
+    ).strip()
+    return len(prose) >= _MIN_BODY_CHARS
 
 
 @dataclass
@@ -96,20 +129,21 @@ def generate_outline(
                           "Output ONLY a single valid JSON object — no prose, no fences, "
                           "no trailing commas."
         )
-        try:
-            response = ollama.chat(
-                model=settings.llm_model,
-                messages=[{"role": "user", "content": retry_prompt}],
-                options={"thinking": False, "temperature": 0.3 if attempt else 0.4},
-                format="json",
-            )
-        except TypeError:
-            # Older ollama-python without `format` kwarg — fall back without it.
-            response = ollama.chat(
-                model=settings.llm_model,
-                messages=[{"role": "user", "content": retry_prompt}],
-                options={"thinking": False, "temperature": 0.3 if attempt else 0.4},
-            )
+        with _GENERATION_LOCK:
+            try:
+                response = ollama.chat(
+                    model=settings.llm_model,
+                    messages=[{"role": "user", "content": retry_prompt}],
+                    options={"thinking": False, "temperature": 0.3 if attempt else 0.4},
+                    format="json",
+                )
+            except TypeError:
+                # Older ollama-python without `format` kwarg — fall back without it.
+                response = ollama.chat(
+                    model=settings.llm_model,
+                    messages=[{"role": "user", "content": retry_prompt}],
+                    options={"thinking": False, "temperature": 0.3 if attempt else 0.4},
+                )
         raw = response["message"]["content"]
         parsed = _parse_outline(raw, num_lessons)
         if parsed is not None:
@@ -222,14 +256,14 @@ def generate_lesson(
 
     chunks = vector_db.search(
         query=lesson_title,  # narrow probe — this lesson's topic
-        top_k=_MAX_CHUNKS,
+        top_k=_MAX_LESSON_CHUNKS,
         source_filter=source_filter,
     )
     if not chunks:
         # Re-probe broadly if the narrow probe missed everything.
         chunks = vector_db.search(
             query=_RETRIEVAL_PROBE,
-            top_k=_MAX_CHUNKS,
+            top_k=_MAX_LESSON_CHUNKS,
             source_filter=source_filter,
         )
 
@@ -245,16 +279,44 @@ def generate_lesson(
         chunks=chunks,
     )
     settings = get_settings()
-    response = ollama.chat(
-        model=settings.llm_model,
-        messages=[{"role": "user", "content": prompt}],
-        options={"thinking": False, "temperature": 0.5},
+
+    # Two attempts: the model occasionally emits degenerate output for a given
+    # prompt; a re-roll (nudged temperature) almost always recovers. Mirrors the
+    # outline pass. The lock serializes against concurrent generation, which can
+    # also degrade output on a single local Ollama.
+    for attempt in range(2):
+        with _GENERATION_LOCK:
+            response = ollama.chat(
+                model=settings.llm_model,
+                messages=[{"role": "user", "content": prompt}],
+                options={"thinking": False, "temperature": 0.5 if attempt == 0 else 0.65},
+            )
+        text = response["message"]["content"].strip()
+        # Strip any accidental <think> blocks, mirroring the chat fix.
+        text = re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE).strip()
+        text = _clean_lesson_content(text)
+        if is_substantive_lesson(text):
+            return text
+        logger.warning(
+            "Lesson %d non-substantive on attempt %d (len=%d); retrying",
+            lesson_idx, attempt + 1, len(text),
+        )
+
+    # Never cache empty/heading-only/truncated output — raise so the caller
+    # surfaces a retryable error instead of persisting garbage forever.
+    raise ValueError(
+        "The model returned incomplete lesson content after 2 attempts. "
+        "Please regenerate this lesson."
     )
-    text = response["message"]["content"].strip()
-    # Strip any accidental <think> blocks, mirroring the chat fix.
-    text = re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE).strip()
-    text = _clean_lesson_content(text)
-    return text or f"# {lesson_title}\n\n(The model returned no content. Try regenerating.)"
+
+
+_OUTRO_PATTERNS = [
+    r"\n\s*(?:\*\*|__)?If you (?:have|'d like)[^\n]*[\s\S]*$",
+    r"\n\s*(?:\*\*|__)?Let me know if[\s\S]*$",
+    r"\n\s*(?:\*\*|__)?Feel free to ask[\s\S]*$",
+    r"\n\s*(?:\*\*|__)?I hope this helps[\s\S]*$",
+    r"\n\s*(?:\*\*|__)?Hope this (?:helps|clarifies)[\s\S]*$",
+]
 
 
 def _clean_lesson_content(text: str) -> str:
@@ -265,7 +327,6 @@ def _clean_lesson_content(text: str) -> str:
       - Any prose before the first `#` heading (the lesson title).
       - Common closing patterns ("If you have a specific question…",
         "Let me know…", "Feel free to ask…", "I hope this helps…").
-      - Trailing "If you have questions about any of these topics…" blocks.
     """
     # Trim everything before the first Markdown heading line.
     lines = text.splitlines()
@@ -274,17 +335,17 @@ def _clean_lesson_content(text: str) -> str:
             text = "\n".join(lines[i:])
             break
 
-    # Strip common chat-outro patterns from the end. Matches on the start
-    # of a new paragraph so we don't accidentally chop mid-sentence.
-    outro_patterns = [
-        r"\n\s*(?:\*\*|__)?If you (?:have|'d like)[^\n]*[\s\S]*$",
-        r"\n\s*(?:\*\*|__)?Let me know if[\s\S]*$",
-        r"\n\s*(?:\*\*|__)?Feel free to ask[\s\S]*$",
-        r"\n\s*(?:\*\*|__)?I hope this helps[\s\S]*$",
-        r"\n\s*(?:\*\*|__)?Hope this (?:helps|clarifies)[\s\S]*$",
-    ]
-    for pat in outro_patterns:
-        text = re.sub(pat, "", text, flags=re.IGNORECASE)
+    # Strip the earliest chat-outro to end of text — but ONLY when a substantial
+    # lesson body precedes it. Otherwise the "outro" is the whole body of a
+    # degenerate response; gutting it here would mask the failure, so we leave it
+    # for is_substantive_lesson() to reject.
+    earliest = len(text)
+    for pat in _OUTRO_PATTERNS:
+        m = re.search(pat, text, flags=re.IGNORECASE)
+        if m:
+            earliest = min(earliest, m.start())
+    if earliest >= _MIN_LESSON_CHARS:
+        text = text[:earliest]
 
     return text.strip()
 
