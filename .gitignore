@@ -40,6 +40,8 @@ memory/
 # Local planning docs (not committed)
 IMPROVEMENTS_PLAN.md
 MINDMAP_IDEAS.md
+BACKEND_EXPLAINED.md
+series/
 
 # Local prompt overrides
 backend/prompts/custom/*

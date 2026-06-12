@@ -11,7 +11,7 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
 [![Gemma 4](https://img.shields.io/badge/Gemma%204-e4b-4285F4?logo=google&logoColor=white)](https://ollama.com/library/gemma4)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-312%20passing-brightgreen)](#-testing)
+[![Tests](https://img.shields.io/badge/tests-351%20passing-brightgreen)](#-testing)
 
 **Chat with your documents. Generate quizzes, workshops, flashcards, mindmaps. Track your progress. Nothing leaves your machine.**
 
@@ -172,7 +172,13 @@ A compact tour of what ships in the box. Each row links to the section of the us
 - **🧠 Quiz Mode** — 5 / 10 / 20 questions · MCQ + True/False · 3 difficulties · resume on refresh · export Markdown + PDF
 - **📖 Workshop Creator** — 5 or 10 lessons · two-pass generation (outline first, lessons on demand) · sticky right-side TOC · recap quiz on completion
 - **🃏 Flashcards** — 10 / 20 / 40 cards · CSS 3D flip · per-card Got-it / Review status · status-aware gradient borders
-- **🗺️ Mindmaps** — radial concept maps · pan + zoom · export Markdown · PNG · PDF
+- **🗺️ Mindmaps** — interactive React Flow concept maps · dagre auto-layout (left-right / top-down toggle) · drag nodes anywhere and positions persist · pan + zoom · export Markdown · PNG · PDF
+
+### Interface
+
+- **🌍 Multilingual UI** — English ⇄ Deutsch toggle (flag switcher in the sidebar, works collapsed too). Adding a language = drop translated JSON files into `frontend/src/locales/<code>/` + one registry entry — no component changes
+- **🌓 Dark / light theme** — one-click toggle, remembered per device
+- **♿ Accessibility-first design system** — semantic ink-color tokens, minimum legible type sizes, keyboard-reachable controls (rules in `frontend/DESIGN_RULES.md`)
 
 ### Progress Dashboard
 
@@ -207,7 +213,7 @@ cp .env.example .env
 | `DB_URL`                         | `postgresql://postgres:password@localhost:5432/dbos` | PostgreSQL connection                                     |
 | `PROGRESS_DB_FILE`               | `progress.db`                                        | SQLite for study sessions, achievements, quizzes, decks…  |
 | `STUDY_SESSION_IDLE_GAP_SECONDS` | `900`                                                | Idle gap (sec) that ends a study session — default 15 min |
-| `MAX_UPLOAD_SIZE_MB`             | `500`                                                | Per-file upload limit                                     |
+| `MAX_UPLOAD_SIZE_MB`             | `200`                                                | Per-file upload limit                                     |
 | `CHUNK_SIZE`                     | `1000`                                               | Characters per chunk                                      |
 | `CHUNK_OVERLAP`                  | `100`                                                | Overlap between adjacent chunks                           |
 
@@ -219,7 +225,7 @@ cp .env.example .env
 
 ```
 Browser
-  │  HTTP / SSE streaming
+  │  HTTP / NDJSON streaming
   ▼
 FastAPI (backend/main.py)
   │
@@ -300,11 +306,14 @@ All four Study Hub modes share a defensive pattern designed around the realities
 
 ```
 1. Retrieve  →  hybrid search restricted by user-selected scope
-2. Prompt    →  strict JSON schema with explicit count + shape rules
+2. Prompt    →  strict schema-by-example with explicit count + shape rules
+                (editable templates in backend/prompts/, custom/ overrides win)
 3. Generate  →  ollama.chat with format="json" (grammar-constrained)
-4. Parse     →  json.loads with trailing-comma + smart-quote repair fallback
+4. Parse     →  tolerant of object / bare-array / fenced shapes,
+                with a trailing-comma repair pass
 5. Validate  →  drop malformed items rather than fail the whole batch
-6. Retry     →  workshops auto-retry once with a stronger prompt on parse failure
+6. Retry     →  the workshop outline retries once with a stronger prompt
+                (lesson bodies are deliberately Markdown, not JSON)
 7. Persist   →  SQLite (progress.db) so the user can come back later
 ```
 
@@ -340,8 +349,9 @@ All storage is local. The Vault Audit Panel confirms no external connections at 
 | **Workflow Engine**   | [DBOS](https://dbos.dev) + PostgreSQL                                                                                        |
 | **Study + Progress**  | SQLite via Python `sqlite3` (zero new deps)                                                                                  |
 | **Frontend**          | React 19 · TypeScript · Vite · TanStack Query · Framer Motion · Tailwind CSS v4 · `marked`                                   |
-| **Mindmap Rendering** | Hand-rolled SVG with pan/zoom (no `@xyflow/react`, no `d3`)                                                                  |
-| **Mindmap Export**    | `XMLSerializer` → `<img>` → `<canvas>` → PNG/PDF (zero export-library deps)                                                  |
+| **i18n**              | react-i18next · auto-discovered locale namespaces (English · Deutsch shipped; languages are additive)                        |
+| **Mindmap Rendering** | [React Flow](https://reactflow.dev) (`@xyflow/react`) · dagre auto-layout · draggable nodes with persisted positions         |
+| **Mindmap Export**    | Markdown (zero-dep tree walk) · PNG via `html-to-image` · PDF via lazy-loaded `jsPDF`                                        |
 
 ---
 
@@ -369,8 +379,9 @@ All storage is local. The Vault Audit Panel confirms no external connections at 
 │   │   ├── flashcard_generator.py  # Flashcard deck generator
 │   │   └── mindmap_generator.py    # Mindmap tree generator
 │   ├── tools/agent_tools.py        # 6 agent tools
+│   ├── prompts/                    # Editable generator templates (custom/ overrides win)
 │   ├── models/schemas.py           # Pydantic request/response models
-│   └── tests/                      # 312 tests across 16 test files
+│   └── tests/                      # 351 tests across 22 test files
 ├── frontend/src/
 │   ├── App.tsx                     # Top-level shell + view persistence
 │   ├── components/
@@ -394,13 +405,15 @@ All storage is local. The Vault Audit Panel confirms no external connections at 
 │   │   │   ├── quiz/               # Quiz panels + state hook + export
 │   │   │   ├── workshop/           # Workshop list, outline, lesson, TOC
 │   │   │   ├── flashcards/         # Flip card + filter chips + status controls
-│   │   │   └── mindmaps/           # SVG renderer + radial layout + export
+│   │   │   └── mindmaps/           # React Flow renderer + dagre layout + export
 │   │   └── dashboard/              # Progress Dashboard
 │   │       ├── ProgressDashboard.tsx   # Top-level page
-│   │       ├── SummaryCards.tsx        # 3 hero stats
-│   │       ├── AchievementStrip.tsx    # Horizontal scrollable badges
+│   │       ├── SummaryCards.tsx        # Hero stats + streak card
+│   │       ├── AchievementGrid.tsx     # Badge grid (click → detail modal)
 │   │       ├── ActivityHeatmap.tsx     # GitHub-style 90-day grid
 │   │       └── DayDetailModal.tsx      # Per-day drill-down
+│   ├── i18n/index.ts               # react-i18next setup + language registry
+│   ├── locales/                    # Translations: en/ + de/, one JSON per namespace
 │   ├── lib/
 │   │   ├── api.ts                  # Typed API client
 │   │   └── saveBlob.ts             # Native File System Access API + fallback
@@ -423,24 +436,28 @@ All storage is local. The Vault Audit Panel confirms no external connections at 
 python -m pytest backend/tests/ -v
 ```
 
-**312 tests** across 16 test files:
+**351 tests** across 22 test files, running in a few seconds with zero infrastructure:
 
 | Test File                    | What it covers                                           |
 | ---------------------------- | -------------------------------------------------------- |
-| `test_api.py`                | All HTTP endpoints (upload, ingest, RAG, history, vault) |
+| `test_api.py`                | The HTTP endpoints (upload, ingest, RAG, history, KB)    |
 | `test_tools.py`              | Calculator, clock, KB search tool                        |
 | `test_thinking.py`           | Two-phase stream, thinking tokens, session isolation     |
 | `test_chat_attachments.py`   | Multi-file attach, PDF/DOCX extraction, size limits      |
+| `test_chat_memory.py`        | Session history budget, trimming, restart rebuild        |
 | `test_doc_scope_filter.py`   | Per-request ContextVar isolation, search filtering       |
 | `test_doc_tools.py`          | list_documents, analyze_document, compare_documents      |
 | `test_edit_regenerate.py`    | History rewind, trim_history_to_turns validation         |
 | `test_structure_chunking.py` | Markdown header splits, CSV row batches, doc types       |
 | `test_ocr_fallback.py`       | OCR trigger threshold, graceful degradation              |
 | `test_new_formats.py`        | PPTX, XLSX, HTML extractors, extension routing           |
+| `test_docx_url.py`           | DOCX ingestion + URL import (SSRF guard)                 |
 | `test_reingest.py`           | SHA-256 change detection, idempotency                    |
 | `test_vector_db.py`          | BM25, FAISS, RRF fusion, hybrid search                   |
 | `test_audio.py`              | Whisper transcription endpoint                           |
 | `test_progress.py`           | Sessions, daily aggregation, achievement criteria        |
+| `test_prompts.py`            | Prompt-template loader + custom overrides                |
+| `test_vault_stats.py`        | Privacy Vault Audit numbers                              |
 | `test_quiz.py`               | Quiz parsing, endpoint, quiz achievements                |
 | `test_workshop.py`           | Outline + lesson parsing, CRUD, workshop achievements    |
 | `test_flashcards.py`         | Deck parsing + CRUD + 4 flashcard achievements           |
@@ -469,6 +486,6 @@ python -m pytest backend/tests/ -v
 
 Built with [Gemma 4](https://ollama.com/library/gemma4) · [Ollama](https://ollama.com) · [Strands Agents](https://github.com/strands-agents/sdk-python) · [FastAPI](https://fastapi.tiangolo.com)
 
-\_Your data. Your hardware. Your AI. Your vault.\_
+*Your data. Your hardware. Your AI. Your vault.*
 
 </div>
