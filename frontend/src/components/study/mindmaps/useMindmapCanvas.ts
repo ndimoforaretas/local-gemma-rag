@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNodesState, useReactFlow } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
-import { addChildNode, deleteBranch, findRootId } from "./graphEdits";
+import { addChildNode, branchIds, deleteBranch, findRootId, recolorNodes } from "./graphEdits";
 import {
   buildChildrenMap,
   decorateEdges,
@@ -130,6 +130,15 @@ export function useMindmapCanvas(
     [graph, counts, performDelete],
   );
 
+  // Recolour one node, or the node plus all of its descendants.
+  const recolor = useCallback(
+    (id: string, color: string | null, wholeBranch: boolean) => {
+      const ids = wholeBranch ? branchIds(graph, id) : [id];
+      onGraphChange(recolorNodes(graph, ids, color));
+    },
+    [graph, onGraphChange],
+  );
+
   const confirmDeleteNow = useCallback(() => {
     setConfirmDelete((pending) => {
       if (pending) performDelete(pending.id);
@@ -160,9 +169,10 @@ export function useMindmapCanvas(
         onRename: renameNode,
         onAddChild: addChild,
         onDelete: requestDelete,
+        onRecolor: recolor,
         onAutoEditDone: clearPendingEdit,
       }),
-    [nodes, hidden, collapsed, children, counts, search.matches, search.activeId, search.query, rootId, pendingEditId, toggleCollapse, renameNode, addChild, requestDelete, clearPendingEdit],
+    [nodes, hidden, collapsed, children, counts, search.matches, search.activeId, search.query, rootId, pendingEditId, toggleCollapse, renameNode, addChild, requestDelete, recolor, clearPendingEdit],
   );
 
   const displayEdges = useMemo(

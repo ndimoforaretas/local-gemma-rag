@@ -354,7 +354,18 @@
       "deleteBranchTitle": "Diesen Zweig löschen?",
       "deleteBranchMessage": "„{{label}}“ und {{count}} Unterthemen werden entfernt.",
       "deleteBranchConfirm": "Löschen",
-      "deleteBranchCancel": "Behalten"
+      "deleteBranchCancel": "Behalten",
+      "recolor": "Umfärben",
+      "resetColor": "Standardfarbe",
+      "applyToBranch": "Auf ganzen Zweig anwenden",
+      "colors": {
+        "purple": "Lila",
+        "pink": "Pink",
+        "emerald": "Smaragdgrün",
+        "amber": "Bernstein",
+        "sky": "Himmelblau",
+        "rose": "Rosé"
+      }
     },
     "layout": {
       "label": "Layout",

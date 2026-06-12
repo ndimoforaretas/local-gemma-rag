@@ -287,8 +287,8 @@ def test_changing_layout_clears_manual_positions(client):
 
 VALID_GRAPH = {
     "nodes": [
-        {"id": "n0", "label": "Python Fundamentals", "level": 0},
-        {"id": "n1", "label": "Variables (renamed)", "level": 1},
+        {"id": "n0", "label": "Python Fundamentals", "level": 0, "color": None},
+        {"id": "n1", "label": "Variables (renamed)", "level": 1, "color": "emerald"},
     ],
     "edges": [{"id": "en0-n1", "source": "n0", "target": "n1"}],
 }
@@ -352,6 +352,25 @@ def test_set_graph_validates_shape(client):
         client.put(f"/api/study/mindmaps/mindmap/{mm_id}/graph", json={"graph": bad}).status_code
         == 422
     )
+
+
+def test_graph_color_roundtrip_and_legacy_default(client):
+    mm_id = progress_tracker.create_mindmap(scope=["x.txt"], depth=2, title="T", tree=VALID_TREE_JSON)
+    # Colours persist per node (VALID_GRAPH has one coloured, one default).
+    body = client.put(
+        f"/api/study/mindmaps/mindmap/{mm_id}/graph", json={"graph": VALID_GRAPH}
+    ).json()
+    colors = {n["id"]: n["color"] for n in body["graph"]["nodes"]}
+    assert colors == {"n0": None, "n1": "emerald"}
+
+    # Graphs stored before the colour field existed parse with color=None.
+    legacy = {
+        "nodes": [{"id": "n0", "label": "Old", "level": 0}],
+        "edges": [],
+    }
+    assert progress_tracker.set_mindmap_graph(mm_id, legacy)
+    body = client.get(f"/api/study/mindmaps/mindmap/{mm_id}").json()
+    assert body["graph"]["nodes"][0]["color"] is None
 
 
 def test_set_graph_404(client):

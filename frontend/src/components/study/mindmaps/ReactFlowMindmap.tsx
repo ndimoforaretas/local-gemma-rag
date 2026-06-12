@@ -22,6 +22,7 @@ import {
 } from "@xyflow/react";
 import { ConfirmationModal } from "../../ConfirmationModal";
 import { ExportPanel } from "./ExportPanel";
+import { COLOR_HEX, isNodeColor } from "./nodeColors";
 import type { NodePositions } from "./flowDecorations";
 import { MindmapFlowNode as MindmapNodeComponent } from "./MindmapFlowNode";
 import { MindmapToolbar } from "./MindmapToolbar";
@@ -35,6 +36,8 @@ const NODE_TYPES = { mindmap: MindmapNodeComponent };
 const MINIMAP_NODE_COLORS = ["#a855f7", "#c084fc"];
 
 function minimapNodeColor(node: Node, isDark: boolean): string {
+  const color = node.data?.color;
+  if (isNodeColor(color)) return COLOR_HEX[color];
   const level = (node.data?.level as number) ?? 2;
   return MINIMAP_NODE_COLORS[level] ?? (isDark ? "#424754" : "#c2c6d6");
 }

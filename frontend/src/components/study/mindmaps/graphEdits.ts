@@ -48,20 +48,38 @@ export function addChildNode(
   return { next, newId };
 }
 
-/** Remove a node and its whole subtree. Refuses the root (returns null). */
-export function deleteBranch(graph: FlowGraph, nodeId: string): MindmapGraph | null {
-  if (nodeId === findRootId(graph)) return null;
+/** A node id plus all of its descendants. */
+export function branchIds(graph: FlowGraph, nodeId: string): Set<string> {
   const children = buildChildrenMap(graph.edges);
-  const doomed = new Set([nodeId]);
+  const ids = new Set([nodeId]);
   const stack = [...(children.get(nodeId) ?? [])];
   while (stack.length) {
     const id = stack.pop()!;
-    if (doomed.has(id)) continue;
-    doomed.add(id);
+    if (ids.has(id)) continue;
+    ids.add(id);
     stack.push(...(children.get(id) ?? []));
   }
+  return ids;
+}
+
+/** Remove a node and its whole subtree. Refuses the root (returns null). */
+export function deleteBranch(graph: FlowGraph, nodeId: string): MindmapGraph | null {
+  if (nodeId === findRootId(graph)) return null;
+  const doomed = branchIds(graph, nodeId);
   const next = flowToGraph(graph);
   next.nodes = next.nodes.filter((n) => !doomed.has(n.id));
   next.edges = next.edges.filter((e) => !doomed.has(e.source) && !doomed.has(e.target));
+  return next;
+}
+
+/** Set (or clear, with null) the colour of the given nodes. */
+export function recolorNodes(
+  graph: FlowGraph,
+  ids: Iterable<string>,
+  color: string | null,
+): MindmapGraph {
+  const idSet = new Set(ids);
+  const next = flowToGraph(graph);
+  for (const n of next.nodes) if (idSet.has(n.id)) n.color = color;
   return next;
 }

@@ -100,6 +100,7 @@ export interface NodeDecorations {
   onRename: (id: string, label: string) => void;
   onAddChild: (id: string) => void;
   onDelete: (id: string) => void;
+  onRecolor: (id: string, color: string | null, wholeBranch: boolean) => void;
   onAutoEditDone: () => void;
 }
 
@@ -125,6 +126,7 @@ export function decorateNodes(
       onRename: d.onRename,
       onAddChild: d.onAddChild,
       onDelete: d.onDelete,
+      onRecolor: d.onRecolor,
       onAutoEditDone: d.onAutoEditDone,
     },
   }));

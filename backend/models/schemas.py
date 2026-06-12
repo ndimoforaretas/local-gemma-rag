@@ -324,6 +324,8 @@ class MindmapGraphNode(BaseModel):
     id: str = Field(..., min_length=1, max_length=64)
     label: str = Field(..., min_length=1, max_length=300)
     level: int = Field(..., ge=0, le=2)
+    # Preset colour key (e.g. "emerald"); null → default tier styling.
+    color: Optional[str] = Field(None, max_length=24)
 
 
 class MindmapGraphEdge(BaseModel):

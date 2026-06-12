@@ -354,7 +354,18 @@
       "deleteBranchTitle": "Delete this branch?",
       "deleteBranchMessage": "\"{{label}}\" and its {{count}} sub-topics will be removed.",
       "deleteBranchConfirm": "Delete",
-      "deleteBranchCancel": "Keep"
+      "deleteBranchCancel": "Keep",
+      "recolor": "Recolor",
+      "resetColor": "Default color",
+      "applyToBranch": "Apply to whole branch",
+      "colors": {
+        "purple": "Purple",
+        "pink": "Pink",
+        "emerald": "Emerald",
+        "amber": "Amber",
+        "sky": "Sky",
+        "rose": "Rose"
+      }
     },
     "layout": {
       "label": "Layout",

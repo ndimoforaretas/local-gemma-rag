@@ -330,6 +330,8 @@ export interface MindmapGraphNode {
   id: string;
   label: string;
   level: 0 | 1 | 2;
+  /** Preset colour key (e.g. "emerald"); null/absent → default tier styling. */
+  color?: string | null;
 }
 
 export interface MindmapGraphEdge {
