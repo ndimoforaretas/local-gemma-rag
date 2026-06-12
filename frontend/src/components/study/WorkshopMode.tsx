@@ -71,12 +71,17 @@ export function WorkshopMode({ onExit }: { onExit: () => void }) {
           />
         )}
 
-        {w.phase === "outline" && w.active.data && (
+        {w.phase === "outline" && w.rerollOutline.isPending && (
+          <WorkshopGeneratingCard mode="outline" />
+        )}
+
+        {w.phase === "outline" && !w.rerollOutline.isPending && w.active.data && (
           <WorkshopOutlineView
             workshop={w.active.data}
             editing={w.editingOutline}
             isSavingLessons={w.editLessons.isPending}
             editError={w.editLessons.error?.message ?? null}
+            rerollFailed={w.rerollOutline.isError}
             onStartEdit={() => w.setEditingOutline(true)}
             onCancelEdit={() => {
               w.setEditingOutline(false);
@@ -85,6 +90,7 @@ export function WorkshopMode({ onExit }: { onExit: () => void }) {
             onSaveLessons={(lessons) =>
               w.editLessons.mutate({ workshopId: w.activeWorkshopId!, lessons })
             }
+            onReroll={() => w.rerollOutline.mutate(w.activeWorkshopId!)}
             onBack={w.backToList}
             onOpenLesson={w.openLesson}
             onStartQuiz={w.startQuiz}

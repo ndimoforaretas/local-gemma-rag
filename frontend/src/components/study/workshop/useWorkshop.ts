@@ -57,18 +57,6 @@ export function useWorkshop() {
     retry: false,
   });
 
-  // Warm the next ungenerated lesson in the background while the user reads
-  // (sequential, pauses while their own lesson is generating and while the
-  // outline is being edited — no point generating for a lesson about to be
-  // renamed or deleted).
-  useLessonPrefetch({
-    workshop: active.data,
-    phase,
-    activeLessonIdx,
-    activeLessonLoading: lesson.isFetching,
-    paused: editingOutline,
-  });
-
   // ── Mutations ────────────────────────────────────────────────────────
   const createOutline = useMutation({
     mutationFn: api.createWorkshopOutline,
@@ -87,6 +75,17 @@ export function useWorkshop() {
       active.refetch();
       list.refetch();
       qc.invalidateQueries({ queryKey: ["progress"] });
+    },
+  });
+
+  // Re-roll the whole outline (keeps config, discards lessons + progress).
+  const rerollOutline = useMutation({
+    mutationFn: (workshopId: number) => api.rerollWorkshopOutline(workshopId),
+    onSuccess: (ws: Workshop) => {
+      qc.setQueryData(["workshops", "detail", ws.id], ws);
+      // All lesson content was discarded server-side — drop the client caches.
+      qc.removeQueries({ queryKey: ["workshops", "lesson", ws.id] });
+      list.refetch();
     },
   });
 
@@ -121,6 +120,18 @@ export function useWorkshop() {
   const deleteWorkshop = useMutation({
     mutationFn: api.deleteWorkshop,
     onSuccess: () => list.refetch(),
+  });
+
+  // Warm the next ungenerated lesson in the background while the user reads
+  // (sequential, pauses while their own lesson is generating, while the
+  // outline is being edited — no point generating for a lesson about to be
+  // renamed or deleted — and while a re-roll replaces the lesson list).
+  useLessonPrefetch({
+    workshop: active.data,
+    phase,
+    activeLessonIdx,
+    activeLessonLoading: lesson.isFetching,
+    paused: editingOutline || rerollOutline.isPending,
   });
 
   // ── Navigation helpers ──────────────────────────────────────────────
@@ -167,7 +178,7 @@ export function useWorkshop() {
     difficulty, setDifficulty,
     lessonCount, setLessonCount,
     list, active, lesson,
-    createOutline, completeLesson, regenerateLesson, editLessons, deleteWorkshop,
+    createOutline, completeLesson, regenerateLesson, editLessons, rerollOutline, deleteWorkshop,
     editingOutline, setEditingOutline,
     activeWorkshopId, activeLessonIdx,
     openWorkshop, openLesson, backToOutline, backToList, startNew, startQuiz,

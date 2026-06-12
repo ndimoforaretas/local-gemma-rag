@@ -257,7 +257,13 @@
       "deleteLessonTitle": "Diese Lektion löschen?",
       "deleteLessonMessage": "„{{title}}“ und der generierte Inhalt werden aus diesem Workshop entfernt.",
       "deleteLessonConfirm": "Löschen",
-      "deleteLessonCancel": "Behalten"
+      "deleteLessonCancel": "Behalten",
+      "reroll": "Gliederung neu generieren",
+      "rerollTitle": "Diese Gliederung neu generieren?",
+      "rerollMessage": "Eine neue Gliederung ersetzt die aktuelle. Alle generierten Lektionen und der Fortschritt in diesem Workshop werden verworfen.",
+      "rerollConfirm": "Neu generieren",
+      "rerollCancel": "Gliederung behalten",
+      "rerollFailed": "Neu generieren fehlgeschlagen — die aktuelle Gliederung wurde behalten."
     },
     "export": {
       "markdown": "Markdown",

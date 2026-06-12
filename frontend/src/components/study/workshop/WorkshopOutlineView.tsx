@@ -5,20 +5,22 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Pencil, Target, Sparkles, Trophy } from "lucide-react";
+import { ArrowLeft, Target, Sparkles, Trophy } from "lucide-react";
 import type { Workshop } from "./types";
 import { LessonCard } from "./LessonCard";
 import { OutlineEditor } from "./OutlineEditor";
-import { WorkshopExportMenu } from "./WorkshopExportMenu";
+import { OutlineToolbar } from "./OutlineToolbar";
 
 export function WorkshopOutlineView({
   workshop,
   editing,
   isSavingLessons,
   editError,
+  rerollFailed,
   onStartEdit,
   onCancelEdit,
   onSaveLessons,
+  onReroll,
   onBack,
   onOpenLesson,
   onStartQuiz,
@@ -27,9 +29,11 @@ export function WorkshopOutlineView({
   editing: boolean;
   isSavingLessons: boolean;
   editError: string | null;
+  rerollFailed: boolean;
   onStartEdit: () => void;
   onCancelEdit: () => void;
   onSaveLessons: (rows: { old_idx: number; title: string }[]) => void;
+  onReroll: () => void;
   onBack: () => void;
   onOpenLesson: (idx: number) => void;
   onStartQuiz: () => void;
@@ -72,16 +76,12 @@ export function WorkshopOutlineView({
             {t("workshop.outline.lessons")}
           </h2>
           {!editing && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={onStartEdit}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#c2c6d6] dark:border-[#424754] hover:bg-[#a855f7]/10 hover:border-[#a855f7]/50 text-ink-strong text-sm font-medium transition-colors"
-              >
-                <Pencil size={13} /> {t("workshop.outline.editOutline")}
-              </button>
-              <WorkshopExportMenu workshop={workshop} />
-            </div>
+            <OutlineToolbar
+              workshop={workshop}
+              rerollFailed={rerollFailed}
+              onStartEdit={onStartEdit}
+              onReroll={onReroll}
+            />
           )}
         </div>
         {editing ? (

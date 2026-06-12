@@ -342,6 +342,52 @@ def create_workshop(
             conn.close()
 
 
+def replace_workshop_outline(
+    workshop_id: int,
+    title: str,
+    summary: str,
+    key_points: list[str],
+    objectives: list[str],
+    lessons: list[dict],  # [{title, est_minutes}, ...]
+) -> bool:
+    """
+    Replace a workshop's outline with a freshly generated one (re-roll).
+
+    Overwrites title/summary/key points/objectives, discards ALL lessons
+    (content + completion) and inserts fresh stubs, and clears the workshop's
+    completed_at. Difficulty, scope and created_at are kept. Returns False if
+    the workshop doesn't exist.
+    """
+    import json as _json
+
+    outline = {"key_points": key_points, "objectives": objectives}
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE workshops SET title = ?, summary = ?, outline_json = ?, "
+                "completed_at = NULL WHERE id = ?",
+                (title, summary, _json.dumps(outline), workshop_id),
+            )
+            if cur.rowcount == 0:
+                return False
+            cur.execute(
+                "DELETE FROM workshop_lessons WHERE workshop_id = ?", (workshop_id,)
+            )
+            for idx, lesson in enumerate(lessons):
+                cur.execute(
+                    "INSERT INTO workshop_lessons "
+                    "(workshop_id, lesson_idx, title, est_minutes) VALUES (?, ?, ?, ?)",
+                    (workshop_id, idx, lesson["title"], int(lesson.get("est_minutes", 5))),
+                )
+            conn.commit()
+            return True
+        finally:
+            conn.close()
+
+
 def get_workshop(workshop_id: int) -> Optional[dict]:
     """Return the full workshop including all lesson rows, or None if missing."""
     import json as _json

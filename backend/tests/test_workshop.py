@@ -259,11 +259,13 @@ def test_outline_endpoint_happy_path(client):
 
 
 def test_outline_endpoint_rejects_invalid_lesson_count(client):
-    resp = client.post(
-        "/api/study/workshop/outline",
-        json={"difficulty": "beginner", "num_lessons": 7, "document_filter": ["x.txt"]},
-    )
-    assert resp.status_code == 422
+    # Any count in 3–15 is allowed (schema-enforced); outside the bounds → 422.
+    for bad in (2, 16):
+        resp = client.post(
+            "/api/study/workshop/outline",
+            json={"difficulty": "beginner", "num_lessons": bad, "document_filter": ["x.txt"]},
+        )
+        assert resp.status_code == 422
 
 
 def test_outline_endpoint_rejects_empty_scope(client):
@@ -460,6 +462,59 @@ def test_force_failure_preserves_old_content(client):
     assert resp.status_code == 422
     # The old lesson is untouched.
     assert progress_tracker.get_workshop(ws_id)["lessons"][0]["content_md"] == SUBSTANTIVE_LESSON
+
+
+# ── Outline re-roll ───────────────────────────────────────────────────────────
+
+
+def test_reroll_replaces_outline_and_resets_lessons(client):
+    ws_id = progress_tracker.create_workshop(
+        difficulty="beginner", scope=["a.txt"], title="Old Title", summary="Old S",
+        key_points=["old"], objectives=["old"],
+        lessons=[{"title": "Old L1"}, {"title": "Old L2"}],
+    )
+    progress_tracker.save_lesson_content(ws_id, 0, SUBSTANTIVE_LESSON)
+    client.post(f"/api/study/workshop/{ws_id}/lesson/0/complete")
+
+    fresh = dict(VALID_OUTLINE_JSON, title="New Title", lessons=VALID_OUTLINE_JSON["lessons"][:2])
+    with patch.object(workshop_generator, "ollama") as mock_oll, patch.object(
+        workshop_generator.vector_db, "search"
+    ) as mock_search:
+        mock_search.return_value = [{"source": "x.txt", "content": "ctx"}]
+        mock_oll.chat.return_value = {"message": {"content": json.dumps(fresh)}}
+        resp = client.post(f"/api/study/workshop/{ws_id}/reroll")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["title"] == "New Title"
+    assert len(body["lessons"]) == 2
+    # All lessons are fresh stubs: no content, no completion; workshop reset.
+    assert all(not l["has_content"] and l["completed_at"] is None for l in body["lessons"])
+    assert body["completed_at"] is None
+    # Difficulty + scope survived.
+    assert body["difficulty"] == "beginner"
+    assert body["scope"] == ["a.txt"]
+
+
+def test_reroll_failure_leaves_workshop_untouched(client):
+    ws_id = progress_tracker.create_workshop(
+        difficulty="beginner", scope=["a.txt"], title="Keep Me", summary="S",
+        key_points=["k"], objectives=["o"], lessons=[{"title": "L1"}],
+    )
+    progress_tracker.save_lesson_content(ws_id, 0, SUBSTANTIVE_LESSON)
+    with patch.object(workshop_generator, "ollama") as mock_oll, patch.object(
+        workshop_generator.vector_db, "search"
+    ) as mock_search:
+        mock_search.return_value = [{"source": "x.txt", "content": "ctx"}]
+        mock_oll.chat.return_value = {"message": {"content": "not json at all"}}
+        resp = client.post(f"/api/study/workshop/{ws_id}/reroll")
+    assert resp.status_code == 422
+    ws = progress_tracker.get_workshop(ws_id)
+    assert ws["title"] == "Keep Me"
+    assert ws["lessons"][0]["content_md"] == SUBSTANTIVE_LESSON
+
+
+def test_reroll_404(client):
+    assert client.post("/api/study/workshop/999/reroll").status_code == 404
 
 
 # ── Outline editing (rename / reorder / delete) ───────────────────────────────

@@ -248,17 +248,10 @@ def submit_quiz(req: QuizSubmitRequest) -> QuizSubmitResponse:
 # ── Workshops ────────────────────────────────────────────────────────────────
 
 
-_ALLOWED_LESSON_COUNTS = {5, 10}
-
-
 @router.post("/workshop/outline", response_model=WorkshopOut)
 def create_workshop_outline(req: WorkshopCreateRequest) -> WorkshopOut:
     """Pass 1: generate the workshop outline and persist it. Returns full record."""
-    if req.num_lessons not in _ALLOWED_LESSON_COUNTS:
-        raise HTTPException(
-            status_code=422,
-            detail=f"num_lessons must be one of {sorted(_ALLOWED_LESSON_COUNTS)}",
-        )
+    # Lesson count bounds (3–15) are enforced by the request schema.
     try:
         outline = workshop_generator.generate_outline(
             difficulty=req.difficulty,  # type: ignore[arg-type]
@@ -384,6 +377,43 @@ def complete_lesson(workshop_id: int, lesson_idx: int) -> LessonCompleteResponse
         workshop_completed=summary["workshop_completed"],
         newly_earned_achievements=newly_earned,
     )
+
+
+@router.post("/workshop/{workshop_id}/reroll", response_model=WorkshopOut)
+def reroll_workshop_outline(workshop_id: int) -> WorkshopOut:
+    """
+    Regenerate the outline for an existing workshop, keeping its difficulty,
+    scope and lesson count. Discards all generated lessons and completion.
+    Generation runs BEFORE any write — a failed re-roll leaves the workshop
+    untouched.
+    """
+    ws = progress_tracker.get_workshop(workshop_id)
+    if not ws:
+        raise HTTPException(status_code=404, detail="Workshop not found.")
+    try:
+        outline = workshop_generator.generate_outline(
+            difficulty=ws["difficulty"],
+            num_lessons=len(ws["lessons"]),
+            source_filter=ws["scope"],
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except Exception:
+        logger.exception("Workshop outline re-roll failed")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to regenerate the outline. The model may be unavailable.",
+        )
+
+    progress_tracker.replace_workshop_outline(
+        workshop_id,
+        title=outline.title,
+        summary=outline.summary,
+        key_points=outline.key_points,
+        objectives=outline.objectives,
+        lessons=outline.lessons,
+    )
+    return _workshop_to_response(progress_tracker.get_workshop(workshop_id))
 
 
 @router.patch("/workshop/{workshop_id}/lessons", response_model=WorkshopOut)

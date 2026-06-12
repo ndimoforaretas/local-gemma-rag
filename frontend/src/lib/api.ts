@@ -356,6 +356,15 @@ export const api = {
     return handleJsonResponse<import("../types/api").LessonContent>(resp);
   },
 
+  // Regenerate the outline keeping difficulty/scope/lesson count.
+  // Discards all generated lessons; a failed re-roll changes nothing.
+  rerollWorkshopOutline: async (workshopId: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/workshop/${workshopId}/reroll`, {
+      method: "POST",
+    });
+    return handleJsonResponse<import("../types/api").Workshop>(resp);
+  },
+
   // Rename / reorder / delete lessons atomically. `lessons` is the desired
   // final list in order; old_idx references the current lesson positions.
   updateWorkshopLessons: async (

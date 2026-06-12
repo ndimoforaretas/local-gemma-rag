@@ -257,7 +257,13 @@
       "deleteLessonTitle": "Delete this lesson?",
       "deleteLessonMessage": "\"{{title}}\" and its generated content will be removed from this workshop.",
       "deleteLessonConfirm": "Delete",
-      "deleteLessonCancel": "Keep"
+      "deleteLessonCancel": "Keep",
+      "reroll": "Regenerate outline",
+      "rerollTitle": "Regenerate this outline?",
+      "rerollMessage": "A new outline will replace the current one. All generated lessons and completion progress in this workshop will be discarded.",
+      "rerollConfirm": "Regenerate",
+      "rerollCancel": "Keep outline",
+      "rerollFailed": "Regenerating failed — the current outline was kept."
     },
     "export": {
       "markdown": "Markdown",
