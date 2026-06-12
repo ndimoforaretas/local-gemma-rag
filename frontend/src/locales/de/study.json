@@ -246,7 +246,18 @@
       "lessons": "Lektionen",
       "completeTitle": "Workshop abgeschlossen!",
       "completeBody": "Teste dein Wissen mit einem Abschlussquiz aus 5 Fragen.",
-      "takeRecap": "Abschlussquiz starten"
+      "takeRecap": "Abschlussquiz starten",
+      "editOutline": "Gliederung bearbeiten",
+      "editSave": "Änderungen speichern",
+      "editCancel": "Abbrechen",
+      "renameLesson": "Lektionstitel",
+      "moveUp": "Nach oben",
+      "moveDown": "Nach unten",
+      "deleteLesson": "Lektion löschen",
+      "deleteLessonTitle": "Diese Lektion löschen?",
+      "deleteLessonMessage": "„{{title}}“ und der generierte Inhalt werden aus diesem Workshop entfernt.",
+      "deleteLessonConfirm": "Löschen",
+      "deleteLessonCancel": "Behalten"
     },
     "lessonCard": {
       "minRead": "{{count}} Min. Lesezeit",

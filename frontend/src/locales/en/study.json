@@ -246,7 +246,18 @@
       "lessons": "Lessons",
       "completeTitle": "Workshop complete!",
       "completeBody": "Test what you learned with a 5-question recap quiz.",
-      "takeRecap": "Take recap quiz"
+      "takeRecap": "Take recap quiz",
+      "editOutline": "Edit outline",
+      "editSave": "Save changes",
+      "editCancel": "Cancel",
+      "renameLesson": "Lesson title",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "deleteLesson": "Delete lesson",
+      "deleteLessonTitle": "Delete this lesson?",
+      "deleteLessonMessage": "\"{{title}}\" and its generated content will be removed from this workshop.",
+      "deleteLessonConfirm": "Delete",
+      "deleteLessonCancel": "Keep"
     },
     "lessonCard": {
       "minRead": "{{count}} min read",

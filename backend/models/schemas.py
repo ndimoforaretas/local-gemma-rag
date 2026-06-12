@@ -228,6 +228,18 @@ class WorkshopOut(BaseModel):
     lessons: list[WorkshopLessonOut]
 
 
+class WorkshopLessonEdit(BaseModel):
+    """One entry of the desired final lesson list (rename/reorder/delete)."""
+    # lesson_idx in the CURRENT workshop this entry refers to.
+    old_idx: int = Field(..., ge=0)
+    title: str = Field(..., min_length=1, max_length=200)
+
+
+class WorkshopLessonsPatchRequest(BaseModel):
+    # The desired final lesson list, in order. Omitted lessons are deleted.
+    lessons: list[WorkshopLessonEdit] = Field(..., min_length=1, max_length=20)
+
+
 class WorkshopListItem(BaseModel):
     id: int
     created_at: float

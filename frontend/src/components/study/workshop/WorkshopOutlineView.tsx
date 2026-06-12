@@ -5,17 +5,30 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Target, Sparkles, Trophy } from "lucide-react";
+import { ArrowLeft, Pencil, Target, Sparkles, Trophy } from "lucide-react";
 import type { Workshop } from "./types";
 import { LessonCard } from "./LessonCard";
+import { OutlineEditor } from "./OutlineEditor";
 
 export function WorkshopOutlineView({
   workshop,
+  editing,
+  isSavingLessons,
+  editError,
+  onStartEdit,
+  onCancelEdit,
+  onSaveLessons,
   onBack,
   onOpenLesson,
   onStartQuiz,
 }: {
   workshop: Workshop;
+  editing: boolean;
+  isSavingLessons: boolean;
+  editError: string | null;
+  onStartEdit: () => void;
+  onCancelEdit: () => void;
+  onSaveLessons: (rows: { old_idx: number; title: string }[]) => void;
   onBack: () => void;
   onOpenLesson: (idx: number) => void;
   onStartQuiz: () => void;
@@ -53,21 +66,42 @@ export function WorkshopOutlineView({
       </div>
 
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-muted mb-3">
-          {t("workshop.outline.lessons")}
-        </h2>
-        <div className="space-y-2">
-          {workshop.lessons.map((lesson) => (
-            <LessonCard
-              key={lesson.lesson_idx}
-              lesson={lesson}
-              onClick={() => onOpenLesson(lesson.lesson_idx)}
-            />
-          ))}
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-muted">
+            {t("workshop.outline.lessons")}
+          </h2>
+          {!editing && (
+            <button
+              type="button"
+              onClick={onStartEdit}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#c2c6d6] dark:border-[#424754] hover:bg-[#a855f7]/10 hover:border-[#a855f7]/50 text-ink-strong text-sm font-medium transition-colors"
+            >
+              <Pencil size={13} /> {t("workshop.outline.editOutline")}
+            </button>
+          )}
         </div>
+        {editing ? (
+          <OutlineEditor
+            lessons={workshop.lessons}
+            isSaving={isSavingLessons}
+            error={editError}
+            onSave={onSaveLessons}
+            onCancel={onCancelEdit}
+          />
+        ) : (
+          <div className="space-y-2">
+            {workshop.lessons.map((lesson) => (
+              <LessonCard
+                key={lesson.lesson_idx}
+                lesson={lesson}
+                onClick={() => onOpenLesson(lesson.lesson_idx)}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
-      {allDone && (
+      {allDone && !editing && (
         <div className="p-5 rounded-2xl border border-emerald-500/40 bg-emerald-500/5 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3 min-w-0">
             <Trophy className="text-emerald-500 shrink-0" size={22} />

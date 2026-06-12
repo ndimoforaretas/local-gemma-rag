@@ -31,6 +31,9 @@ export function useWorkshop() {
   const [difficulty, setDifficulty] = useState<WorkshopDifficulty>("beginner");
   const [lessonCount, setLessonCount] = useState<LessonCount>(5);
 
+  // Outline edit mode (rename/reorder/delete lessons).
+  const [editingOutline, setEditingOutline] = useState(false);
+
   // ── Server state ─────────────────────────────────────────────────────
   const list = useQuery({
     queryKey: ["workshops", "list"],
@@ -55,12 +58,15 @@ export function useWorkshop() {
   });
 
   // Warm the next ungenerated lesson in the background while the user reads
-  // (sequential, pauses while their own lesson is generating).
+  // (sequential, pauses while their own lesson is generating and while the
+  // outline is being edited — no point generating for a lesson about to be
+  // renamed or deleted).
   useLessonPrefetch({
     workshop: active.data,
     phase,
     activeLessonIdx,
     activeLessonLoading: lesson.isFetching,
+    paused: editingOutline,
   });
 
   // ── Mutations ────────────────────────────────────────────────────────
@@ -84,6 +90,25 @@ export function useWorkshop() {
     },
   });
 
+  // Rename / reorder / delete lessons atomically; server is source of truth.
+  const editLessons = useMutation({
+    mutationFn: ({
+      workshopId,
+      lessons,
+    }: {
+      workshopId: number;
+      lessons: { old_idx: number; title: string }[];
+    }) => api.updateWorkshopLessons(workshopId, lessons),
+    onSuccess: (ws: Workshop) => {
+      qc.setQueryData(["workshops", "detail", ws.id], ws);
+      // Cached lesson content is keyed by index, and indices may have moved —
+      // drop them all; refetches hit the server-side cache (instant).
+      qc.removeQueries({ queryKey: ["workshops", "lesson", ws.id] });
+      setEditingOutline(false);
+      list.refetch();
+    },
+  });
+
   // Re-roll an already-generated lesson; on failure the old content stays.
   const regenerateLesson = useMutation({
     mutationFn: ({ workshopId, lessonIdx }: { workshopId: number; lessonIdx: number }) =>
@@ -103,6 +128,8 @@ export function useWorkshop() {
     setActiveWorkshopId(id);
     setActiveLessonIdx(null);
     setPhase("outline");
+    setEditingOutline(false);
+    editLessons.reset();
   };
 
   const openLesson = (lessonIdx: number) => {
@@ -122,6 +149,8 @@ export function useWorkshop() {
     setActiveWorkshopId(null);
     setActiveLessonIdx(null);
     setPhase("list");
+    setEditingOutline(false);
+    editLessons.reset();
   };
 
   const startNew = () => {
@@ -138,7 +167,8 @@ export function useWorkshop() {
     difficulty, setDifficulty,
     lessonCount, setLessonCount,
     list, active, lesson,
-    createOutline, completeLesson, regenerateLesson, deleteWorkshop,
+    createOutline, completeLesson, regenerateLesson, editLessons, deleteWorkshop,
+    editingOutline, setEditingOutline,
     activeWorkshopId, activeLessonIdx,
     openWorkshop, openLesson, backToOutline, backToList, startNew, startQuiz,
   };

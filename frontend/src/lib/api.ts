@@ -356,6 +356,20 @@ export const api = {
     return handleJsonResponse<import("../types/api").LessonContent>(resp);
   },
 
+  // Rename / reorder / delete lessons atomically. `lessons` is the desired
+  // final list in order; old_idx references the current lesson positions.
+  updateWorkshopLessons: async (
+    workshopId: number,
+    lessons: { old_idx: number; title: string }[],
+  ) => {
+    const resp = await fetch(`${API_BASE}/api/study/workshop/${workshopId}/lessons`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lessons }),
+    });
+    return handleJsonResponse<import("../types/api").Workshop>(resp);
+  },
+
   completeLesson: async (workshopId: number, lessonIdx: number) => {
     const resp = await fetch(
       `${API_BASE}/api/study/workshop/${workshopId}/lesson/${lessonIdx}/complete`,

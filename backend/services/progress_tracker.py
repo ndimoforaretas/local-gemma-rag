@@ -423,6 +423,77 @@ def save_lesson_content(workshop_id: int, lesson_idx: int, content_md: str) -> N
             conn.close()
 
 
+def update_workshop_lessons(workshop_id: int, lessons: list[dict]) -> bool:
+    """
+    Atomically rewrite a workshop's lesson list (rename / reorder / delete).
+
+    ``lessons`` is the desired FINAL ordered list:
+    ``[{"old_idx": int, "title": str}, ...]`` — ``old_idx`` references the
+    current lesson_idx, so content_md / completed_at / est_minutes travel with
+    their lesson through renames and reorders. Lessons whose old_idx is omitted
+    are deleted. Recomputes workshops.completed_at, since deleting the only
+    incomplete lessons can legitimately complete the workshop.
+
+    Returns False if the workshop doesn't exist; raises ValueError on an
+    invalid edit (empty list, unknown/duplicate old_idx, blank title).
+    """
+    if not lessons:
+        raise ValueError("A workshop needs at least one lesson.")
+    ts = _dt.datetime.now().timestamp()
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute("SELECT id FROM workshops WHERE id = ?", (workshop_id,))
+            if not cur.fetchone():
+                return False
+            cur.execute(
+                "SELECT lesson_idx, title, est_minutes, content_md, completed_at "
+                "FROM workshop_lessons WHERE workshop_id = ?",
+                (workshop_id,),
+            )
+            current = {r["lesson_idx"]: dict(r) for r in cur.fetchall()}
+
+            seen: set[int] = set()
+            rows: list[tuple] = []
+            for pos, item in enumerate(lessons):
+                old_idx = item.get("old_idx")
+                title = (item.get("title") or "").strip()
+                if old_idx not in current:
+                    raise ValueError(f"Unknown lesson index: {old_idx}")
+                if old_idx in seen:
+                    raise ValueError(f"Duplicate lesson index: {old_idx}")
+                if not title:
+                    raise ValueError("Lesson titles cannot be empty.")
+                seen.add(old_idx)
+                src = current[old_idx]
+                rows.append(
+                    (workshop_id, pos, title, src["est_minutes"],
+                     src["content_md"], src["completed_at"])
+                )
+
+            cur.execute(
+                "DELETE FROM workshop_lessons WHERE workshop_id = ?", (workshop_id,)
+            )
+            cur.executemany(
+                "INSERT INTO workshop_lessons "
+                "(workshop_id, lesson_idx, title, est_minutes, content_md, completed_at) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                rows,
+            )
+            # Recompute completion — a delete-only edit can complete the workshop.
+            if all(r[5] is not None for r in rows):
+                cur.execute(
+                    "UPDATE workshops SET completed_at = COALESCE(completed_at, ?) WHERE id = ?",
+                    (ts, workshop_id),
+                )
+            conn.commit()
+            return True
+        finally:
+            conn.close()
+
+
 def mark_lesson_complete(workshop_id: int, lesson_idx: int) -> dict:
     """
     Mark a lesson complete (idempotent — re-marking keeps the first timestamp).

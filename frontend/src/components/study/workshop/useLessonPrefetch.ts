@@ -35,12 +35,15 @@ export function useLessonPrefetch({
   phase,
   activeLessonIdx,
   activeLessonLoading,
+  paused = false,
 }: {
   workshop: Workshop | undefined;
   phase: WorkshopPhase;
   activeLessonIdx: number | null;
   /** True while the lesson the user opened is itself still generating. */
   activeLessonLoading: boolean;
+  /** Hold off entirely (e.g. while the outline is being edited). */
+  paused?: boolean;
 }) {
   const qc = useQueryClient();
   const busy = useRef(false);
@@ -52,7 +55,7 @@ export function useLessonPrefetch({
   });
 
   useEffect(() => {
-    if (!workshop) return;
+    if (!workshop || paused) return;
     if (phase !== "outline" && phase !== "lesson") return;
     if (busy.current || activeLessonLoading) return;
 
@@ -81,5 +84,5 @@ export function useLessonPrefetch({
         // and re-runs this effect to chain the next lesson.
         qc.invalidateQueries({ queryKey: ["workshops", "detail", workshop.id] });
       });
-  }, [workshop, phase, activeLessonIdx, activeLessonLoading, qc]);
+  }, [workshop, phase, activeLessonIdx, activeLessonLoading, paused, qc]);
 }

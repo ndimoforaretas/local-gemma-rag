@@ -74,6 +74,17 @@ export function WorkshopMode({ onExit }: { onExit: () => void }) {
         {w.phase === "outline" && w.active.data && (
           <WorkshopOutlineView
             workshop={w.active.data}
+            editing={w.editingOutline}
+            isSavingLessons={w.editLessons.isPending}
+            editError={w.editLessons.error?.message ?? null}
+            onStartEdit={() => w.setEditingOutline(true)}
+            onCancelEdit={() => {
+              w.setEditingOutline(false);
+              w.editLessons.reset();
+            }}
+            onSaveLessons={(lessons) =>
+              w.editLessons.mutate({ workshopId: w.activeWorkshopId!, lessons })
+            }
             onBack={w.backToList}
             onOpenLesson={w.openLesson}
             onStartQuiz={w.startQuiz}

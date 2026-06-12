@@ -44,6 +44,7 @@ from backend.models.schemas import (
     SavedQuizOut,
     WorkshopCreateRequest,
     WorkshopLessonOut,
+    WorkshopLessonsPatchRequest,
     WorkshopListItem,
     WorkshopListResponse,
     WorkshopOut,
@@ -383,6 +384,22 @@ def complete_lesson(workshop_id: int, lesson_idx: int) -> LessonCompleteResponse
         workshop_completed=summary["workshop_completed"],
         newly_earned_achievements=newly_earned,
     )
+
+
+@router.patch("/workshop/{workshop_id}/lessons", response_model=WorkshopOut)
+def edit_workshop_lessons(
+    workshop_id: int, req: WorkshopLessonsPatchRequest
+) -> WorkshopOut:
+    """Rename / reorder / delete lessons atomically (content travels along)."""
+    try:
+        ok = progress_tracker.update_workshop_lessons(
+            workshop_id, [l.model_dump() for l in req.lessons]
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    if not ok:
+        raise HTTPException(status_code=404, detail="Workshop not found.")
+    return _workshop_to_response(progress_tracker.get_workshop(workshop_id))
 
 
 @router.delete("/workshop/{workshop_id}", response_model=dict)

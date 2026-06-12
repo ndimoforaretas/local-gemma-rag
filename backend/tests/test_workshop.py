@@ -462,6 +462,97 @@ def test_force_failure_preserves_old_content(client):
     assert progress_tracker.get_workshop(ws_id)["lessons"][0]["content_md"] == SUBSTANTIVE_LESSON
 
 
+# ── Outline editing (rename / reorder / delete) ───────────────────────────────
+
+
+def _editable_workshop() -> int:
+    ws_id = progress_tracker.create_workshop(
+        difficulty="beginner", scope=["a.txt"], title="T", summary="S",
+        key_points=["k"], objectives=["o"],
+        lessons=[
+            {"title": "Alpha", "est_minutes": 5},
+            {"title": "Beta", "est_minutes": 7},
+            {"title": "Gamma", "est_minutes": 9},
+        ],
+    )
+    progress_tracker.save_lesson_content(ws_id, 1, SUBSTANTIVE_LESSON)  # Beta has content
+    return ws_id
+
+
+def test_edit_lessons_rename_keeps_content(client):
+    ws_id = _editable_workshop()
+    body = client.patch(
+        f"/api/study/workshop/{ws_id}/lessons",
+        json={"lessons": [
+            {"old_idx": 0, "title": "Alpha"},
+            {"old_idx": 1, "title": "Beta (renamed)"},
+            {"old_idx": 2, "title": "Gamma"},
+        ]},
+    ).json()
+    assert [l["title"] for l in body["lessons"]] == ["Alpha", "Beta (renamed)", "Gamma"]
+    # Beta's generated content travelled with the rename.
+    assert body["lessons"][1]["has_content"] is True
+    ws = progress_tracker.get_workshop(ws_id)
+    assert ws["lessons"][1]["content_md"] == SUBSTANTIVE_LESSON
+
+
+def test_edit_lessons_reorder_moves_content_and_completion(client):
+    ws_id = _editable_workshop()
+    client.post(f"/api/study/workshop/{ws_id}/lesson/1/complete")  # Beta done
+    # Move Beta (old_idx 1) to the front.
+    body = client.patch(
+        f"/api/study/workshop/{ws_id}/lessons",
+        json={"lessons": [
+            {"old_idx": 1, "title": "Beta"},
+            {"old_idx": 0, "title": "Alpha"},
+            {"old_idx": 2, "title": "Gamma"},
+        ]},
+    ).json()
+    assert [l["title"] for l in body["lessons"]] == ["Beta", "Alpha", "Gamma"]
+    assert body["lessons"][0]["has_content"] is True
+    assert body["lessons"][0]["completed_at"] is not None
+    assert body["lessons"][1]["has_content"] is False
+    ws = progress_tracker.get_workshop(ws_id)
+    assert ws["lessons"][0]["content_md"] == SUBSTANTIVE_LESSON
+    assert ws["lessons"][1]["content_md"] is None
+
+
+def test_edit_lessons_delete_can_complete_workshop(client):
+    ws_id = _editable_workshop()
+    client.post(f"/api/study/workshop/{ws_id}/lesson/1/complete")  # only Beta done
+    assert client.get(f"/api/study/workshop/{ws_id}").json()["completed_at"] is None
+    # Drop the two incomplete lessons → workshop becomes fully complete.
+    body = client.patch(
+        f"/api/study/workshop/{ws_id}/lessons",
+        json={"lessons": [{"old_idx": 1, "title": "Beta"}]},
+    ).json()
+    assert len(body["lessons"]) == 1
+    assert body["completed_at"] is not None
+
+
+def test_edit_lessons_validation(client):
+    ws_id = _editable_workshop()
+    url = f"/api/study/workshop/{ws_id}/lessons"
+    # Unknown old_idx.
+    assert client.patch(url, json={"lessons": [{"old_idx": 9, "title": "X"}]}).status_code == 422
+    # Duplicate old_idx.
+    assert client.patch(url, json={"lessons": [
+        {"old_idx": 0, "title": "A"}, {"old_idx": 0, "title": "B"},
+    ]}).status_code == 422
+    # Empty list (pydantic min_length).
+    assert client.patch(url, json={"lessons": []}).status_code == 422
+    # Blank title (pydantic min_length on the field).
+    assert client.patch(url, json={"lessons": [{"old_idx": 0, "title": ""}]}).status_code == 422
+    # Unknown workshop.
+    assert client.patch(
+        "/api/study/workshop/999/lessons",
+        json={"lessons": [{"old_idx": 0, "title": "X"}]},
+    ).status_code in (404, 422)
+    # Nothing was mutated by the failed edits.
+    ws = progress_tracker.get_workshop(ws_id)
+    assert [l["title"] for l in ws["lessons"]] == ["Alpha", "Beta", "Gamma"]
+
+
 def test_complete_lesson_endpoint_unlocks_badges(client):
     ws_id = progress_tracker.create_workshop(
         difficulty="beginner", scope=["a.txt"], title="T", summary="S",
