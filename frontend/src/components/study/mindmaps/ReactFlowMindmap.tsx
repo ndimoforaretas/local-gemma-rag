@@ -11,6 +11,7 @@
 import "@xyflow/react/dist/style.css";
 
 import { useRef } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Background,
   Controls,
@@ -19,6 +20,7 @@ import {
   ReactFlowProvider,
   type Node,
 } from "@xyflow/react";
+import { ConfirmationModal } from "../../ConfirmationModal";
 import { ExportPanel } from "./ExportPanel";
 import type { NodePositions } from "./flowDecorations";
 import { MindmapFlowNode as MindmapNodeComponent } from "./MindmapFlowNode";
@@ -56,6 +58,7 @@ export function ReactFlowMindmap(props: Props) {
 }
 
 function Inner({ mindmap, layout, positions, onPositionsChange, onGraphChange, onExported }: Props) {
+  const { t } = useTranslation("study");
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvas = useMindmapCanvas(mindmap, layout, positions, onPositionsChange, onGraphChange);
 
@@ -114,6 +117,19 @@ function Inner({ mindmap, layout, positions, onPositionsChange, onGraphChange, o
           onExported={onExported}
         />
       </ReactFlow>
+      <ConfirmationModal
+        isOpen={!!canvas.confirmDelete}
+        title={t("mindmap.canvas.deleteBranchTitle")}
+        message={t("mindmap.canvas.deleteBranchMessage", {
+          label: canvas.confirmDelete?.label ?? "",
+          count: canvas.confirmDelete?.count ?? 0,
+        })}
+        confirmLabel={t("mindmap.canvas.deleteBranchConfirm")}
+        cancelLabel={t("mindmap.canvas.deleteBranchCancel")}
+        type="destructive"
+        onConfirm={canvas.confirmDeleteNow}
+        onCancel={canvas.cancelDelete}
+      />
     </div>
   );
 }

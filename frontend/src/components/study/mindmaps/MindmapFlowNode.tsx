@@ -4,14 +4,16 @@
  *
  * Three tiers: root (gradient), theme (purple-tinted), leaf (subtle). Renders
  * the decoration flags from useMindmapCanvas (search highlight/dim, collapse
- * toggle) and supports double-click inline rename (Enter/blur commits, Esc
- * cancels) via data.onRename.
+ * toggle), double-click inline rename (NodeLabelEditor; auto-opens for a
+ * just-added node), and a selection toolbar (add child / delete branch).
  */
 
 import { useState } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import type { MindmapFlowNode as MindmapNodeType } from "./treeToFlow";
+import { NodeActionsToolbar } from "./NodeActionsToolbar";
 import { NodeCollapseToggle } from "./NodeCollapseToggle";
+import { NodeLabelEditor } from "./NodeLabelEditor";
 
 const TIER: Record<number, string> = {
   0: "bg-gradient-to-br from-[#a855f7] to-[#ec4899] text-white border-transparent font-bold shadow-lg shadow-[#a855f7]/20",
@@ -22,11 +24,12 @@ const TIER: Record<number, string> = {
 export function MindmapFlowNode({
   id,
   data,
+  selected,
   sourcePosition,
   targetPosition,
 }: NodeProps<MindmapNodeType>) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState("");
+  // A just-added node mounts straight into editing (autoEdit).
+  const [editing, setEditing] = useState(!!data.autoEdit);
 
   const tier = TIER[data.level] ?? TIER[2];
   const ring = data.activeMatch
@@ -39,12 +42,11 @@ export function MindmapFlowNode({
   const startEdit = (e: React.MouseEvent) => {
     if (!data.onRename) return;
     e.stopPropagation();
-    setDraft(data.label);
     setEditing(true);
   };
-  const commit = () => {
+  const finishEdit = () => {
     setEditing(false);
-    data.onRename?.(id, draft);
+    if (data.autoEdit) data.onAutoEditDone?.();
   };
 
   return (
@@ -54,24 +56,25 @@ export function MindmapFlowNode({
         data.dimmed ? "opacity-25" : ""
       }`}
     >
+      <NodeActionsToolbar
+        visible={!!selected && !editing && !!data.onAddChild}
+        isRoot={!!data.isRoot}
+        onAddChild={() => data.onAddChild?.(id)}
+        onDelete={() => data.onDelete?.(id)}
+      />
       <Handle
         type="target"
         position={targetPosition ?? Position.Left}
         className="!bg-[#a855f7] !w-1.5 !h-1.5 !border-0"
       />
       {editing ? (
-        <input
-          autoFocus
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onFocus={(e) => e.target.select()}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            e.stopPropagation();
-            if (e.key === "Enter") commit();
-            else if (e.key === "Escape") setEditing(false);
+        <NodeLabelEditor
+          initial={data.label}
+          onCommit={(value) => {
+            finishEdit();
+            data.onRename?.(id, value);
           }}
-          className="nodrag nopan w-full min-w-[120px] bg-transparent text-center outline-none placeholder:opacity-50"
+          onCancel={finishEdit}
         />
       ) : (
         data.label

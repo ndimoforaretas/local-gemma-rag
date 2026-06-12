@@ -347,7 +347,14 @@
       "unlockLayout": "Layout entsperren",
       "snapToGrid": "Am Raster ausrichten",
       "collapseBranch": "Zweig einklappen",
-      "expandBranch": "Zweig ausklappen ({{count}} verborgen)"
+      "expandBranch": "Zweig ausklappen ({{count}} verborgen)",
+      "addChild": "Unterthema hinzufügen",
+      "deleteNode": "Knoten löschen",
+      "newNode": "Neues Thema",
+      "deleteBranchTitle": "Diesen Zweig löschen?",
+      "deleteBranchMessage": "„{{label}}“ und {{count}} Unterthemen werden entfernt.",
+      "deleteBranchConfirm": "Löschen",
+      "deleteBranchCancel": "Behalten"
     },
     "layout": {
       "label": "Layout",

@@ -347,7 +347,14 @@
       "unlockLayout": "Unlock layout",
       "snapToGrid": "Snap to grid",
       "collapseBranch": "Collapse branch",
-      "expandBranch": "Expand branch ({{count}} hidden)"
+      "expandBranch": "Expand branch ({{count}} hidden)",
+      "addChild": "Add child topic",
+      "deleteNode": "Delete node",
+      "newNode": "New topic",
+      "deleteBranchTitle": "Delete this branch?",
+      "deleteBranchMessage": "\"{{label}}\" and its {{count}} sub-topics will be removed.",
+      "deleteBranchConfirm": "Delete",
+      "deleteBranchCancel": "Keep"
     },
     "layout": {
       "label": "Layout",

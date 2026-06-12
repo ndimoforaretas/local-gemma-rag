@@ -6,6 +6,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNodesState, useReactFlow } from "@xyflow/react";
+import { useTranslation } from "react-i18next";
+import { addChildNode, deleteBranch, findRootId } from "./graphEdits";
 import {
   buildChildrenMap,
   decorateEdges,
@@ -29,12 +31,14 @@ export function useMindmapCanvas(
 ) {
   const isDark = useIsDark();
   const rf = useReactFlow();
+  const { t } = useTranslation("study");
 
   // User-edited graph wins; otherwise render the AI-generated tree.
   const graph = useMemo(
     () => (mindmap.graph ? graphToFlow(mindmap.graph) : treeToFlow(mindmap.tree)),
     [mindmap.graph, mindmap.tree],
   );
+  const rootId = useMemo(() => findRootId(graph), [graph]);
   const children = useMemo(() => buildChildrenMap(graph.edges), [graph.edges]);
   const counts = useMemo(() => descendantCounts(children), [children]);
 
@@ -73,6 +77,67 @@ export function useMindmapCanvas(
     [graph, onGraphChange],
   );
 
+  // Newly added node whose rename editor should open on mount.
+  const [pendingEditId, setPendingEditId] = useState<string | null>(null);
+  const clearPendingEdit = useCallback(() => setPendingEditId(null), []);
+
+  // Add a child under `parentId`, expand a collapsed parent so the new node
+  // is visible, and queue its inline rename editor.
+  const addChild = useCallback(
+    (parentId: string) => {
+      const result = addChildNode(
+        graph,
+        parentId,
+        t("mindmap.canvas.newNode"),
+        Object.keys(positions ?? {}),
+      );
+      if (!result) return;
+      setCollapsed((prev) => {
+        if (!prev.has(parentId)) return prev;
+        const nextSet = new Set(prev);
+        nextSet.delete(parentId);
+        return nextSet;
+      });
+      setPendingEditId(result.newId);
+      onGraphChange(result.next);
+    },
+    [graph, positions, onGraphChange, t],
+  );
+
+  // Branch deletes are confirmed first; leaves delete immediately.
+  const [confirmDelete, setConfirmDelete] = useState<{
+    id: string;
+    label: string;
+    count: number;
+  } | null>(null);
+
+  const performDelete = useCallback(
+    (id: string) => {
+      const next = deleteBranch(graph, id);
+      if (next) onGraphChange(next);
+    },
+    [graph, onGraphChange],
+  );
+
+  const requestDelete = useCallback(
+    (id: string) => {
+      const node = graph.nodes.find((n) => n.id === id);
+      if (!node) return;
+      const count = counts.get(id) ?? 0;
+      if (count === 0) performDelete(id);
+      else setConfirmDelete({ id, label: node.data.label, count });
+    },
+    [graph, counts, performDelete],
+  );
+
+  const confirmDeleteNow = useCallback(() => {
+    setConfirmDelete((pending) => {
+      if (pending) performDelete(pending.id);
+      return null;
+    });
+  }, [performDelete]);
+  const cancelDelete = useCallback(() => setConfirmDelete(null), []);
+
   const hidden = useMemo(() => hiddenByCollapse(children, collapsed), [children, collapsed]);
   const search = useMindmapSearch(nodes, hidden);
 
@@ -89,10 +154,15 @@ export function useMindmapCanvas(
         matches: search.matches,
         activeMatchId: search.activeId,
         searching: search.query.trim().length > 0,
+        rootId,
+        pendingEditId,
         onToggleCollapse: toggleCollapse,
         onRename: renameNode,
+        onAddChild: addChild,
+        onDelete: requestDelete,
+        onAutoEditDone: clearPendingEdit,
       }),
-    [nodes, hidden, collapsed, children, counts, search.matches, search.activeId, search.query, toggleCollapse, renameNode],
+    [nodes, hidden, collapsed, children, counts, search.matches, search.activeId, search.query, rootId, pendingEditId, toggleCollapse, renameNode, addChild, requestDelete, clearPendingEdit],
   );
 
   const displayEdges = useMemo(
@@ -125,5 +195,8 @@ export function useMindmapCanvas(
     snap,
     setSnap,
     fitSelection,
+    confirmDelete,
+    confirmDeleteNow,
+    cancelDelete,
   };
 }

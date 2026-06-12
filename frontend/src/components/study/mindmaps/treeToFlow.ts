@@ -18,8 +18,14 @@ export interface FlowNodeData extends Record<string, unknown> {
   match?: boolean;
   activeMatch?: boolean;
   dimmed?: boolean;
+  isRoot?: boolean;
+  /** Open the rename editor on mount (set for a just-added node). */
+  autoEdit?: boolean;
   onToggleCollapse?: (id: string) => void;
   onRename?: (id: string, label: string) => void;
+  onAddChild?: (id: string) => void;
+  onDelete?: (id: string) => void;
+  onAutoEditDone?: () => void;
 }
 
 export type MindmapFlowNode = Node<FlowNodeData, "mindmap">;

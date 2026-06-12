@@ -18,10 +18,28 @@ export function layoutNodes(
   positions: NodePositions | null,
 ): MindmapFlowNode[] {
   const laid = layoutWithDagre(graph.nodes, graph.edges, layout === "TD" ? "TB" : "LR");
-  if (positions && Object.keys(positions).length) {
-    return laid.map((n) => (positions[n.id] ? { ...n, position: positions[n.id] } : n));
-  }
-  return laid;
+  if (!positions || !Object.keys(positions).length) return laid;
+  // Saved positions win. Nodes added after the save (no entry yet) are placed
+  // at their parent's saved position plus the dagre offset, so a new child
+  // appears next to its (possibly dragged) parent instead of a far-off spot.
+  const dagrePos = new Map(laid.map((n) => [n.id, n.position]));
+  const parentOf = new Map(graph.edges.map((e) => [e.target, e.source]));
+  return laid.map((n) => {
+    if (positions[n.id]) return { ...n, position: positions[n.id] };
+    const parent = parentOf.get(n.id);
+    const parentSaved = parent ? positions[parent] : undefined;
+    const parentDagre = parent ? dagrePos.get(parent) : undefined;
+    if (parentSaved && parentDagre) {
+      return {
+        ...n,
+        position: {
+          x: parentSaved.x + (n.position.x - parentDagre.x),
+          y: parentSaved.y + (n.position.y - parentDagre.y),
+        },
+      };
+    }
+    return n;
+  });
 }
 
 /** parent id → direct child ids (from the tree edges). */
@@ -75,8 +93,14 @@ export interface NodeDecorations {
   matches: Set<string>;
   activeMatchId: string | null;
   searching: boolean;
+  rootId: string | null;
+  /** Newly added node that should open its rename editor on mount. */
+  pendingEditId: string | null;
   onToggleCollapse: (id: string) => void;
   onRename: (id: string, label: string) => void;
+  onAddChild: (id: string) => void;
+  onDelete: (id: string) => void;
+  onAutoEditDone: () => void;
 }
 
 /** Apply collapse visibility + search flags onto the laid-out nodes. */
@@ -95,8 +119,13 @@ export function decorateNodes(
       match: d.matches.has(n.id),
       activeMatch: n.id === d.activeMatchId,
       dimmed: d.searching && !d.matches.has(n.id),
+      isRoot: n.id === d.rootId,
+      autoEdit: n.id === d.pendingEditId,
       onToggleCollapse: d.onToggleCollapse,
       onRename: d.onRename,
+      onAddChild: d.onAddChild,
+      onDelete: d.onDelete,
+      onAutoEditDone: d.onAutoEditDone,
     },
   }));
 }
