@@ -261,7 +261,13 @@
       "markComplete": "Mark complete",
       "errorTitle": "Couldn't generate this lesson",
       "errorBody": "The model returned incomplete content. This can happen occasionally — try again.",
-      "retry": "Retry"
+      "retry": "Retry",
+      "regenerate": "Regenerate",
+      "regenTitle": "Regenerate this lesson?",
+      "regenMessage": "The current text will be replaced with a freshly generated version. Your completion status is kept.",
+      "regenConfirm": "Regenerate",
+      "regenCancel": "Keep current",
+      "regenFailed": "Regeneration failed — the previous version was kept."
     },
     "toc": {
       "onThisPage": "On this page"
@@ -269,7 +275,8 @@
     "gen": {
       "outlineTitle": "Building your workshop outline",
       "lessonTitle": "Writing this lesson",
-      "body": "Gemma is on it. This usually takes {{eta}}.",
+      "body": "Gemma is writing this from your documents — typically {{eta}}, depending on your hardware.",
+      "lessonHint": "Upcoming lessons are prepared in the background while you read.",
       "outlineEta": "10–40 seconds",
       "lessonEta": "20–60 seconds",
       "elapsed": "{{time}} elapsed",

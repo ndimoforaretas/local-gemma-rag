@@ -422,6 +422,46 @@ def test_corrupt_cached_lesson_self_heals(client):
     assert "Variables" in resp.json()["content_md"]
 
 
+def test_force_regenerates_and_keeps_completion(client):
+    ws_id = progress_tracker.create_workshop(
+        difficulty="beginner", scope=["a.txt"], title="T", summary="S",
+        key_points=["k"], objectives=["o"], lessons=[{"title": "Variables"}],
+    )
+    progress_tracker.save_lesson_content(ws_id, 0, SUBSTANTIVE_LESSON)
+    client.post(f"/api/study/workshop/{ws_id}/lesson/0/complete")
+
+    fresh = SUBSTANTIVE_LESSON.replace("named containers", "labelled boxes")
+    with patch.object(workshop_generator, "ollama") as mock_oll, patch.object(
+        workshop_generator.vector_db, "search"
+    ) as mock_search:
+        mock_search.return_value = [{"source": "x.txt", "content": "ctx"}]
+        mock_oll.chat.return_value = {"message": {"content": fresh}}
+        resp = client.post(f"/api/study/workshop/{ws_id}/lesson/0?force=true")
+    assert resp.status_code == 200
+    assert "labelled boxes" in resp.json()["content_md"]
+    # Completion survives the re-roll.
+    assert resp.json()["completed_at"] is not None
+    # New content persisted.
+    assert "labelled boxes" in progress_tracker.get_workshop(ws_id)["lessons"][0]["content_md"]
+
+
+def test_force_failure_preserves_old_content(client):
+    ws_id = progress_tracker.create_workshop(
+        difficulty="beginner", scope=["a.txt"], title="T", summary="S",
+        key_points=["k"], objectives=["o"], lessons=[{"title": "Variables"}],
+    )
+    progress_tracker.save_lesson_content(ws_id, 0, SUBSTANTIVE_LESSON)
+    with patch.object(workshop_generator, "ollama") as mock_oll, patch.object(
+        workshop_generator.vector_db, "search"
+    ) as mock_search:
+        mock_search.return_value = [{"source": "x.txt", "content": "ctx"}]
+        mock_oll.chat.return_value = {"message": {"content": "#"}}  # both attempts degenerate
+        resp = client.post(f"/api/study/workshop/{ws_id}/lesson/0?force=true")
+    assert resp.status_code == 422
+    # The old lesson is untouched.
+    assert progress_tracker.get_workshop(ws_id)["lessons"][0]["content_md"] == SUBSTANTIVE_LESSON
+
+
 def test_complete_lesson_endpoint_unlocks_badges(client):
     ws_id = progress_tracker.create_workshop(
         difficulty="beginner", scope=["a.txt"], title="T", summary="S",

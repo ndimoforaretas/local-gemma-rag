@@ -67,9 +67,12 @@ export function WorkshopGeneratingCard({
       <h2 className="text-xl font-bold text-ink-strong mb-1">
         {title}
       </h2>
-      <p className="text-sm text-ink-muted mb-6">
+      <p className={`text-sm text-ink-muted ${mode === "lesson" ? "mb-1" : "mb-6"}`}>
         {t("workshop.gen.body", { eta })}
       </p>
+      {mode === "lesson" && (
+        <p className="text-xs text-ink-muted mb-6">{t("workshop.gen.lessonHint")}</p>
+      )}
 
       <div className="w-full max-w-sm h-1.5 bg-[#c2c6d6]/40 dark:bg-[#424754]/40 rounded-full overflow-hidden mb-4">
         <motion.div

@@ -308,8 +308,15 @@ def get_workshop(workshop_id: int) -> WorkshopOut:
 
 
 @router.post("/workshop/{workshop_id}/lesson/{lesson_idx}", response_model=LessonContentResponse)
-def get_or_generate_lesson(workshop_id: int, lesson_idx: int) -> LessonContentResponse:
-    """Return cached lesson content, or generate it on demand and cache."""
+def get_or_generate_lesson(
+    workshop_id: int, lesson_idx: int, force: bool = False
+) -> LessonContentResponse:
+    """
+    Return cached lesson content, or generate it on demand and cache.
+    ``force=true`` re-rolls an already-generated lesson; the old content is
+    only replaced if the new generation succeeds (generation raises on
+    non-substantive output, leaving the cache untouched).
+    """
     ws = progress_tracker.get_workshop(workshop_id)
     if not ws:
         raise HTTPException(status_code=404, detail="Workshop not found.")
@@ -319,7 +326,7 @@ def get_or_generate_lesson(workshop_id: int, lesson_idx: int) -> LessonContentRe
     lesson = ws["lessons"][lesson_idx]
     # Self-heal: only serve cached content that's actually substantive. Garbage
     # persisted by an older/concurrent generation falls through to regenerate.
-    if workshop_generator.is_substantive_lesson(lesson["content_md"]):
+    if not force and workshop_generator.is_substantive_lesson(lesson["content_md"]):
         return LessonContentResponse(
             lesson_idx=lesson_idx,
             title=lesson["title"],
@@ -345,11 +352,13 @@ def get_or_generate_lesson(workshop_id: int, lesson_idx: int) -> LessonContentRe
         raise HTTPException(status_code=500, detail="Failed to generate this lesson.")
 
     progress_tracker.save_lesson_content(workshop_id, lesson_idx, content_md)
+    # Completion tracks the user's progress, not the content version — a
+    # regenerated lesson keeps its completed_at.
     return LessonContentResponse(
         lesson_idx=lesson_idx,
         title=lesson["title"],
         content_md=content_md,
-        completed_at=None,
+        completed_at=lesson["completed_at"],
     )
 
 

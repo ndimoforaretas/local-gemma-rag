@@ -261,7 +261,13 @@
       "markComplete": "Als erledigt markieren",
       "errorTitle": "Lektion konnte nicht erstellt werden",
       "errorBody": "Das Modell hat unvollständigen Inhalt geliefert. Das kann gelegentlich passieren — bitte erneut versuchen.",
-      "retry": "Erneut versuchen"
+      "retry": "Erneut versuchen",
+      "regenerate": "Neu generieren",
+      "regenTitle": "Diese Lektion neu generieren?",
+      "regenMessage": "Der aktuelle Text wird durch eine neu generierte Version ersetzt. Dein Abschluss-Status bleibt erhalten.",
+      "regenConfirm": "Neu generieren",
+      "regenCancel": "Aktuelle behalten",
+      "regenFailed": "Neu generieren fehlgeschlagen — die vorherige Version wurde behalten."
     },
     "toc": {
       "onThisPage": "Auf dieser Seite"
@@ -269,7 +275,8 @@
     "gen": {
       "outlineTitle": "Deine Workshop-Gliederung wird erstellt",
       "lessonTitle": "Diese Lektion wird geschrieben",
-      "body": "Gemma ist dran. Das dauert normalerweise {{eta}}.",
+      "body": "Gemma schreibt das aus deinen Dokumenten — meist {{eta}}, je nach Hardware.",
+      "lessonHint": "Kommende Lektionen werden im Hintergrund vorbereitet, während du liest.",
       "outlineEta": "10–40 Sekunden",
       "lessonEta": "20–60 Sekunden",
       "elapsed": "{{time}} vergangen",

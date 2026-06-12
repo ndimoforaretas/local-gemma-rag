@@ -14,9 +14,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, RotateCcw } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, RotateCcw } from "lucide-react";
 import { marked } from "marked";
 import type { LessonContent } from "./types";
+import { LessonActions } from "./LessonActions";
 import { TocSidebar } from "./TocSidebar";
 import { parseTocHeadings } from "./tocHelpers";
 
@@ -27,8 +28,10 @@ export function LessonView({
   onRetry,
   isCompleted,
   isMarking,
+  regenerateFailed,
   onBack,
   onMarkComplete,
+  onRegenerate,
 }: {
   lesson: LessonContent | undefined;
   isLoading: boolean;
@@ -36,8 +39,10 @@ export function LessonView({
   onRetry?: () => void;
   isCompleted: boolean;
   isMarking: boolean;
+  regenerateFailed: boolean;
   onBack: () => void;
   onMarkComplete: () => void;
+  onRegenerate: () => void;
 }) {
   const { t } = useTranslation("study");
   // Body markdown with any leading H1 removed (title rendered separately).
@@ -117,32 +122,13 @@ export function LessonView({
       )}
 
       {!isLoading && lesson && (
-        <div className="flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onMarkComplete}
-            disabled={isCompleted || isMarking}
-            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-colors ${
-              isCompleted
-                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 cursor-default"
-                : "bg-[#a855f7] hover:bg-[#9333ea] disabled:bg-[#a855f7]/40 text-white"
-            }`}
-          >
-            {isMarking ? (
-              <>
-                <Loader2 size={14} className="animate-spin" /> {t("workshop.lesson.saving")}
-              </>
-            ) : isCompleted ? (
-              <>
-                <CheckCircle2 size={14} /> {t("workshop.lesson.completed")}
-              </>
-            ) : (
-              <>
-                <CheckCircle2 size={14} /> {t("workshop.lesson.markComplete")}
-              </>
-            )}
-          </button>
-        </div>
+        <LessonActions
+          isCompleted={isCompleted}
+          isMarking={isMarking}
+          regenerateFailed={regenerateFailed}
+          onMarkComplete={onMarkComplete}
+          onRegenerate={onRegenerate}
+        />
       )}
     </div>
   );

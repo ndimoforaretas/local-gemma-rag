@@ -84,6 +84,15 @@ export function useWorkshop() {
     },
   });
 
+  // Re-roll an already-generated lesson; on failure the old content stays.
+  const regenerateLesson = useMutation({
+    mutationFn: ({ workshopId, lessonIdx }: { workshopId: number; lessonIdx: number }) =>
+      api.getOrGenerateLesson(workshopId, lessonIdx, true),
+    onSuccess: (data: LessonContent, vars) => {
+      qc.setQueryData(["workshops", "lesson", vars.workshopId, vars.lessonIdx], data);
+    },
+  });
+
   const deleteWorkshop = useMutation({
     mutationFn: api.deleteWorkshop,
     onSuccess: () => list.refetch(),
@@ -99,11 +108,13 @@ export function useWorkshop() {
   const openLesson = (lessonIdx: number) => {
     setActiveLessonIdx(lessonIdx);
     setPhase("lesson");
+    regenerateLesson.reset(); // a stale regen error shouldn't follow into the next lesson
   };
 
   const backToOutline = () => {
     setActiveLessonIdx(null);
     setPhase("outline");
+    regenerateLesson.reset();
     active.refetch(); // refresh completion timestamps
   };
 
@@ -127,7 +138,7 @@ export function useWorkshop() {
     difficulty, setDifficulty,
     lessonCount, setLessonCount,
     list, active, lesson,
-    createOutline, completeLesson, deleteWorkshop,
+    createOutline, completeLesson, regenerateLesson, deleteWorkshop,
     activeWorkshopId, activeLessonIdx,
     openWorkshop, openLesson, backToOutline, backToList, startNew, startQuiz,
   };

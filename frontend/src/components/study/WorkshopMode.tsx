@@ -80,11 +80,11 @@ export function WorkshopMode({ onExit }: { onExit: () => void }) {
           />
         )}
 
-        {w.phase === "lesson" && w.lesson.isPending && (
+        {w.phase === "lesson" && (w.lesson.isPending || w.regenerateLesson.isPending) && (
           <WorkshopGeneratingCard mode="lesson" />
         )}
 
-        {w.phase === "lesson" && !w.lesson.isPending && (
+        {w.phase === "lesson" && !w.lesson.isPending && !w.regenerateLesson.isPending && (
           <LessonView
             lesson={w.lesson.data}
             isLoading={false}
@@ -94,9 +94,16 @@ export function WorkshopMode({ onExit }: { onExit: () => void }) {
               w.active.data?.lessons[w.activeLessonIdx ?? 0]?.completed_at != null
             }
             isMarking={w.completeLesson.isPending}
+            regenerateFailed={w.regenerateLesson.isError}
             onBack={w.backToOutline}
             onMarkComplete={() =>
               w.completeLesson.mutate({
+                workshopId: w.activeWorkshopId!,
+                lessonIdx: w.activeLessonIdx!,
+              })
+            }
+            onRegenerate={() =>
+              w.regenerateLesson.mutate({
                 workshopId: w.activeWorkshopId!,
                 lessonIdx: w.activeLessonIdx!,
               })

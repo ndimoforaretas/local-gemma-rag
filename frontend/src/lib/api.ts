@@ -347,9 +347,10 @@ export const api = {
     return handleJsonResponse<import("../types/api").Workshop>(resp);
   },
 
-  getOrGenerateLesson: async (workshopId: number, lessonIdx: number) => {
+  // `force` re-rolls an already-generated lesson (old content kept on failure).
+  getOrGenerateLesson: async (workshopId: number, lessonIdx: number, force = false) => {
     const resp = await fetch(
-      `${API_BASE}/api/study/workshop/${workshopId}/lesson/${lessonIdx}`,
+      `${API_BASE}/api/study/workshop/${workshopId}/lesson/${lessonIdx}${force ? "?force=true" : ""}`,
       { method: "POST" },
     );
     return handleJsonResponse<import("../types/api").LessonContent>(resp);
