@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../lib/api";
-import type { Mindmap, MindmapsPhase } from "./types";
+import type { Mindmap, MindmapGraph, MindmapsPhase } from "./types";
 
 export function useMindmaps() {
   const qc = useQueryClient();
@@ -65,6 +65,14 @@ export function useMindmaps() {
       qc.setQueryData(["mindmaps", "detail", mm.id], mm),
   });
 
+  // Save (or clear with null) the user-edited graph; cache in place.
+  const saveGraph = useMutation({
+    mutationFn: ({ id, graph }: { id: number; graph: MindmapGraph | null }) =>
+      api.setMindmapGraph(id, graph),
+    onSuccess: (mm: Mindmap) =>
+      qc.setQueryData(["mindmaps", "detail", mm.id], mm),
+  });
+
   const deleteMindmap = useMutation({
     mutationFn: api.deleteMindmap,
     onSuccess: () => list.refetch(),
@@ -88,7 +96,7 @@ export function useMindmaps() {
     phase, setPhase,
     scope, setScope,
     list, active,
-    createMindmap, recordExport, deleteMindmap, saveLayout, savePositions,
+    createMindmap, recordExport, deleteMindmap, saveLayout, savePositions, saveGraph,
     activeId,
     openMindmap, backToList, startNew,
   };

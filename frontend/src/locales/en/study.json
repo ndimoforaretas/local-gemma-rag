@@ -330,8 +330,24 @@
     },
     "view": {
       "meta": "{{themes}} themes · {{subtopics}} sub-topics",
-      "hint": "Drag nodes to rearrange · scroll to zoom · drag the background to pan",
-      "resetLayout": "Reset layout"
+      "hint": "Drag nodes to rearrange · scroll to zoom · drag the background to pan · Shift+drag to multi-select · press F to fit the view · double-click a node to rename",
+      "resetLayout": "Reset layout",
+      "resetToAi": "Reset to AI version",
+      "resetGraphTitle": "Discard your edits?",
+      "resetGraphMessage": "\"{{title}}\" will return to the original AI-generated structure. Your node edits will be lost.",
+      "resetGraphConfirm": "Reset",
+      "resetGraphCancel": "Keep edits"
+    },
+    "canvas": {
+      "searchPlaceholder": "Search nodes…",
+      "prevMatch": "Previous match",
+      "nextMatch": "Next match",
+      "clearSearch": "Clear search",
+      "lockLayout": "Lock layout",
+      "unlockLayout": "Unlock layout",
+      "snapToGrid": "Snap to grid",
+      "collapseBranch": "Collapse branch",
+      "expandBranch": "Expand branch ({{count}} hidden)"
     },
     "layout": {
       "label": "Layout",

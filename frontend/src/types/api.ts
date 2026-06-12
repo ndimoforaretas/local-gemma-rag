@@ -326,6 +326,24 @@ export interface MindmapNode {
   children: MindmapNode[];
 }
 
+export interface MindmapGraphNode {
+  id: string;
+  label: string;
+  level: 0 | 1 | 2;
+}
+
+export interface MindmapGraphEdge {
+  id: string;
+  source: string;
+  target: string;
+}
+
+/** User-edited mindmap graph — structure only (positions/layout separate). */
+export interface MindmapGraph {
+  nodes: MindmapGraphNode[];
+  edges: MindmapGraphEdge[];
+}
+
 export interface Mindmap {
   id: number;
   created_at: number;
@@ -340,6 +358,8 @@ export interface Mindmap {
   layout?: "TD" | "LR" | null;
   /** Manual React Flow node positions {id: {x, y}} (null → auto-layout). */
   node_positions?: Record<string, { x: number; y: number }> | null;
+  /** User-edited graph; null/absent → render the AI-generated tree. */
+  graph?: MindmapGraph | null;
 }
 
 export interface MindmapListItem {

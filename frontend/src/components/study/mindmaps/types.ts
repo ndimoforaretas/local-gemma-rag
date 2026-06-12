@@ -9,6 +9,9 @@ export type MindmapLayout = "TD" | "LR";
 
 export type {
   Mindmap,
+  MindmapGraph,
+  MindmapGraphEdge,
+  MindmapGraphNode,
   MindmapListItem,
   MindmapNode,
 } from "../../../types/api";

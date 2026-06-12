@@ -466,6 +466,22 @@ export const api = {
     return handleJsonResponse<import("../types/api").Mindmap>(resp);
   },
 
+  // Save (or clear, with null) the user-edited graph (structure only).
+  setMindmapGraph: async (
+    id: number,
+    graph: import("../types/api").MindmapGraph | null,
+  ) => {
+    const resp = await fetch(
+      `${API_BASE}/api/study/mindmaps/mindmap/${id}/graph`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ graph }),
+      },
+    );
+    return handleJsonResponse<import("../types/api").Mindmap>(resp);
+  },
+
   recordMindmapExport: async (id: number) => {
     const resp = await fetch(
       `${API_BASE}/api/study/mindmaps/mindmap/${id}/export`,

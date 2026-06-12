@@ -26,6 +26,7 @@ from backend.models.schemas import (
     LessonContentResponse,
     MindmapCreateRequest,
     MindmapExportResponse,
+    MindmapGraphRequest,
     MindmapLayoutRequest,
     MindmapListItem,
     MindmapListResponse,
@@ -600,6 +601,18 @@ def set_mindmap_layout(mindmap_id: int, req: MindmapLayoutRequest) -> MindmapOut
 def set_mindmap_positions(mindmap_id: int, req: MindmapPositionsRequest) -> MindmapOut:
     """Save (or clear) manual React Flow node positions for this mindmap."""
     if not progress_tracker.set_mindmap_positions(mindmap_id, req.positions):
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
+    mm = progress_tracker.get_mindmap(mindmap_id)
+    if not mm:
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
+    return MindmapOut(**mm)
+
+
+@router.put("/mindmaps/mindmap/{mindmap_id}/graph", response_model=MindmapOut)
+def set_mindmap_graph(mindmap_id: int, req: MindmapGraphRequest) -> MindmapOut:
+    """Save (or clear) the user-edited graph. Null resets to the AI tree."""
+    graph = req.graph.model_dump() if req.graph is not None else None
+    if not progress_tracker.set_mindmap_graph(mindmap_id, graph):
         raise HTTPException(status_code=404, detail="Mindmap not found.")
     mm = progress_tracker.get_mindmap(mindmap_id)
     if not mm:

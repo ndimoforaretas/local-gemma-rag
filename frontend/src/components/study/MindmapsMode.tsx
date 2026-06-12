@@ -61,6 +61,9 @@ export function MindmapsMode({ onExit }: { onExit: () => void }) {
               onSavePositions={(positions) =>
                 m.savePositions.mutate({ id: m.activeId!, positions })
               }
+              onSaveGraph={(graph) =>
+                m.saveGraph.mutate({ id: m.activeId!, graph })
+              }
             />
           )}
         </div>

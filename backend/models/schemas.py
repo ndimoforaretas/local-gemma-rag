@@ -320,6 +320,25 @@ class MindmapNode(BaseModel):
     children: list["MindmapNode"] = []
 
 
+class MindmapGraphNode(BaseModel):
+    id: str = Field(..., min_length=1, max_length=64)
+    label: str = Field(..., min_length=1, max_length=300)
+    level: int = Field(..., ge=0, le=2)
+
+
+class MindmapGraphEdge(BaseModel):
+    id: str = Field(..., min_length=1, max_length=140)
+    source: str = Field(..., min_length=1, max_length=64)
+    target: str = Field(..., min_length=1, max_length=64)
+
+
+class MindmapGraph(BaseModel):
+    """User-edited graph — structure only (positions/layout have own columns)."""
+
+    nodes: list[MindmapGraphNode] = Field(..., min_length=1, max_length=500)
+    edges: list[MindmapGraphEdge] = Field(..., max_length=1_000)
+
+
 class MindmapOut(BaseModel):
     id: int
     created_at: float
@@ -334,6 +353,8 @@ class MindmapOut(BaseModel):
     layout: Optional[str] = None
     # Manual node positions {id: {x, y}} (null → dagre auto-layout).
     node_positions: Optional[dict] = None
+    # User-edited graph; null → render the AI-generated tree.
+    graph: Optional[MindmapGraph] = None
 
 
 class MindmapSourceRequest(BaseModel):
@@ -348,6 +369,11 @@ class MindmapLayoutRequest(BaseModel):
 class MindmapPositionsRequest(BaseModel):
     # Manual node positions; empty/null clears them (back to auto-layout).
     positions: Optional[dict] = None
+
+
+class MindmapGraphRequest(BaseModel):
+    # The edited graph; null resets to the AI-generated tree.
+    graph: Optional[MindmapGraph] = None
 
 
 class MindmapListItem(BaseModel):

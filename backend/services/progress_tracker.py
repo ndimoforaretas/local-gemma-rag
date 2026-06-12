@@ -206,6 +206,11 @@ def _init_schema(conn: sqlite3.Connection) -> None:
     # Manual React Flow node positions (JSON {id: {x, y}}); NULL → auto-layout.
     if "node_positions" not in mm_cols:
         conn.execute("ALTER TABLE mindmaps ADD COLUMN node_positions TEXT")
+    # User-edited graph (Option B fork): JSON {nodes: [{id,label,level}],
+    # edges: [{id,source,target}]}. NULL → render the AI tree (tree_json).
+    # Structure only — positions stay in node_positions, direction in layout.
+    if "graph_json" not in mm_cols:
+        conn.execute("ALTER TABLE mindmaps ADD COLUMN graph_json TEXT")
     conn.commit()
 
 
@@ -873,6 +878,12 @@ def get_mindmap(mindmap_id: int) -> Optional[dict]:
                 if "node_positions" in keys and row["node_positions"]
                 else None
             ),
+            # User-edited graph (NULL → render the AI-generated tree).
+            "graph": (
+                _json.loads(row["graph_json"])
+                if "graph_json" in keys and row["graph_json"]
+                else None
+            ),
         }
     finally:
         conn.close()
@@ -981,6 +992,32 @@ def set_mindmap_positions(mindmap_id: int, positions: Optional[dict]) -> bool:
             cur = conn.cursor()
             cur.execute(
                 "UPDATE mindmaps SET node_positions = ? WHERE id = ?",
+                (blob, mindmap_id),
+            )
+            conn.commit()
+            return cur.rowcount > 0
+        finally:
+            conn.close()
+
+
+def set_mindmap_graph(mindmap_id: int, graph: Optional[dict]) -> bool:
+    """
+    Persist (or clear) the user-edited graph for a mindmap.
+
+    ``graph`` is ``{"nodes": [{id, label, level}], "edges": [{id, source,
+    target}]}`` — structure only; positions/layout live in their own columns.
+    ``None`` resets to the AI-generated tree. Returns True if a row updated.
+    """
+    import json as _json
+
+    blob = _json.dumps(graph) if graph else None
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE mindmaps SET graph_json = ? WHERE id = ?",
                 (blob, mindmap_id),
             )
             conn.commit()

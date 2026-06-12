@@ -330,8 +330,24 @@
     },
     "view": {
       "meta": "{{themes}} Themen · {{subtopics}} Unterthemen",
-      "hint": "Knoten ziehen zum Anordnen · scrollen zum Zoomen · Hintergrund ziehen zum Verschieben",
-      "resetLayout": "Layout zurücksetzen"
+      "hint": "Knoten ziehen zum Anordnen · scrollen zum Zoomen · Hintergrund ziehen zum Verschieben · Shift+Ziehen für Mehrfachauswahl · F passt die Ansicht ein · Doppelklick benennt einen Knoten um",
+      "resetLayout": "Layout zurücksetzen",
+      "resetToAi": "Auf KI-Version zurücksetzen",
+      "resetGraphTitle": "Bearbeitungen verwerfen?",
+      "resetGraphMessage": "„{{title}}“ kehrt zur ursprünglich generierten KI-Struktur zurück. Deine Knoten-Bearbeitungen gehen verloren.",
+      "resetGraphConfirm": "Zurücksetzen",
+      "resetGraphCancel": "Bearbeitungen behalten"
+    },
+    "canvas": {
+      "searchPlaceholder": "Knoten suchen…",
+      "prevMatch": "Voriger Treffer",
+      "nextMatch": "Nächster Treffer",
+      "clearSearch": "Suche löschen",
+      "lockLayout": "Layout sperren",
+      "unlockLayout": "Layout entsperren",
+      "snapToGrid": "Am Raster ausrichten",
+      "collapseBranch": "Zweig einklappen",
+      "expandBranch": "Zweig ausklappen ({{count}} verborgen)"
     },
     "layout": {
       "label": "Layout",
