@@ -259,6 +259,13 @@
       "deleteLessonConfirm": "Löschen",
       "deleteLessonCancel": "Behalten"
     },
+    "export": {
+      "markdown": "Markdown",
+      "pdf": "PDF",
+      "markdownTip": "Gesamten Workshop als Markdown exportieren",
+      "pdfTip": "Gesamten Workshop als PDF exportieren",
+      "notGenerated": "Diese Lektion wurde noch nicht generiert."
+    },
     "lessonCard": {
       "minRead": "{{count}} Min. Lesezeit",
       "completed": "Abgeschlossen",

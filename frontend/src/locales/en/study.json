@@ -259,6 +259,13 @@
       "deleteLessonConfirm": "Delete",
       "deleteLessonCancel": "Keep"
     },
+    "export": {
+      "markdown": "Markdown",
+      "pdf": "PDF",
+      "markdownTip": "Export the whole workshop as Markdown",
+      "pdfTip": "Export the whole workshop as PDF",
+      "notGenerated": "This lesson has not been generated yet."
+    },
     "lessonCard": {
       "minRead": "{{count}} min read",
       "completed": "Completed",

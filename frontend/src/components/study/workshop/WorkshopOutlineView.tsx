@@ -9,6 +9,7 @@ import { ArrowLeft, Pencil, Target, Sparkles, Trophy } from "lucide-react";
 import type { Workshop } from "./types";
 import { LessonCard } from "./LessonCard";
 import { OutlineEditor } from "./OutlineEditor";
+import { WorkshopExportMenu } from "./WorkshopExportMenu";
 
 export function WorkshopOutlineView({
   workshop,
@@ -71,13 +72,16 @@ export function WorkshopOutlineView({
             {t("workshop.outline.lessons")}
           </h2>
           {!editing && (
-            <button
-              type="button"
-              onClick={onStartEdit}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#c2c6d6] dark:border-[#424754] hover:bg-[#a855f7]/10 hover:border-[#a855f7]/50 text-ink-strong text-sm font-medium transition-colors"
-            >
-              <Pencil size={13} /> {t("workshop.outline.editOutline")}
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={onStartEdit}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#c2c6d6] dark:border-[#424754] hover:bg-[#a855f7]/10 hover:border-[#a855f7]/50 text-ink-strong text-sm font-medium transition-colors"
+              >
+                <Pencil size={13} /> {t("workshop.outline.editOutline")}
+              </button>
+              <WorkshopExportMenu workshop={workshop} />
+            </div>
           )}
         </div>
         {editing ? (
