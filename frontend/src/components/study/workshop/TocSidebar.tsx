@@ -78,12 +78,12 @@ export function TocSidebar({
                   href={`#${h.slug}`}
                   onClick={(e) => handleClick(e, h.slug)}
                   className={`
-                    block py-1 px-3 text-xs leading-snug transition-colors border-l-2 -ml-px
+                    block py-1 px-3 text-xs leading-snug transition-colors border-l-2 -ml-px rounded-r-md
                     ${h.level === 3 ? "pl-6" : ""}
                     ${
                       active
-                        ? "border-[#a855f7] text-[#a855f7] dark:text-[#ddb7ff] font-semibold"
-                        : "border-transparent text-ink-muted hover:text-[#a855f7] dark:hover:text-[#ddb7ff]"
+                        ? "border-[#a855f7] text-[#a855f7] dark:text-[#ddb7ff] font-semibold bg-[#a855f7]/10"
+                        : "border-transparent text-ink-muted hover:text-[#a855f7] dark:hover:text-[#ddb7ff] hover:border-[#a855f7]/40 hover:bg-[#a855f7]/5"
                     }
                   `}
                 >

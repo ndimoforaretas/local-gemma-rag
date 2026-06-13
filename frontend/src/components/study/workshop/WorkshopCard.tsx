@@ -23,23 +23,31 @@ export function WorkshopCard({
 
   return (
     <div
-      className="group relative p-5 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23] hover:border-[#a855f7]/50 transition-colors"
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      className="group relative p-5 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23] hover:border-[#a855f7]/50 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#a855f7]/60"
     >
       <button
         type="button"
-        onClick={onDelete}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
         aria-label={t("workshop.card.deleteAria")}
         title={t("workshop.card.deleteAria")}
-        className="absolute top-3 right-3 p-1.5 rounded-lg text-ink-muted hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+        className="absolute top-3 right-3 z-10 p-1.5 rounded-lg text-ink-muted hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
       >
         <Trash2 size={14} />
       </button>
 
-      <button
-        type="button"
-        onClick={onOpen}
-        className="text-left w-full"
-      >
+      <div>
         <div className="flex items-center gap-2 mb-2">
           <span className="text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-[#a855f7]/15 text-[#a855f7] dark:text-[#ddb7ff]">
             {t(`difficulty.${item.difficulty}`)}
@@ -67,7 +75,7 @@ export function WorkshopCard({
             style={{ width: `${pct}%` }}
           />
         </div>
-      </button>
+      </div>
     </div>
   );
 }
