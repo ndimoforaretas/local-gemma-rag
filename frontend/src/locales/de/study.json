@@ -291,7 +291,10 @@
       "regenMessage": "Der aktuelle Text wird durch eine neu generierte Version ersetzt. Dein Abschluss-Status bleibt erhalten.",
       "regenConfirm": "Neu generieren",
       "regenCancel": "Aktuelle behalten",
-      "regenFailed": "Neu generieren fehlgeschlagen — die vorherige Version wurde behalten."
+      "regenFailed": "Neu generieren fehlgeschlagen — die vorherige Version wurde behalten.",
+      "copyCode": "Kopieren",
+      "copied": "Kopiert",
+      "copyFailed": "Fehler"
     },
     "toc": {
       "onThisPage": "Auf dieser Seite"

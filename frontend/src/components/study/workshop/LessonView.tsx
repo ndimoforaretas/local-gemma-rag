@@ -20,6 +20,7 @@ import type { LessonContent } from "./types";
 import { LessonActions } from "./LessonActions";
 import { TocSidebar } from "./TocSidebar";
 import { parseTocHeadings } from "./tocHelpers";
+import { enhanceCodeBlocks } from "../../../lib/enhanceCodeBlocks";
 
 export function LessonView({
   lesson,
@@ -65,6 +66,16 @@ export function LessonView({
       if (h) el.id = h.slug;
     });
   }, [articleEl, html, headings]);
+
+  // Syntax-highlight code blocks and add copy buttons (highlight.js lazy-loaded).
+  useEffect(() => {
+    if (!articleEl) return;
+    void enhanceCodeBlocks(articleEl, {
+      copy: t("workshop.lesson.copyCode"),
+      copied: t("workshop.lesson.copied"),
+      failed: t("workshop.lesson.copyFailed"),
+    });
+  }, [articleEl, html, t]);
 
   return (
     <div className="space-y-6">

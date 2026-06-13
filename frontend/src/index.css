@@ -468,3 +468,113 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Enhanced code blocks (syntax highlight + copy button) ──
+   The code surface is a consistent dark panel in BOTH themes (prose renders
+   `pre` dark anyway), so one vibrant token palette serves light + dark. */
+
+.code-block {
+  position: relative;
+  padding-top: 2.5rem !important; /* room for the language label / copy button */
+  background: #0d1117 !important;
+  border: 1px solid #2a2f3a !important;
+  color: #e6e9ef;
+}
+
+.code-block code,
+.code-block code.hljs {
+  color: #e6e9ef;
+  background: transparent;
+}
+
+.code-block-bar {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.code-lang {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8b93a7;
+  user-select: none;
+}
+
+.code-copy-btn {
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.3rem 0.55rem;
+  border-radius: 0.45rem;
+  border: 1px solid #424754;
+  background: rgba(25, 27, 35, 0.85);
+  color: #c2c6d6;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.code-copy-btn:hover {
+  border-color: color-mix(in srgb, #a855f7 60%, transparent);
+  color: #ddb7ff;
+}
+
+.code-copy-btn.is-copied {
+  border-color: #34d399;
+  color: #34d399;
+}
+
+/* Compact highlight.js token theme (vibrant — for the dark code surface). */
+.code-block .hljs-comment,
+.code-block .hljs-quote {
+  color: #8b93a7;
+  font-style: italic;
+}
+.code-block .hljs-keyword,
+.code-block .hljs-selector-tag,
+.code-block .hljs-section,
+.code-block .hljs-doctag,
+.code-block .hljs-name {
+  color: #d8b4fe;
+  font-weight: 600;
+}
+.code-block .hljs-string,
+.code-block .hljs-regexp,
+.code-block .hljs-addition,
+.code-block .hljs-attribute,
+.code-block .hljs-meta .hljs-string {
+  color: #6ee7b7;
+}
+.code-block .hljs-number,
+.code-block .hljs-built_in,
+.code-block .hljs-literal,
+.code-block .hljs-type,
+.code-block .hljs-params,
+.code-block .hljs-template-variable {
+  color: #fcd34d;
+}
+.code-block .hljs-title,
+.code-block .hljs-title.function_,
+.code-block .hljs-attr,
+.code-block .hljs-variable,
+.code-block .hljs-selector-id,
+.code-block .hljs-selector-class {
+  color: #7dd3fc;
+}
+.code-block .hljs-symbol,
+.code-block .hljs-bullet,
+.code-block .hljs-link,
+.code-block .hljs-meta,
+.code-block .hljs-deletion {
+  color: #fda4af;
+}
+.code-block .hljs-emphasis {
+  font-style: italic;
+}
+.code-block .hljs-strong {
+  font-weight: 700;
+}

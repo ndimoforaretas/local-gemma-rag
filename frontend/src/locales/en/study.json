@@ -291,7 +291,10 @@
       "regenMessage": "The current text will be replaced with a freshly generated version. Your completion status is kept.",
       "regenConfirm": "Regenerate",
       "regenCancel": "Keep current",
-      "regenFailed": "Regeneration failed — the previous version was kept."
+      "regenFailed": "Regeneration failed — the previous version was kept.",
+      "copyCode": "Copy",
+      "copied": "Copied",
+      "copyFailed": "Failed"
     },
     "toc": {
       "onThisPage": "On this page"
