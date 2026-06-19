@@ -33,14 +33,6 @@ function dateStamp(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) =>
-    (
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }) as Record<string, string>
-    )[c] ?? c,
-  );
-}
-
 // ── Markdown ────────────────────────────────────────────────────────────────
 
 export function buildMarkdown(
@@ -82,78 +74,80 @@ export async function downloadMarkdown(
   });
 }
 
-// ── PDF (via browser print) ────────────────────────────────────────────────
+// ── PDF (real file, via jsPDF) ──────────────────────────────────────────────
+//
+// We generate and download an actual .pdf rather than relying on the browser's
+// print engine (the old hidden-iframe `print()` was unreliable across browsers).
+// jsPDF is loaded lazily so it stays out of the initial bundle.
 
-const PRINT_STYLES = `
-  body { font: 14px/1.55 system-ui, -apple-system, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 24px; color: #111; }
-  h1 { font-size: 26px; margin: 0 0 4px; }
-  .subtitle { color: #666; font-size: 12px; margin-bottom: 28px; }
-  .q { margin-bottom: 22px; page-break-inside: avoid; }
-  .q h2 { font-size: 15px; margin: 0 0 10px; font-weight: 600; }
-  ul { margin: 0; padding: 0; list-style: none; }
-  li { margin: 5px 0; padding-left: 24px; position: relative; }
-  li::before { content: "☐"; position: absolute; left: 0; }
-  li.correct::before { content: "☑"; color: #15803d; }
-  li.correct { font-weight: 600; color: #15803d; }
-  .why { margin-top: 8px; padding: 8px 12px; background: #faf5ff; border-left: 3px solid #a855f7; font-size: 13px; }
-  @media print { body { margin: 0; } }
-`;
-
-export function buildPrintableHTML(
+export async function downloadPdf(
   questions: QuizQuestion[],
   content: ExportContent,
-): string {
-  const renderQ = (q: QuizQuestion, i: number) => {
-    const opts = q.options
-      .map((opt, idx) => {
-        const isCorrect = idx === q.correct_index;
-        const cls = content !== "questions" && isCorrect ? "correct" : "";
-        return `<li class="${cls}">${escapeHtml(opt)}</li>`;
-      })
-      .join("");
-    const why =
-      content === "explanations" && q.explanation
-        ? `<div class="why"><strong>Why:</strong> ${escapeHtml(q.explanation)}</div>`
-        : "";
-    return `<div class="q"><h2>${i + 1}. ${escapeHtml(q.question)}</h2><ul>${opts}</ul>${why}</div>`;
+): Promise<void> {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+
+  const MARGIN = 48;
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const maxW = pageW - MARGIN * 2;
+  let y = MARGIN;
+
+  const ensure = (space: number) => {
+    if (y + space > pageH - MARGIN) {
+      doc.addPage();
+      y = MARGIN;
+    }
   };
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Quiz</title><style>${PRINT_STYLES}</style></head><body><h1>Quiz</h1><div class="subtitle">Exported on ${todayLabel()}</div>${questions.map(renderQ).join("")}</body></html>`;
-}
 
-export function printAsPdf(
-  questions: QuizQuestion[],
-  content: ExportContent,
-): void {
-  const html = buildPrintableHTML(questions, content);
-  // Hidden iframe avoids popup blockers and keeps the SPA state intact.
-  const iframe = document.createElement("iframe");
-  iframe.setAttribute("aria-hidden", "true");
-  Object.assign(iframe.style, {
-    position: "fixed",
-    right: "0",
-    bottom: "0",
-    width: "0",
-    height: "0",
-    border: "0",
+  // `indent` shifts the left margin (used for options).
+  const write = (
+    str: string,
+    opts: { size: number; bold?: boolean; color?: [number, number, number]; indent?: number; gap?: number } = { size: 11 },
+  ) => {
+    const { size, bold = false, color = [17, 17, 17], indent = 0, gap = 4 } = opts;
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    doc.setFontSize(size);
+    doc.setTextColor(color[0], color[1], color[2]);
+    const lineH = size * 1.4;
+    const lines = doc.splitTextToSize(str, maxW - indent) as string[];
+    for (const line of lines) {
+      ensure(lineH);
+      doc.text(line, MARGIN + indent, y);
+      y += lineH;
+    }
+    y += gap;
+  };
+
+  // ── Header ──
+  write("Quiz", { size: 22, bold: true, gap: 2 });
+  write(`Exported on ${todayLabel()}`, { size: 9, color: [120, 120, 120], gap: 16 });
+
+  // ── Questions ──
+  const showAnswers = content !== "questions";
+  questions.forEach((q, i) => {
+    ensure(40);
+    write(`${i + 1}. ${q.question}`, { size: 12, bold: true, gap: 6 });
+    q.options.forEach((opt, idx) => {
+      const correct = showAnswers && idx === q.correct_index;
+      write(`${correct ? "[x]" : "[ ]"}  ${opt}${correct ? "   (correct)" : ""}`, {
+        size: 10,
+        bold: correct,
+        color: correct ? [21, 128, 61] : [40, 40, 40],
+        indent: 16,
+        gap: 2,
+      });
+    });
+    if (content === "explanations" && q.explanation) {
+      write(`Why: ${q.explanation}`, {
+        size: 9.5,
+        color: [124, 58, 237],
+        indent: 16,
+        gap: 4,
+      });
+    }
+    y += 10; // space between questions
   });
-  document.body.appendChild(iframe);
 
-  const cw = iframe.contentWindow;
-  if (!cw) {
-    document.body.removeChild(iframe);
-    return;
-  }
-  cw.document.open();
-  cw.document.write(html);
-  cw.document.close();
-
-  // Give the iframe a tick to render fonts/styles before printing.
-  iframe.onload = () => {
-    cw.focus();
-    cw.print();
-    // Most browsers fire print() synchronously; clean up after a delay.
-    setTimeout(() => {
-      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-    }, 1500);
-  };
+  doc.save(`quiz-${dateStamp()}.pdf`);
 }

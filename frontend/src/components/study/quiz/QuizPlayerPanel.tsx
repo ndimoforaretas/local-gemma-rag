@@ -4,6 +4,8 @@
  */
 
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
+import { Timer } from "lucide-react";
 import { QuizOption } from "./QuizOption";
 import type { QuizQuestion } from "./types";
 
@@ -13,9 +15,18 @@ export interface QuizPlayerPanelProps {
   total: number;
   selected: number | null;
   revealed: boolean;
+  /** Milliseconds remaining on the timer; null/omitted = untimed. */
+  remainingMs?: number | null;
   onPick: (i: number) => void;
   onSubmit: () => void;
   onNext: () => void;
+}
+
+function formatMMSS(ms: number): string {
+  const total = Math.ceil(ms / 1000);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 export function QuizPlayerPanel({
@@ -24,15 +35,35 @@ export function QuizPlayerPanel({
   total,
   selected,
   revealed,
+  remainingMs = null,
   onPick,
   onSubmit,
   onNext,
 }: QuizPlayerPanelProps) {
+  const { t } = useTranslation("study");
   const progressPct = ((current + (revealed ? 1 : 0)) / total) * 100;
+  const urgent = remainingMs != null && remainingMs <= 60_000;
 
   return (
     <div className="space-y-5">
-      <ProgressBar current={current + 1} total={total} pct={progressPct} />
+      {remainingMs != null && (
+        <div className="flex justify-end">
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold tabular-nums ${
+              urgent
+                ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 animate-pulse"
+                : "bg-[#a855f7]/15 text-[#a855f7] dark:text-[#ddb7ff]"
+            }`}
+          >
+            <Timer size={14} /> {formatMMSS(remainingMs)}
+          </span>
+        </div>
+      )}
+
+      <ProgressBar
+        label={t("quiz.play.questionOf", { current: current + 1, total })}
+        pct={progressPct}
+      />
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -43,7 +74,7 @@ export function QuizPlayerPanel({
           transition={{ duration: 0.18 }}
           className="p-5 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23]"
         >
-          <h2 className="text-lg font-semibold mb-4 text-[#191c1e] dark:text-[#e1e2ec]">
+          <h2 className="text-lg font-semibold mb-4 text-ink-strong">
             {question.question}
           </h2>
 
@@ -64,9 +95,9 @@ export function QuizPlayerPanel({
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
-              className="mt-4 p-3 rounded-xl bg-[#a855f7]/5 border border-[#a855f7]/20 text-sm text-[#424754] dark:text-[#c2c6d6]"
+              className="mt-4 p-3 rounded-xl bg-[#a855f7]/5 border border-[#a855f7]/20 text-sm text-ink-muted"
             >
-              <span className="font-semibold text-[#a855f7]">Why: </span>
+              <span className="font-semibold text-[#a855f7]">{t("quiz.play.why")} </span>
               {question.explanation}
             </motion.div>
           )}
@@ -81,7 +112,7 @@ export function QuizPlayerPanel({
             disabled={selected === null}
             className="px-5 py-2.5 rounded-xl bg-[#a855f7] hover:bg-[#9333ea] disabled:bg-[#a855f7]/40 disabled:cursor-not-allowed text-white font-medium transition-colors"
           >
-            Submit answer
+            {t("quiz.play.submitAnswer")}
           </button>
         ) : (
           <button
@@ -89,7 +120,7 @@ export function QuizPlayerPanel({
             onClick={onNext}
             className="px-5 py-2.5 rounded-xl bg-[#a855f7] hover:bg-[#9333ea] text-white font-medium transition-colors"
           >
-            {current + 1 < total ? "Next question" : "See results"}
+            {current + 1 < total ? t("quiz.play.nextQuestion") : t("quiz.play.seeResults")}
           </button>
         )}
       </div>
@@ -97,21 +128,11 @@ export function QuizPlayerPanel({
   );
 }
 
-function ProgressBar({
-  current,
-  total,
-  pct,
-}: {
-  current: number;
-  total: number;
-  pct: number;
-}) {
+function ProgressBar({ label, pct }: { label: string; pct: number }) {
   return (
     <div>
-      <div className="flex items-center justify-between text-xs mb-1 text-[#727785] dark:text-[#8c909f]">
-        <span>
-          Question {current} of {total}
-        </span>
+      <div className="flex items-center justify-between text-xs mb-1 text-ink-muted">
+        <span>{label}</span>
         <span>{Math.round(pct)}%</span>
       </div>
       <div className="h-1.5 bg-[#c2c6d6]/40 dark:bg-[#424754]/40 rounded-full overflow-hidden">

@@ -3,6 +3,7 @@
  */
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Plus, Network, Loader2 } from "lucide-react";
 import { ConfirmationModal } from "../../ConfirmationModal";
 import type { MindmapListItem } from "./types";
@@ -22,24 +23,27 @@ export function MindmapsList({
   onDelete: (id: number) => void;
 }) {
   const [pendingDelete, setPendingDelete] = useState<MindmapListItem | null>(null);
+  const { t } = useTranslation("study");
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h2 className="text-2xl sm:text-3xl font-bold text-[#191c1e] dark:text-white">
-          {items.length === 0 ? "Your mindmaps" : `Your mindmaps (${items.length})`}
+        <h2 className="text-2xl sm:text-3xl font-bold text-ink-strong">
+          {items.length === 0
+            ? t("mindmap.list.yourMindmaps")
+            : t("mindmap.list.yourMindmapsCount", { count: items.length })}
         </h2>
         <button
           type="button"
           onClick={onNew}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#a855f7] hover:bg-[#9333ea] text-white text-sm font-semibold shadow-lg shadow-[#a855f7]/20 transition-colors"
         >
-          <Plus size={14} /> New Mindmap
+          <Plus size={14} /> {t("mindmap.list.newMindmap")}
         </button>
       </div>
 
       {isLoading && (
-        <div className="flex items-center justify-center py-16 text-[#727785]">
+        <div className="flex items-center justify-center py-16 text-ink-muted">
           <Loader2 size={20} className="animate-spin" />
         </div>
       )}
@@ -49,16 +53,14 @@ export function MindmapsList({
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#a855f7]/15 text-[#a855f7] mb-5">
             <Network size={36} strokeWidth={2.2} />
           </div>
-          <h3 className="text-2xl font-bold text-[#191c1e] dark:text-white mb-3">
-            Map a concept
+          <h3 className="text-2xl font-bold text-ink-strong mb-3">
+            {t("mindmap.list.emptyTitle")}
           </h3>
-          <p className="text-base sm:text-lg text-[#424754] dark:text-[#e1e2ec] max-w-xl mx-auto mb-2 leading-relaxed">
-            Mindmaps render the central themes and sub-topics of your scoped
-            documents as an interactive radial diagram you can pan, zoom, and
-            export as Markdown, PNG, or PDF.
+          <p className="text-base sm:text-lg text-ink max-w-xl mx-auto mb-2 leading-relaxed">
+            {t("mindmap.list.emptyBody")}
           </p>
-          <p className="text-sm text-[#727785] dark:text-[#c2c6d6]">
-            Click <span className="font-semibold text-[#a855f7] dark:text-[#ddb7ff]">New Mindmap</span> above to get started.
+          <p className="text-sm text-ink-muted">
+            {t("mindmap.list.emptyHintPre")} <span className="font-semibold text-[#a855f7] dark:text-[#ddb7ff]">{t("mindmap.list.newMindmap")}</span> {t("mindmap.list.emptyHintPost")}
           </p>
         </div>
       )}
@@ -79,10 +81,10 @@ export function MindmapsList({
       {pendingDelete && (
         <ConfirmationModal
           isOpen
-          title="Delete this mindmap?"
-          message={`"${pendingDelete.title}" will be permanently removed.`}
-          confirmLabel="Delete"
-          cancelLabel="Keep"
+          title={t("mindmap.list.deleteTitle")}
+          message={t("mindmap.list.deleteMessage", { title: pendingDelete.title })}
+          confirmLabel={t("mindmap.list.delete")}
+          cancelLabel={t("mindmap.list.keep")}
           type="destructive"
           onConfirm={() => {
             onDelete(pendingDelete.id);

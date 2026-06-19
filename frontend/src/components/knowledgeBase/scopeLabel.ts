@@ -1,3 +1,4 @@
+import i18n from "../../i18n";
 import type { IndexedDocument } from "../../types/api";
 
 /**
@@ -36,5 +37,5 @@ export function computeScopeLabel(
     return fullCats[0];
   }
   if (filter.length === 1) return filter[0];
-  return `${filter.length} documents`;
+  return i18n.t("kb:scope.documents", { count: filter.length });
 }

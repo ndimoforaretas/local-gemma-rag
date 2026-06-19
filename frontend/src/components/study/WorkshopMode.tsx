@@ -6,6 +6,8 @@
  * All state + queries live in `useWorkshop`; this file is composition only.
  */
 
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Breadcrumbs, type Crumb } from "../Breadcrumbs";
 import { LessonView } from "./workshop/LessonView";
 import { useWorkshop } from "./workshop/useWorkshop";
@@ -17,7 +19,8 @@ import { WorkshopOutlineView } from "./workshop/WorkshopOutlineView";
 
 export function WorkshopMode({ onExit }: { onExit: () => void }) {
   const w = useWorkshop();
-  const crumbs = buildCrumbs(w, onExit);
+  const { t } = useTranslation("study");
+  const crumbs = buildCrumbs(w, onExit, t);
 
   return (
     <div className="h-full overflow-y-auto">
@@ -68,30 +71,56 @@ export function WorkshopMode({ onExit }: { onExit: () => void }) {
           />
         )}
 
-        {w.phase === "outline" && w.active.data && (
+        {w.phase === "outline" && w.rerollOutline.isPending && (
+          <WorkshopGeneratingCard mode="outline" />
+        )}
+
+        {w.phase === "outline" && !w.rerollOutline.isPending && w.active.data && (
           <WorkshopOutlineView
             workshop={w.active.data}
+            editing={w.editingOutline}
+            isSavingLessons={w.editLessons.isPending}
+            editError={w.editLessons.error?.message ?? null}
+            rerollFailed={w.rerollOutline.isError}
+            onStartEdit={() => w.setEditingOutline(true)}
+            onCancelEdit={() => {
+              w.setEditingOutline(false);
+              w.editLessons.reset();
+            }}
+            onSaveLessons={(lessons) =>
+              w.editLessons.mutate({ workshopId: w.activeWorkshopId!, lessons })
+            }
+            onReroll={() => w.rerollOutline.mutate(w.activeWorkshopId!)}
             onBack={w.backToList}
             onOpenLesson={w.openLesson}
             onStartQuiz={w.startQuiz}
           />
         )}
 
-        {w.phase === "lesson" && w.lesson.isPending && (
+        {w.phase === "lesson" && (w.lesson.isPending || w.regenerateLesson.isPending) && (
           <WorkshopGeneratingCard mode="lesson" />
         )}
 
-        {w.phase === "lesson" && !w.lesson.isPending && (
+        {w.phase === "lesson" && !w.lesson.isPending && !w.regenerateLesson.isPending && (
           <LessonView
             lesson={w.lesson.data}
             isLoading={false}
+            isError={w.lesson.isError}
+            onRetry={() => w.lesson.refetch()}
             isCompleted={
               w.active.data?.lessons[w.activeLessonIdx ?? 0]?.completed_at != null
             }
             isMarking={w.completeLesson.isPending}
+            regenerateFailed={w.regenerateLesson.isError}
             onBack={w.backToOutline}
             onMarkComplete={() =>
               w.completeLesson.mutate({
+                workshopId: w.activeWorkshopId!,
+                lessonIdx: w.activeLessonIdx!,
+              })
+            }
+            onRegenerate={() =>
+              w.regenerateLesson.mutate({
                 workshopId: w.activeWorkshopId!,
                 lessonIdx: w.activeLessonIdx!,
               })
@@ -115,18 +144,19 @@ export function WorkshopMode({ onExit }: { onExit: () => void }) {
 function buildCrumbs(
   w: ReturnType<typeof useWorkshop>,
   onExit: () => void,
+  t: TFunction,
 ): Crumb[] {
   const crumbs: Crumb[] = [
-    { label: "Study Hub", onClick: onExit },
+    { label: t("hub.title"), onClick: onExit },
     {
-      label: "Workshop Creator",
+      label: t("workshop.crumbs.creator"),
       // Final crumb is non-clickable; intermediate crumbs jump back to list.
       onClick: w.phase === "list" ? undefined : w.backToList,
     },
   ];
   switch (w.phase) {
     case "config":
-      crumbs.push({ label: "New Workshop" });
+      crumbs.push({ label: t("workshop.crumbs.newWorkshop") });
       break;
     case "outline":
       if (w.active.data) crumbs.push({ label: w.active.data.title });
@@ -141,7 +171,7 @@ function buildCrumbs(
     case "final_quiz":
       if (w.active.data) {
         crumbs.push({ label: w.active.data.title, onClick: w.backToOutline });
-        crumbs.push({ label: "Recap Quiz" });
+        crumbs.push({ label: t("workshop.crumbs.recapQuiz") });
       }
       break;
   }

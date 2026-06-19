@@ -20,5 +20,6 @@ export type {
   LessonContent,
 } from "../../../types/api";
 
-export const LESSON_COUNTS = [5, 10] as const;
+// Preset choices; the backend accepts any count from 3–15.
+export const LESSON_COUNTS = [3, 5, 8, 10, 15] as const;
 export type LessonCount = (typeof LESSON_COUNTS)[number];

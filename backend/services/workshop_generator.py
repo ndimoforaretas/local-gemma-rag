@@ -22,12 +22,14 @@ from __future__ import annotations
 import json
 import logging
 import re
+import threading
 from dataclasses import dataclass
 from typing import Literal, Optional
 
 import ollama
 
 from backend.config import get_settings
+from backend.services import prompt_loader
 from backend.services.vector_db import vector_db
 
 logger = logging.getLogger("cognivault.workshop")
@@ -35,8 +37,40 @@ logger = logging.getLogger("cognivault.workshop")
 Difficulty = Literal["beginner", "intermediate", "advanced"]
 
 _MAX_CHUNKS = 20             # outlines benefit from wider material than quizzes
+# The lesson pass uses far fewer chunks: ~20 chunks (≈24k chars) of context
+# overwhelms the model and triggers degenerate single-token (`#`) output. 8 is
+# ample grounding and generates reliably across lesson topics.
+_MAX_LESSON_CHUNKS = 8
 _MAX_CHUNK_CHARS = 1200
 _RETRIEVAL_PROBE = "key concepts, definitions, important facts, main ideas, examples"
+
+# A real lesson body is well over 1k chars (Intro/Core/Takeaways/Self-check).
+# These floors reject empty/heading-only/truncated generations so they're never
+# cached — and let us self-heal any garbage already in the DB.
+_MIN_LESSON_CHARS = 200
+_MIN_BODY_CHARS = 120
+
+# The local Ollama serializes poorly under concurrent generation (truncated /
+# garbage output). One in-flight generation at a time across the whole module
+# — prefetch and user-clicks queue rather than racing.
+_GENERATION_LOCK = threading.Lock()
+
+
+def is_substantive_lesson(text: Optional[str]) -> bool:
+    """
+    True if `text` is a real lesson body — not empty, a bare heading, or a
+    truncated stub. Used both to reject bad generations before caching and to
+    self-heal corrupt content already persisted (treat it as not-yet-generated).
+    """
+    if not text:
+        return False
+    text = text.strip()
+    if len(text) < _MIN_LESSON_CHARS:
+        return False
+    prose = "\n".join(
+        ln for ln in text.splitlines() if not ln.lstrip().startswith("#")
+    ).strip()
+    return len(prose) >= _MIN_BODY_CHARS
 
 
 @dataclass
@@ -95,20 +129,21 @@ def generate_outline(
                           "Output ONLY a single valid JSON object — no prose, no fences, "
                           "no trailing commas."
         )
-        try:
-            response = ollama.chat(
-                model=settings.llm_model,
-                messages=[{"role": "user", "content": retry_prompt}],
-                options={"thinking": False, "temperature": 0.3 if attempt else 0.4},
-                format="json",
-            )
-        except TypeError:
-            # Older ollama-python without `format` kwarg — fall back without it.
-            response = ollama.chat(
-                model=settings.llm_model,
-                messages=[{"role": "user", "content": retry_prompt}],
-                options={"thinking": False, "temperature": 0.3 if attempt else 0.4},
-            )
+        with _GENERATION_LOCK:
+            try:
+                response = ollama.chat(
+                    model=settings.llm_model,
+                    messages=[{"role": "user", "content": retry_prompt}],
+                    options={"thinking": False, "temperature": 0.3 if attempt else 0.4},
+                    format="json",
+                )
+            except TypeError:
+                # Older ollama-python without `format` kwarg — fall back without it.
+                response = ollama.chat(
+                    model=settings.llm_model,
+                    messages=[{"role": "user", "content": retry_prompt}],
+                    options={"thinking": False, "temperature": 0.3 if attempt else 0.4},
+                )
         raw = response["message"]["content"]
         parsed = _parse_outline(raw, num_lessons)
         if parsed is not None:
@@ -133,28 +168,12 @@ def _build_outline_prompt(
     for i, c in enumerate(chunks, 1):
         text = (c.get("content") or c.get("text") or "")[:_MAX_CHUNK_CHARS]
         context_blocks.append(f"[Source {i}: {c.get('source', 'unknown')}]\n{text}")
-    return (
-        "You design a structured workshop from study material. "
-        "Output ONLY a JSON object. No prose, no markdown fences.\n\n"
-        f"DIFFICULTY: {difficulty}. {_DIFF_NOTE[difficulty]}\n"
-        f"NUMBER OF LESSONS: EXACTLY {num_lessons}.\n\n"
-        "OUTPUT SCHEMA:\n"
-        "{\n"
-        '  "title": short engaging workshop title (string),\n'
-        '  "summary": 2-3 sentence overview of what the workshop covers,\n'
-        '  "key_points": array of 3-5 bullet strings — main topics covered,\n'
-        '  "objectives": array of 3-5 bullet strings — what the learner will be able to do after,\n'
-        f'  "lessons": array of EXACTLY {num_lessons} objects, each {{"title": str, "est_minutes": int 3-15}}\n'
-        "}\n\n"
-        "RULES:\n"
-        "- Ground every part in the source material below — do not invent topics.\n"
-        "- Lesson order should build progressively (foundations first, advanced last).\n"
-        "- Lesson titles should be concise and action/topic oriented.\n"
-        "- est_minutes is a realistic reading-time estimate for that lesson.\n"
-        f"- The lessons array MUST contain exactly {num_lessons} items.\n\n"
-        "SOURCE MATERIAL:\n"
-        + "\n\n".join(context_blocks)
-        + "\n\nNow emit the JSON object."
+    return prompt_loader.render(
+        "workshop_outline",
+        difficulty=difficulty,
+        diff_note=_DIFF_NOTE[difficulty],
+        num_lessons=num_lessons,
+        context="\n\n".join(context_blocks),
     )
 
 
@@ -237,14 +256,14 @@ def generate_lesson(
 
     chunks = vector_db.search(
         query=lesson_title,  # narrow probe — this lesson's topic
-        top_k=_MAX_CHUNKS,
+        top_k=_MAX_LESSON_CHUNKS,
         source_filter=source_filter,
     )
     if not chunks:
         # Re-probe broadly if the narrow probe missed everything.
         chunks = vector_db.search(
             query=_RETRIEVAL_PROBE,
-            top_k=_MAX_CHUNKS,
+            top_k=_MAX_LESSON_CHUNKS,
             source_filter=source_filter,
         )
 
@@ -260,16 +279,44 @@ def generate_lesson(
         chunks=chunks,
     )
     settings = get_settings()
-    response = ollama.chat(
-        model=settings.llm_model,
-        messages=[{"role": "user", "content": prompt}],
-        options={"thinking": False, "temperature": 0.5},
+
+    # Two attempts: the model occasionally emits degenerate output for a given
+    # prompt; a re-roll (nudged temperature) almost always recovers. Mirrors the
+    # outline pass. The lock serializes against concurrent generation, which can
+    # also degrade output on a single local Ollama.
+    for attempt in range(2):
+        with _GENERATION_LOCK:
+            response = ollama.chat(
+                model=settings.llm_model,
+                messages=[{"role": "user", "content": prompt}],
+                options={"thinking": False, "temperature": 0.5 if attempt == 0 else 0.65},
+            )
+        text = response["message"]["content"].strip()
+        # Strip any accidental <think> blocks, mirroring the chat fix.
+        text = re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE).strip()
+        text = _clean_lesson_content(text)
+        if is_substantive_lesson(text):
+            return text
+        logger.warning(
+            "Lesson %d non-substantive on attempt %d (len=%d); retrying",
+            lesson_idx, attempt + 1, len(text),
+        )
+
+    # Never cache empty/heading-only/truncated output — raise so the caller
+    # surfaces a retryable error instead of persisting garbage forever.
+    raise ValueError(
+        "The model returned incomplete lesson content after 2 attempts. "
+        "Please regenerate this lesson."
     )
-    text = response["message"]["content"].strip()
-    # Strip any accidental <think> blocks, mirroring the chat fix.
-    text = re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE).strip()
-    text = _clean_lesson_content(text)
-    return text or f"# {lesson_title}\n\n(The model returned no content. Try regenerating.)"
+
+
+_OUTRO_PATTERNS = [
+    r"\n\s*(?:\*\*|__)?If you (?:have|'d like)[^\n]*[\s\S]*$",
+    r"\n\s*(?:\*\*|__)?Let me know if[\s\S]*$",
+    r"\n\s*(?:\*\*|__)?Feel free to ask[\s\S]*$",
+    r"\n\s*(?:\*\*|__)?I hope this helps[\s\S]*$",
+    r"\n\s*(?:\*\*|__)?Hope this (?:helps|clarifies)[\s\S]*$",
+]
 
 
 def _clean_lesson_content(text: str) -> str:
@@ -280,7 +327,6 @@ def _clean_lesson_content(text: str) -> str:
       - Any prose before the first `#` heading (the lesson title).
       - Common closing patterns ("If you have a specific question…",
         "Let me know…", "Feel free to ask…", "I hope this helps…").
-      - Trailing "If you have questions about any of these topics…" blocks.
     """
     # Trim everything before the first Markdown heading line.
     lines = text.splitlines()
@@ -289,17 +335,17 @@ def _clean_lesson_content(text: str) -> str:
             text = "\n".join(lines[i:])
             break
 
-    # Strip common chat-outro patterns from the end. Matches on the start
-    # of a new paragraph so we don't accidentally chop mid-sentence.
-    outro_patterns = [
-        r"\n\s*(?:\*\*|__)?If you (?:have|'d like)[^\n]*[\s\S]*$",
-        r"\n\s*(?:\*\*|__)?Let me know if[\s\S]*$",
-        r"\n\s*(?:\*\*|__)?Feel free to ask[\s\S]*$",
-        r"\n\s*(?:\*\*|__)?I hope this helps[\s\S]*$",
-        r"\n\s*(?:\*\*|__)?Hope this (?:helps|clarifies)[\s\S]*$",
-    ]
-    for pat in outro_patterns:
-        text = re.sub(pat, "", text, flags=re.IGNORECASE)
+    # Strip the earliest chat-outro to end of text — but ONLY when a substantial
+    # lesson body precedes it. Otherwise the "outro" is the whole body of a
+    # degenerate response; gutting it here would mask the failure, so we leave it
+    # for is_substantive_lesson() to reject.
+    earliest = len(text)
+    for pat in _OUTRO_PATTERNS:
+        m = re.search(pat, text, flags=re.IGNORECASE)
+        if m:
+            earliest = min(earliest, m.start())
+    if earliest >= _MIN_LESSON_CHARS:
+        text = text[:earliest]
 
     return text.strip()
 
@@ -312,40 +358,19 @@ def _build_lesson_prompt(**kw) -> str:
     other_lessons = "\n".join(
         f"  {i + 1}. {t}" for i, t in enumerate(kw["all_lesson_titles"]) if i != kw["lesson_idx"]
     )
-    return (
-        "You write a single workshop lesson as well-structured Markdown. "
-        "Output ONLY the lesson body — no preamble, no acknowledgment of the source material, "
-        "no offers to clarify or answer follow-up questions, no <think> or XML tags, no JSON. "
-        "Your response MUST start with the exact heading line `# " + kw["lesson_title"] + "` "
-        "and nothing before it. Your response MUST end after the last Self-check question — "
-        "do NOT add 'If you have any questions…', 'Let me know…', 'Feel free to ask…', or "
-        "any other chat-style outro.\n\n"
-        f"WORKSHOP: {kw['workshop_title']}\n"
-        f"WORKSHOP SUMMARY: {kw['workshop_summary']}\n"
-        f"DIFFICULTY: {kw['difficulty']}. {_DIFF_NOTE[kw['difficulty']]}\n\n"
-        f"KEY POINTS:\n- " + "\n- ".join(kw["key_points"]) + "\n\n"
-        f"LEARNING OBJECTIVES:\n- " + "\n- ".join(kw["objectives"]) + "\n\n"
-        f"OTHER LESSONS IN THIS WORKSHOP (avoid duplicating their content):\n{other_lessons}\n\n"
-        f"YOUR LESSON ({kw['lesson_idx'] + 1} of {len(kw['all_lesson_titles'])}): "
-        f"{kw['lesson_title']}\n\n"
-        "STRUCTURE THIS LESSON AS:\n"
-        f"# {kw['lesson_title']}\n"
-        "## Introduction\n"
-        "(1-2 short paragraphs orienting the reader)\n\n"
-        "## Core content\n"
-        "(The body — multiple sections / subsections as needed, with examples and "
-        "code blocks where helpful)\n\n"
-        "## Key takeaways\n"
-        "(Bulleted list, 3-5 items)\n\n"
-        "## Self-check\n"
-        "(2-3 short reflective questions the reader can ponder — no answers given)\n\n"
-        "RULES:\n"
-        "- Ground every claim in the source material below.\n"
-        "- Stay tightly focused on YOUR lesson's title — leave other topics to other lessons.\n"
-        "- Use Markdown features: headings, bullets, **bold**, `inline code`, and ```fenced``` blocks.\n"
-        "- Aim for substantial but readable: roughly the est_minutes worth of content.\n\n"
-        "SOURCE MATERIAL:\n"
-        + "\n\n".join(context_blocks)
+    return prompt_loader.render(
+        "workshop_lesson",
+        lesson_title=kw["lesson_title"],
+        workshop_title=kw["workshop_title"],
+        workshop_summary=kw["workshop_summary"],
+        difficulty=kw["difficulty"],
+        diff_note=_DIFF_NOTE[kw["difficulty"]],
+        key_points="- " + "\n- ".join(kw["key_points"]),
+        objectives="- " + "\n- ".join(kw["objectives"]),
+        other_lessons=other_lessons,
+        lesson_number=kw["lesson_idx"] + 1,
+        total_lessons=len(kw["all_lesson_titles"]),
+        context="\n\n".join(context_blocks),
     )
 
 

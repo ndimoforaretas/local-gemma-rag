@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "../../../lib/api";
@@ -25,6 +26,7 @@ export function WorkshopFinalQuiz({
   workshop: Workshop;
   onBack: () => void;
 }) {
+  const { t } = useTranslation("study");
   const [phase, setPhase] = useState<Phase>("generating");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [current, setCurrent] = useState(0);
@@ -98,9 +100,9 @@ export function WorkshopFinalQuiz({
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-sm text-[#424754] dark:text-[#c2c6d6] hover:text-[#191c1e] dark:hover:text-white"
+        className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink-strong"
       >
-        <ArrowLeft size={14} /> Back to workshop outline
+        <ArrowLeft size={14} /> {t("workshop.finalQuiz.back")}
       </button>
 
       {phase === "generating" && <QuizGeneratingCard />}
@@ -125,7 +127,7 @@ export function WorkshopFinalQuiz({
           correctCount={correctCount}
           finalScore={finalScore}
           newlyEarned={newlyEarned}
-          onRetry={onBack}
+          exitLabel={t("workshop.finalQuiz.backToWorkshop")}
           onExit={onBack}
         />
       )}

@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import { Sidebar, type AppView } from "./components/Sidebar";
+import { ChatChromeProvider } from "./components/ChatChromeContext";
 import {
   isActiveStudyMode,
   type ActiveStudyMode,
@@ -23,6 +24,12 @@ const ProgressDashboard = lazy(() =>
     default: m.ProgressDashboard,
   })),
 );
+const Help = lazy(() =>
+  import("./components/Help").then((m) => ({ default: m.Help })),
+);
+const Home = lazy(() =>
+  import("./components/Home").then((m) => ({ default: m.Home })),
+);
 
 function ViewLoader() {
   return (
@@ -36,22 +43,24 @@ const VIEW_STORAGE_KEY = "cognivault.activeView";
 const STUDY_MODE_STORAGE_KEY = "cognivault.studyMode";
 
 function readSavedView(): AppView {
-  // Restore last view across browser refreshes so the user lands where they were
-  // (chat / knowledge base / study hub) rather than always snapping back to chat.
-  if (typeof window === "undefined" || !window.localStorage) return "chat";
+  // Restore last view across browser refreshes so the user lands where they were.
+  // First-time users (no saved view) land on Home.
+  if (typeof window === "undefined" || !window.localStorage) return "home";
   try {
     const saved = localStorage.getItem(VIEW_STORAGE_KEY);
     if (
+      saved === "home" ||
       saved === "chat" ||
       saved === "sync" ||
       saved === "study" ||
-      saved === "dashboard"
+      saved === "dashboard" ||
+      saved === "help"
     )
       return saved;
   } catch {
     // ignore
   }
-  return "chat";
+  return "home";
 }
 
 function readSavedStudyMode(): ActiveStudyMode {
@@ -112,6 +121,7 @@ function App() {
 
   return (
     <div className="flex w-full h-screen overflow-hidden bg-[#f7f9fb] dark:bg-[#10131a] text-[#191c1e] dark:text-[#e1e2ec] transition-colors duration-300">
+      <ChatChromeProvider>
       <div className="flex w-full h-full relative z-10 overflow-hidden">
         <Sidebar
           activeView={activeView}
@@ -123,16 +133,21 @@ function App() {
         <main className="flex-1 flex flex-col relative bg-[#f7f9fb] dark:bg-[#10131a] transition-colors duration-300">
           <div className="flex-1 overflow-hidden relative">
             <Suspense fallback={<ViewLoader />}>
-              {activeView === "chat" && <KnowledgeBase />}
+              {activeView === "home" && <Home onNavigate={handleNavigate} />}
+              {activeView === "chat" && (
+                <KnowledgeBase onOpenHelp={() => handleNavigate("help")} />
+              )}
               {activeView === "sync" && <KnowledgeSync />}
               {activeView === "study" && (
                 <StudyHub mode={studyMode} onChangeMode={setStudyMode} />
               )}
               {activeView === "dashboard" && <ProgressDashboard />}
+              {activeView === "help" && <Help />}
             </Suspense>
           </div>
         </main>
       </div>
+      </ChatChromeProvider>
     </div>
   );
 }

@@ -4,37 +4,33 @@
  * Pure presentational — parent owns the data, this just lays out the cards.
  */
 
-import { Clock, Layers, Flame } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Clock, Layers } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ProgressSummary } from "../../types/api";
 import { formatDuration } from "./dashboardHelpers";
+import { StreakCard } from "./StreakCard";
 
 export function SummaryCards({ data }: { data: ProgressSummary }) {
+  const { t } = useTranslation("dashboard");
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <StatCard
         icon={Clock}
-        label="Total study time"
+        label={t("summary.totalTime")}
         value={formatDuration(data.total_seconds)}
         accent="text-[#a855f7]"
       />
       <StatCard
         icon={Layers}
-        label="Study sessions"
+        label={t("summary.sessions")}
         value={String(data.total_sessions)}
-        sublabel={`${data.total_messages} messages sent`}
+        sublabel={t("summary.messagesSent", { count: data.total_messages })}
         accent="text-emerald-500"
       />
-      <StatCard
-        icon={Flame}
-        label="Current streak"
-        value={
-          data.current_streak_days > 0
-            ? `${data.current_streak_days} day${data.current_streak_days === 1 ? "" : "s"}`
-            : "—"
-        }
-        sublabel={data.current_streak_days > 0 ? "Keep it going!" : "Study today to start a streak"}
-        accent="text-amber-500"
+      <StreakCard
+        current={data.current_streak_days}
+        best={data.longest_streak_days}
       />
     </div>
   );
@@ -54,21 +50,17 @@ function StatCard({
   accent: string;
 }) {
   return (
-    <div className="p-5 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23]">
+    <div className="p-6 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23]">
       <div className="flex items-center gap-2 mb-3">
         <Icon size={18} className={accent} />
-        <span className="text-xs font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
+        <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
           {label}
         </span>
       </div>
-      <div className="text-3xl font-bold text-[#191c1e] dark:text-white tabular-nums">
+      <div className="text-3xl font-bold text-ink-strong tabular-nums">
         {value}
       </div>
-      {sublabel && (
-        <p className="text-xs text-[#727785] dark:text-[#8c909f] mt-1">
-          {sublabel}
-        </p>
-      )}
+      {sublabel && <p className="text-sm text-ink-muted mt-1.5">{sublabel}</p>}
     </div>
   );
 }

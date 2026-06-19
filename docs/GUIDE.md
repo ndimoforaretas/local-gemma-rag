@@ -1,6 +1,6 @@
 # Gemma CogniVault — User Guide
 
-> Your fully local AI study companion. This guide is pre-loaded into the knowledge base and powers the starter cards on a new chat.
+> Your fully local, private AI companion for your documents. This guide is pre-loaded into the knowledge base and powers the in-app **Help** section.
 
 ---
 
@@ -21,7 +21,7 @@
 
 ## 1. What CogniVault Does
 
-CogniVault is a **100% local, privacy-first AI study app**. Nothing leaves your machine — no API keys, no cloud calls, no usage fees.
+CogniVault is a **100% local, privacy-first AI document companion**. Nothing leaves your machine — no API keys, no cloud calls, no usage fees. Whether you're a researcher, lawyer, doctor, teacher, or student, it works the same way: bring your own documents and put them to work.
 
 It does four things well:
 
@@ -36,18 +36,24 @@ Under the hood: Ollama + Gemma 4 (LLM), `embeddinggemma` (embeddings), FAISS + B
 
 ## 2. The Interface
 
-The left sidebar has **four top-level sections**. The active section is highlighted in purple.
+The left sidebar has **six top-level sections**. The active section is highlighted in purple.
 
 | Section | What it does |
 |---|---|
+| **Home** | Your landing screen — a welcome plus clickable cards that jump into each section. |
 | **Chat** | Conversational interface — ask anything about your documents. |
 | **Knowledge Base** | Upload, categorise, and delete documents. |
 | **Study Hub** | Generate quizzes, workshops, flashcards, mindmaps. |
 | **Dashboard** | See your study time, achievements, and daily activity heatmap. |
+| **Help** | A guided FAQ — click any question to see the answer inline (no typing needed). |
 
 Your current section persists across browser refreshes. Refresh inside Quiz Mode and you land back in Quiz Mode.
 
+**Collapse the sidebar** with the toggle next to the app name to shrink it to a slim icon rail (hover any icon for its label) — handy for giving the chat or a mindmap more width. Your collapsed/expanded choice is remembered.
+
 Inside the Study Hub, **breadcrumbs** at the top show your exact location (e.g. *Study Hub › Workshop Creator › Python Fundamentals › Lesson 2*). Every crumb except the current one is clickable to jump back to that level.
+
+At the bottom of the sidebar, a **theme toggle** switches between light and dark mode (your choice persists). The whole interface is tuned for readability — large, high-contrast text so it's comfortable for extended reading and accessible to low-vision users.
 
 ---
 
@@ -78,7 +84,7 @@ Click the **filter pill** ("All documents ▾") just above the composer. Pick a 
 
 - The active scope is **stamped on the user message** as a purple badge so you can see what was active when you asked.
 - The pill clears after sending so the next message uses the full KB unless you re-scope.
-- This scope also drives the **starter suggestion cards** on a new chat — anything clicked from the empty state is automatically scoped to this guide.
+- The same guide-scoping powers the **Help** section — clicking any question there answers it from this guide without touching your own documents.
 
 ### Sources sidebar
 
@@ -91,7 +97,11 @@ The right panel shows **every chunk** the AI cited in its last answer. Each entr
 
 ### Chat history
 
-The clock icon (top right) toggles the history sidebar. Every conversation is saved automatically; click any session to resume it. Use the trash icon to delete a session.
+Use **New Chat** and **Browse Past Sessions** in the left sidebar (under the app name, shown while you're in Chat) to start a fresh conversation or toggle the history panel. Every conversation is saved automatically; click any session to resume it, or use the trash icon to delete one.
+
+**Memory survives restarts.** The AI's working memory of a conversation is rebuilt from your saved history the first time you message a chat after restarting the app — so it still remembers earlier turns in that chat. (Each chat stays independent; there's no cross-chat memory.)
+
+**Working-memory meter.** Above the message box, a slim **Working memory** bar shows how much of the current chat the AI is actively holding in context (roughly the last ~8,000 words). It fills as the conversation grows and turns amber as it gets near the limit. Once a chat is long enough that the **oldest** messages start dropping out of context, the bar turns red with a note — that's your cue to **start a new chat** if you need the AI to remember everything. (Power users: the budget is `max_history_chars` in the backend settings.)
 
 ### Editing and regenerating
 
@@ -151,13 +161,21 @@ All modes share three rules:
 
 ### 5.1 Quiz Mode
 
-Generates a quiz from your scoped documents.
+Generates a quiz from your scoped documents — and **saves every quiz** so you can retake it later.
 
-**Configuration:** difficulty (Beginner / Intermediate / Advanced) · count (5 / 10 / 20) · question types (Multiple Choice / True-False, multi-select).
+**Quiz library (landing):** Quiz Mode opens to a grid of your saved quizzes. Click any one to **replay** it, use the trash icon to delete it, or hit **New Quiz** to generate a fresh one. (Each quiz you generate is saved here automatically.)
 
-**Player:** one question at a time. Click an option, hit **Submit answer** for instant feedback (correct/incorrect + explanation), then **Next question**. Final screen shows score + per-question recap.
+**Configuration:** difficulty (Beginner / Intermediate / Advanced) · count (5 / 10 / 20) · **mode** (Practice / Exam) · question types (Multiple Choice / True-False, multi-select) · **time limit** (None / 5 / 10 / 20 min).
 
-**Resume on refresh:** if you refresh mid-quiz, a purple banner offers to resume from where you left off. Saved for 24 hours.
+**Practice vs Exam:**
+- **Practice** — instant feedback. Submit each answer to see right/wrong and the explanation immediately, then move on. Best for learning.
+- **Exam** — deferred feedback. Answers stay hidden until you submit the whole paper. You can jump between questions freely, change any answer, and **flag** tricky ones to revisit. A question **navigator** grid shows at a glance what's answered, blank, or flagged. Best for self-testing under realistic conditions.
+
+**Timed quizzes:** pick a time limit to race the clock — a countdown shows at the top of the player (it turns red in the final minute), and the quiz **auto-submits** when time runs out. The timer is for a single sitting; leaving and resuming a quiz continues it untimed.
+
+**Player:** Practice shows one question at a time — click an option, hit **Submit answer** for instant feedback, then **Next question**. Exam lets you move back and forth with **Back / Next** and the navigator, then **Submit exam** when you're ready. Both end on a score + per-question recap.
+
+**Leave & resume:** you can stop a quiz halfway and come back to it anytime. Your progress (answers + position) is saved automatically; the quiz shows an amber **"In progress · X/N answered · Resume"** badge in the library, and clicking it drops you right back where you left off. This survives app restarts and works across devices (it's saved on the backend, not just your browser).
 
 **Export the finished quiz:** Markdown or PDF. Three content levels — *questions only* · *with answers* · *with answers & explanations*.
 
@@ -196,17 +214,21 @@ Scrollable decks of flip-cards for spaced review.
 
 ### 5.4 Mindmaps
 
-Radial concept maps of your scoped material.
+Concept maps of your scoped material, rendered as a clean top-down diagram.
 
 **Configuration:** just scope. Depth is fixed at 2 (root → themes → sub-topics).
 
-**The map:** central root pill (purple-pink gradient), 4–6 themed branches around it, 2–4 sub-topics fanning out from each theme. **Drag** to pan, **scroll** to zoom (0.4× → 2.5×).
+**The map:** an interactive node graph of your root → 4–6 themes → 2–4 sub-topics each, themed to match light/dark mode. **Drag the background** to pan, **scroll** to zoom, or use the on-canvas controls.
 
-**Export buttons** in the header:
+**Rearrange it.** **Drag any node** to move it — your arrangement is **saved automatically** and restored next time you open the map. Hit **Reset layout** (top-right of the toolbar) to snap back to the automatic layout.
+
+**Layout selector.** A small control switches the automatic layout between **Left-right** (default — best for wordy nodes) and **Top-down**. Switching direction re-runs the auto layout (and clears any manual drags). Your choice is saved per-map.
+
+**Export buttons** (top-right of the canvas):
 
 - **Markdown** — nested bulleted list. Opens a native Save As dialog (Chromium-based browsers).
-- **Image (PNG)** — rasterised at 2400 px wide on a dark background. Same Save As dialog.
-- **PDF** — opens the browser print dialog with the rendered image pre-filled.
+- **Image (PNG)** — the whole map rendered crisply (2× pixel density) on a solid background. Same Save As dialog.
+- **PDF** — the map embedded in a one-page PDF, downloaded directly.
 
 **Badges:** 🗺️ Mind Mapper · 📐 Cartographer (first export) · 🌐 Concept Network (5 mindmaps).
 
@@ -214,23 +236,37 @@ Radial concept maps of your scoped material.
 
 ## 6. Progress Dashboard
 
-A standalone view (4th sidebar item) that visualises everything you've done.
+A standalone view (4th sidebar item) that visualises everything you've done. Brand new? It shows a friendly **getting-started** card pointing you to Chat, the Study Hub, and Achievements — the full dashboard appears automatically once you send your first message.
 
-### Summary cards (top)
+The dashboard reads top to bottom:
+
+### Summary cards
 
 | Card | Shows |
 |---|---|
-| **Total study time** | Cumulative seconds across chat + quizzes + workshops + flashcards |
-| **Sessions** | How many distinct study sessions, plus total messages sent |
-| **Current streak** | Consecutive days with any study activity |
+| **Total study time** | Cumulative time across chat + all Study Hub modes |
+| **Study sessions** | Distinct sessions, plus total messages sent |
+| **Current streak** | Consecutive active days. A flame **pulses** while the streak is live, your **personal-best** streak sits underneath, and a "Best" badge celebrates when your current run ties or beats your record. |
 
-### Achievements strip (middle)
+### Study time (trend)
 
-Horizontally scrollable row of every badge. Earned badges show in full colour; locked badges are dimmed with a lock overlay. Hover any badge to see the description and (for earned ones) the date you unlocked it.
+A bar chart of your **weekly study minutes** over the last ~12 weeks — see your momentum at a glance.
 
-### Activity heatmap (bottom)
+### Study Hub activity
 
-GitHub-style grid of the last **90 days** — 7 rows (Mon → Sun), 13 columns (one per week). Each cell is colour-coded by that day's total study duration:
+Four cards summarising what you've created: **Quizzes** (count + average score), **Workshops** (created + completed), **Flashcards** (decks + mastered), **Mindmaps** (created + exports). Hidden until you've made at least one artefact.
+
+### Almost there
+
+Your **closest in-progress badges** (up to 3), each with a mini progress bar — a nudge toward your next unlock. Click one to open its details. Hidden when nothing is in progress.
+
+### Achievements
+
+A responsive **grid** of all 25 badges (earned ones first). Earned badges have an **emerald border + check mark**; locked ones are dimmed with a lock. **Click any badge** to open a detail panel showing what it is, a **progress bar** toward the target (e.g. 7/10 quizzes), the date you earned it, and the **next level** in that family — click the next level to jump straight to it. (Full badge list in §7.)
+
+### Activity heatmap
+
+GitHub-style grid of the last **90 days** — 7 rows (Mon → Sun) by week columns, with **month labels** across the top. Each cell is colour-coded by that day's total study duration:
 
 | Cell | Duration |
 |---|---|
@@ -240,13 +276,13 @@ GitHub-style grid of the last **90 days** — 7 rows (Mon → Sun), 13 columns (
 | **Strong purple** | 1–3 h |
 | **Solid purple** | 3 h+ |
 
-**Click any cell** to open a modal with that day's details: total time, sessions, messages, and any achievements earned on that day.
+Below the grid, a quick insight calls out your **most active weekday**. **Click any cell** to open a modal with that day's details: total time, sessions, messages, and any achievements earned that day.
 
 ---
 
 ## 7. Achievements (25 badges)
 
-Auto-tracked. They appear in the Dashboard's Achievements strip as you earn them.
+Auto-tracked. They appear in the Dashboard's **Achievements grid** as you earn them — click any badge to see your progress toward it and the next level in its family.
 
 ### Chat & Activity (10)
 
@@ -298,6 +334,8 @@ Auto-tracked. They appear in the Dashboard's Achievements strip as you earn them
 | 📐 Cartographer | Export a mindmap (Markdown, PNG, or PDF) |
 | 🌐 Concept Network | Create 5 mindmaps total |
 
+> **Add your own badges (advanced).** All badges live in `backend/achievements.json` — a plain list of `{code, name, description, icon, metric, target, group}`. Append an entry and restart the backend to add a new badge (most use the default `gte` comparator: earned when `metric ≥ target`; time-of-day badges use `"comparator": "hour_between"` with `"hours": [start, end]`). A malformed entry is logged and skipped, so a typo can't break anything.
+
 ---
 
 ## 8. Privacy & Data Storage
@@ -328,6 +366,8 @@ To wipe a category of data: delete the corresponding file or table. Nothing else
 - **Click any heatmap day** to see exactly what you did — useful when you can't remember whether you actually studied yesterday.
 - **The chat scope badge** on your sent messages is permanent history — you can always see what scope a past answer was based on.
 - **Export anything.** Quizzes and mindmaps support Markdown; mindmaps also support PNG and PDF — great for sharing or printing.
+- **Chase the "Almost there" nudges** on the Dashboard — they surface the badges you're closest to earning, so you always have a next goal.
+- **Customise how the AI generates content (advanced).** Drop a file in `backend/prompts/custom/` (e.g. `quiz.md`, `flashcards.md`, `workshop_lesson.md`) to override the built-in prompt for that mode. Changes apply on the next generation — no restart needed. See `backend/prompts/README.md` for the available variables.
 
 ---
 

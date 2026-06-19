@@ -2,6 +2,7 @@
  * Config form for a new flashcard deck. Mirrors the Workshop/Quiz layout.
  */
 
+import { useTranslation } from "react-i18next";
 import { Layers, Loader2, AlertCircle, ArrowLeft } from "lucide-react";
 import { DocScopeFilter } from "../../DocScopeFilter";
 import { PillButton, Section } from "../quiz/QuizPrimitives";
@@ -22,6 +23,7 @@ export interface FlashcardsConfigPanelProps {
 }
 
 export function FlashcardsConfigPanel(p: FlashcardsConfigPanelProps) {
+  const { t } = useTranslation("study");
   const hasScope = p.scope.length > 0;
   const canStart = hasScope && !p.isLoading;
 
@@ -30,34 +32,28 @@ export function FlashcardsConfigPanel(p: FlashcardsConfigPanelProps) {
       <button
         type="button"
         onClick={p.onCancel}
-        className="inline-flex items-center gap-1.5 text-sm text-[#424754] dark:text-[#c2c6d6] hover:text-[#191c1e] dark:hover:text-white"
+        className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink-strong"
       >
         <ArrowLeft size={14} />
-        Back to decks
+        {t("flashcards.config.back")}
       </button>
 
       <div>
-        <h2 className="text-2xl font-bold text-[#191c1e] dark:text-white mb-1">
-          New Flashcard Deck
+        <h2 className="text-2xl font-bold text-ink-strong mb-1">
+          {t("flashcards.config.title")}
         </h2>
-        <p className="text-sm text-[#424754] dark:text-[#c2c6d6]">
-          Pick your scope, difficulty, and how many cards to generate.
-        </p>
+        <p className="text-sm text-ink-muted">{t("flashcards.config.subtitle")}</p>
       </div>
 
       <div className="bg-white dark:bg-[#191b23] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-6 sm:p-8 space-y-7">
         <Section
-          label="Document scope (required)"
-          hint={
-            hasScope
-              ? "Cards are drawn from these documents."
-              : "Pick at least one category or file. Wide scope = unfocused cards."
-          }
+          label={t("flashcards.config.scopeLabel")}
+          hint={hasScope ? t("flashcards.config.scopeHintHas") : t("flashcards.config.scopeHintEmpty")}
         >
           <DocScopeFilter selected={p.scope} onChange={p.setScope} />
         </Section>
 
-        <Section label="Difficulty">
+        <Section label={t("flashcards.config.difficultyLabel")}>
           <div className="flex flex-wrap gap-2.5">
             {DIFFICULTIES.map((d) => (
               <PillButton
@@ -65,17 +61,17 @@ export function FlashcardsConfigPanel(p: FlashcardsConfigPanelProps) {
                 active={p.difficulty === d.id}
                 onClick={() => p.setDifficulty(d.id)}
               >
-                <span className={d.tone}>●</span> {d.label}
+                <span className={d.tone}>●</span> {t(`difficulty.${d.id}`)}
               </PillButton>
             ))}
           </div>
         </Section>
 
-        <Section label="Number of cards">
+        <Section label={t("flashcards.config.countLabel")}>
           <div className="flex flex-wrap gap-2.5">
             {CARD_COUNTS.map((n) => (
               <PillButton key={n} active={p.cardCount === n} onClick={() => p.setCardCount(n)}>
-                {n} cards
+                {t("flashcards.config.cardsN", { count: n })}
               </PillButton>
             ))}
           </div>
@@ -98,11 +94,11 @@ export function FlashcardsConfigPanel(p: FlashcardsConfigPanelProps) {
         >
           {p.isLoading ? (
             <>
-              <Loader2 size={16} className="animate-spin" /> Generating…
+              <Loader2 size={16} className="animate-spin" /> {t("flashcards.config.generating")}
             </>
           ) : (
             <>
-              <Layers size={16} /> Build Deck
+              <Layers size={16} /> {t("flashcards.config.build")}
             </>
           )}
         </button>

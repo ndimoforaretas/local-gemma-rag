@@ -1,0 +1,90 @@
+{
+  "empty": {
+    "title": "Stellen Sie jede Frage zu Ihren Dokumenten",
+    "intro": "Geben Sie unten eine Frage ein, um zu beginnen. Ein paar Möglichkeiten:",
+    "hint1": "Beschränken Sie den Chat auf eine Kategorie oder bestimmte Dateien, damit die Antworten beim Thema bleiben.",
+    "hint2": "Hängen Sie Dokumente oder Bilder direkt im Nachrichtenfeld an.",
+    "hint3": "Lieber sprechen? Tippen Sie auf das Mikrofon, um Ihre Frage zu diktieren.",
+    "browseHelp": "Hilfe durchsuchen"
+  },
+  "input": {
+    "placeholder": "Nachricht an Gemma CogniVault …",
+    "ariaInput": "Nachrichteneingabe",
+    "attach": "Dateien anhängen",
+    "attachFull": "Dateien anhängen (Bilder, PDF, DOCX, Text – bis zu {{max}})",
+    "attachLimit": "Maximal {{max}} Anhänge erreicht",
+    "send": "Nachricht senden",
+    "generating": "Antwort wird generiert …",
+    "recordStart": "Sprachnachricht aufnehmen (Whisper)",
+    "recordStop": "Aufnahme stoppen",
+    "transcribing": "Wird transkribiert …",
+    "helper": "Enter zum Senden · Umschalt+Enter für neue Zeile · bis zu {{max}} Dateien anhängen",
+    "chars": "{{count}} Zeichen"
+  },
+  "message": {
+    "conversationAria": "Unterhaltungsnachrichten",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "copyTip": "Antwort in die Zwischenablage kopieren",
+    "copiedTip": "In die Zwischenablage kopiert!",
+    "copyAria": "Antwort kopieren",
+    "copiedAria": "Antwort kopiert",
+    "export": "Exportieren",
+    "exportTip": "Diese Antwort als Markdown-Datei exportieren",
+    "exportAria": "Antwort als Markdown exportieren",
+    "regenerate": "Neu generieren",
+    "regenerateTip": "Diese Antwort neu generieren",
+    "regenerateAria": "Antwort neu generieren",
+    "editTip": "Bearbeiten und erneut senden",
+    "editAria": "Nachricht bearbeiten",
+    "editYourAria": "Ihre Nachricht bearbeiten",
+    "cancel": "Abbrechen",
+    "resend": "Senden",
+    "reasoning": "Denkprozess"
+  },
+  "memory": {
+    "label": "Arbeitsgedächtnis",
+    "trimmed": "Dieser Chat ist lang – die ältesten Nachrichten fallen aus dem Gedächtnis der KI. Starten Sie einen neuen Chat, um den vollen Kontext zu behalten.",
+    "tooltip": "Die KI hat etwa {{words}} Wörter dieses Gesprächs im Gedächtnis ({{pct}} % ihres rollierenden Fensters)."
+  },
+  "scope": {
+    "documents_one": "{{count}} Dokument",
+    "documents_other": "{{count}} Dokumente"
+  },
+  "session": {
+    "previousChat": "Vorheriger Chat",
+    "deleteTitle": "Chat-Sitzung löschen",
+    "deleteMessage": "Sitzung „{{title}}“ löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "delete": "Löschen",
+    "cancel": "Abbrechen"
+  },
+  "bridge": {
+    "done": "✅ „{{file}}“ indiziert und bereit",
+    "indexing": "⚙️ „{{file}}“ wird indiziert…",
+    "error": "❌ Speichern von „{{file}}“ fehlgeschlagen — versuche es erneut",
+    "prompt": "„{{file}}“ zur Wissensdatenbank hinzufügen?",
+    "add": "Zur WDB hinzufügen"
+  },
+  "context": {
+    "title": "Verwendeter Kontext",
+    "referenced": "Referenzierte Quellen",
+    "closeAria": "Quellenbereich schließen",
+    "retrievedChunk": "Abgerufener Abschnitt",
+    "collapseAria": "Abschnittsvorschau einklappen",
+    "viewAria": "Abschnittstext anzeigen",
+    "hide": "Ausblenden",
+    "viewChunk": "Abschnitt anzeigen",
+    "openTip": "Quelldatei öffnen",
+    "open": "Öffnen"
+  },
+  "history": {
+    "title": "Chat-Verlauf",
+    "recent": "Letzte Sitzungen",
+    "msgs": "{{count}} Nachr.",
+    "deleteAria": "Sitzung {{title}} löschen",
+    "deleteTitle": "Sitzung löschen",
+    "empty": "Keine früheren Sitzungen",
+    "today": "Heute, {{time}}",
+    "yesterday": "Gestern, {{time}}"
+  }
+}

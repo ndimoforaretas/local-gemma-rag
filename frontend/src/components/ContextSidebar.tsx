@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Database, ExternalLink, FileText, ChevronDown, X } from "lucide-react";
 import type { ContextItem } from "../types/api";
@@ -23,6 +24,7 @@ function formatTypeLabel(type: string): string {
 }
 
 function CitationCard({ item, index }: { item: ContextItem; index: number }) {
+  const { t } = useTranslation("chat");
   const [expanded, setExpanded] = useState(false);
   const hasPreview = Boolean(item.text);
 
@@ -40,10 +42,10 @@ function CitationCard({ item, index }: { item: ContextItem; index: number }) {
             size={16}
             className="text-[#0058be] dark:text-[#adc6ff] mt-0.5 shrink-0"
           />
-          <span className="text-base font-medium leading-tight text-[#191c1e] dark:text-[#e1e2ec] line-clamp-2">
+          <span className="text-base font-medium leading-tight text-ink-strong line-clamp-2">
             {item.title}
             {item.page !== undefined && (
-              <span className="ml-1.5 text-xs font-normal text-[#727785] dark:text-[#8c909f]">
+              <span className="ml-1.5 text-xs font-normal text-ink-muted">
                 p.{item.page}
               </span>
             )}
@@ -51,14 +53,14 @@ function CitationCard({ item, index }: { item: ContextItem; index: number }) {
         </div>
 
         <div
-          className="text-sm text-[#727785] dark:text-[#8c909f] pl-7 truncate"
+          className="text-sm text-ink-muted pl-7 truncate"
           title={item.path}
         >
           {item.path}
         </div>
 
         <div className="pl-7 mt-1 flex items-center justify-between gap-2">
-          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#e0e3e5] dark:bg-[#272a31] text-[#505f76] dark:text-[#c2c6d6]">
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#e0e3e5] dark:bg-[#272a31] text-ink-muted">
             {formatTypeLabel(item.type)}
           </span>
 
@@ -68,10 +70,10 @@ function CitationCard({ item, index }: { item: ContextItem; index: number }) {
                 type="button"
                 onClick={() => setExpanded((v) => !v)}
                 aria-expanded={expanded}
-                aria-label={expanded ? "Collapse chunk preview" : "View chunk text"}
+                aria-label={expanded ? t("context.collapseAria") : t("context.viewAria")}
                 className="inline-flex items-center gap-0.5 text-xs text-[#a855f7] dark:text-[#ddb7ff] hover:underline focus:outline-none"
               >
-                {expanded ? "Hide" : "View chunk"}
+                {expanded ? t("context.hide") : t("context.viewChunk")}
                 <ChevronDown
                   size={12}
                   className={`transition-transform duration-150 ${expanded ? "rotate-180" : ""}`}
@@ -82,10 +84,10 @@ function CitationCard({ item, index }: { item: ContextItem; index: number }) {
               href={`/static/docs/${item.title}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-[#727785] dark:text-[#8c909f] hover:text-[#0058be] dark:hover:text-[#adc6ff] transition-colors"
-              title="Open source file"
+              className="inline-flex items-center gap-1 text-xs text-ink-muted hover:text-[#0058be] dark:hover:text-[#adc6ff] transition-colors"
+              title={t("context.openTip")}
             >
-              Open <ExternalLink size={12} />
+              {t("context.open")} <ExternalLink size={12} />
             </a>
           </div>
         </div>
@@ -103,10 +105,10 @@ function CitationCard({ item, index }: { item: ContextItem; index: number }) {
             className="overflow-hidden"
           >
             <div className="mx-4 mb-4 rounded-lg bg-[#f2f4f6] dark:bg-[#272a31] border border-[#c2c6d6] dark:border-[#424754] p-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f] mb-1.5">
-                Retrieved chunk
+              <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-1.5">
+                {t("context.retrievedChunk")}
               </p>
-              <p className="text-xs leading-relaxed text-[#191c1e] dark:text-[#c2c6d6] whitespace-pre-wrap break-words line-clamp-[12]">
+              <p className="text-xs leading-relaxed text-ink whitespace-pre-wrap break-words line-clamp-[12]">
                 {item.text}
               </p>
             </div>
@@ -126,24 +128,25 @@ function SidebarContent({
   contextItems: ContextItem[];
   onClose?: () => void;
 }) {
+  const { t } = useTranslation("chat");
   return (
     <>
       <div className="p-6 border-b border-[#c2c6d6] dark:border-[#424754] flex items-center gap-2">
         <Database size={16} className="text-[#0058be] dark:text-[#adc6ff]" />
         <div className="flex items-center justify-between w-full gap-2">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
-            Context Used
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-ink-muted">
+            {t("context.title")}
           </h3>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#e0e3e5] dark:bg-[#272a31] text-[#424754] dark:text-[#c2c6d6]">
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#e0e3e5] dark:bg-[#272a31] text-ink-muted">
               {contextItems.length}
             </span>
             {onClose && (
               <button
                 type="button"
                 onClick={onClose}
-                aria-label="Close sources panel"
-                className="p-1 rounded-lg text-[#727785] dark:text-[#8c909f] hover:text-[#191c1e] dark:hover:text-[#e1e2ec] hover:bg-[#e0e3e5] dark:hover:bg-[#32353c] transition-colors"
+                aria-label={t("context.closeAria")}
+                className="p-1 rounded-lg text-ink-muted hover:text-ink-strong hover:bg-[#e0e3e5] dark:hover:bg-[#32353c] transition-colors"
               >
                 <X size={16} />
               </button>
@@ -152,8 +155,8 @@ function SidebarContent({
         </div>
       </div>
 
-      <div className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f]">
-        Referenced Sources
+      <div className="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-ink-muted">
+        {t("context.referenced")}
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-4 flex flex-col gap-2">

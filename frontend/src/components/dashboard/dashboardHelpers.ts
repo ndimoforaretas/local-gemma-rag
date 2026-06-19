@@ -31,8 +31,8 @@ export function getWeekdayIdx(d: Date): number {
 }
 
 /** "Mon, 23 May" — used in tooltips and modal headers. */
-export function formatLongDate(iso: string): string {
-  return parseISODate(iso).toLocaleDateString(undefined, {
+export function formatLongDate(iso: string, locale?: string): string {
+  return parseISODate(iso).toLocaleDateString(locale, {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -73,10 +73,62 @@ export const INTENSITY_COLORS: Record<IntensityLevel, string> = {
   4: "rgba(168, 85, 247, 1.00)",
 };
 
-export const INTENSITY_LEGEND: { label: string; level: IntensityLevel }[] = [
-  { label: "None", level: 0 },
-  { label: "<15m", level: 1 },
-  { label: "15–60m", level: 2 },
-  { label: "1–3h", level: 3 },
-  { label: "3h+", level: 4 },
-];
+/** Intensity buckets, in order. Labels are translated at render time. */
+export const INTENSITY_LEVELS: IntensityLevel[] = [0, 1, 2, 3, 4];
+
+// ── Heatmap helpers ────────────────────────────────────────────────────────
+
+export interface MonthLabel {
+  /** Short month name, e.g. "Jan". */
+  label: string;
+  /** Zero-based grid column index where this month's first day falls. */
+  colIndex: number;
+}
+
+/**
+ * Compute which grid column each month transition falls in, accounting for
+ * the `padBefore` filler cells at the start of the heatmap.
+ *
+ * Returns one entry per month that starts at a different column from the
+ * previous label, so short months at the edge don't produce overlapping text.
+ */
+export function computeMonthLabels(
+  dates: string[],
+  padBefore: number,
+  locale?: string,
+): MonthLabel[] {
+  const labels: MonthLabel[] = [];
+  let lastCol = -2;
+  dates.forEach((iso, i) => {
+    const d = parseISODate(iso);
+    if (d.getDate() === 1 || i === 0) {
+      const col = Math.floor((padBefore + i) / 7);
+      if (col !== lastCol && col - lastCol > 1) {
+        labels.push({
+          label: d.toLocaleDateString(locale, { month: "short" }),
+          colIndex: col,
+        });
+        lastCol = col;
+      }
+    }
+  });
+  return labels;
+}
+
+/**
+ * Return the index (Mon=0 … Sun=6) of the weekday with the highest total study
+ * seconds, or null when there isn't enough meaningful data (fewer than 2
+ * distinct active weekdays with at least 10 minutes of activity each).
+ * Callers map the index to a localized weekday name.
+ */
+export function busyWeekdayIdx(
+  days: { date: string; seconds: number }[],
+): number | null {
+  const totals = new Array<number>(7).fill(0);
+  for (const d of days) {
+    if (d.seconds > 0) totals[getWeekdayIdx(parseISODate(d.date))] += d.seconds;
+  }
+  const active = totals.filter((s) => s >= 600).length;
+  if (active < 2) return null;
+  return totals.indexOf(Math.max(...totals));
+}

@@ -5,6 +5,7 @@
  * optional "new badges unlocked" pill.
  */
 
+import { useTranslation } from "react-i18next";
 import { Trophy } from "lucide-react";
 
 export function QuizScoreCard({
@@ -18,20 +19,20 @@ export function QuizScoreCard({
   total: number;
   newlyEarned: string[];
 }) {
+  const { t } = useTranslation("study");
   return (
     <div className="p-6 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23] text-center">
       <Trophy className="mx-auto text-[#a855f7] mb-2" size={36} />
-      <div className="text-4xl font-bold text-[#191c1e] dark:text-[#e1e2ec]">
+      <div className="text-4xl font-bold text-ink-strong">
         {pct}%
       </div>
-      <p className="text-sm text-[#727785] dark:text-[#8c909f] mt-1">
-        {correctCount} of {total} correct
+      <p className="text-sm text-ink-muted mt-1">
+        {t("quiz.results.correctOfTotal", { correct: correctCount, total })}
       </p>
 
       {newlyEarned.length > 0 && (
         <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#a855f7]/15 border border-[#a855f7]/30 text-[#a855f7] dark:text-[#ddb7ff] text-xs font-medium">
-          🏅 {newlyEarned.length} new achievement
-          {newlyEarned.length === 1 ? "" : "s"} unlocked
+          {t("quiz.results.newAchievements", { count: newlyEarned.length })}
         </div>
       )}
     </div>

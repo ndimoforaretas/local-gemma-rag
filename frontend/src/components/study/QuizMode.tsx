@@ -5,9 +5,12 @@
  * just layout: top bar, then one of four panels based on phase + loading.
  */
 
-import { Breadcrumbs } from "../Breadcrumbs";
+import { useTranslation } from "react-i18next";
+import { Breadcrumbs, type Crumb } from "../Breadcrumbs";
 import { QuizConfigPanel } from "./quiz/QuizConfigPanel";
 import { QuizGeneratingCard } from "./quiz/QuizGeneratingCard";
+import { QuizList } from "./quiz/QuizList";
+import { ExamPlayerPanel } from "./quiz/ExamPlayerPanel";
 import { QuizPlayerPanel } from "./quiz/QuizPlayerPanel";
 import { QuizResultsPanel } from "./quiz/QuizResultsPanel";
 import { ResumeQuizBanner } from "./quiz/ResumeQuizBanner";
@@ -15,6 +18,16 @@ import { useQuiz } from "./quiz/useQuiz";
 
 export function QuizMode({ onExit }: { onExit: () => void }) {
   const q = useQuiz();
+  const { t } = useTranslation("study");
+
+  const crumbs: Crumb[] = [
+    { label: t("hub.title"), onClick: onExit },
+    { label: t("quiz.crumbs.quizMode"), onClick: q.phase === "library" ? undefined : q.backToLibrary },
+  ];
+  if (q.phase === "config") crumbs.push({ label: t("quiz.crumbs.newQuiz") });
+
+  // The results recap uses a two-column layout, so it gets a wider container.
+  const wide = q.phase === "results";
 
   return (
     <div className="h-full overflow-y-auto">
@@ -23,17 +36,26 @@ export function QuizMode({ onExit }: { onExit: () => void }) {
         the remaining vertical space evenly. The top bar stays at the top via
         normal document flow; long content (e.g. results recap) still scrolls.
       */}
-      <div className="max-w-4xl mx-auto w-full px-6 sm:px-8 py-8 min-h-full flex flex-col">
+      <div
+        className={`${
+          wide ? "max-w-6xl" : "max-w-4xl"
+        } mx-auto w-full px-6 sm:px-8 py-8 min-h-full flex flex-col`}
+      >
         <div className="mb-6">
-          <Breadcrumbs
-            crumbs={[
-              { label: "Study Hub", onClick: onExit },
-              { label: "Quiz Mode" },
-            ]}
-          />
+          <Breadcrumbs crumbs={crumbs} />
         </div>
 
         <div className="my-auto w-full">
+
+        {q.phase === "library" && (
+          <QuizList
+            items={q.savedList.data?.quizzes ?? []}
+            isLoading={q.savedList.isLoading || q.loadSaved.isPending}
+            onOpen={(id) => q.loadSaved.mutate(id)}
+            onNew={q.startNew}
+            onDelete={(id) => q.deleteSaved.mutate(id)}
+          />
+        )}
 
         {q.phase === "config" && q.generate.isPending && <QuizGeneratingCard />}
 
@@ -55,24 +77,50 @@ export function QuizMode({ onExit }: { onExit: () => void }) {
             setCount={q.setCount}
             types={q.types}
             toggleType={q.toggleType}
+            timeLimit={q.timeLimit}
+            setTimeLimit={q.setTimeLimit}
+            style={q.style}
+            setStyle={q.setStyle}
             onStart={q.startQuiz}
             isLoading={false}
             error={q.generate.error?.message ?? null}
           />
         )}
 
-        {q.phase === "playing" && q.questions.length > 0 && (
-          <QuizPlayerPanel
-            question={q.questions[q.current]}
-            current={q.current}
-            total={q.questions.length}
-            selected={q.selected}
-            revealed={q.revealed}
-            onPick={q.pickOption}
-            onSubmit={q.submitAnswer}
-            onNext={q.nextQuestion}
-          />
-        )}
+        {q.phase === "playing" &&
+          q.questions.length > 0 &&
+          q.style === "practice" && (
+            <QuizPlayerPanel
+              question={q.questions[q.current]}
+              current={q.current}
+              total={q.questions.length}
+              selected={q.selected}
+              revealed={q.revealed}
+              remainingMs={q.remainingMs}
+              onPick={q.pickOption}
+              onSubmit={q.submitAnswer}
+              onNext={q.nextQuestion}
+            />
+          )}
+
+        {q.phase === "playing" &&
+          q.questions.length > 0 &&
+          q.style === "exam" && (
+            <ExamPlayerPanel
+              question={q.questions[q.current]}
+              current={q.current}
+              total={q.questions.length}
+              answers={q.answers}
+              flagged={q.flagged}
+              remainingMs={q.remainingMs}
+              onPick={q.selectExamAnswer}
+              onJump={q.goTo}
+              onPrev={q.goPrev}
+              onNext={q.goNext}
+              onToggleFlag={q.toggleFlag}
+              onSubmit={q.submitExam}
+            />
+          )}
 
         {q.phase === "results" && (
           <QuizResultsPanel
@@ -81,7 +129,8 @@ export function QuizMode({ onExit }: { onExit: () => void }) {
             correctCount={q.correctCount}
             finalScore={q.finalScore}
             newlyEarned={q.newlyEarned}
-            onRetry={q.restart}
+            onRetake={q.restart}
+            onLibrary={q.backToLibrary}
             onExit={onExit}
           />
         )}

@@ -8,31 +8,41 @@
  *  - `useKBBridge`: post-message "Add to KB" action + polling.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChatMessageList } from "./ChatMessageList";
 import { ChatInput } from "./ChatInput";
+import { ChatMemoryMeter } from "./ChatMemoryMeter";
 import { DocScopeFilter } from "./DocScopeFilter";
 import { ContextSidebar } from "./ContextSidebar";
 import { HistorySidebar } from "./HistorySidebar";
+import { useChatChrome } from "./ChatChromeContext";
 import { ConfirmationModal } from "./ConfirmationModal";
-import { ChatHeaderBar } from "./knowledgeBase/ChatHeaderBar";
 import { KBBridgeCard } from "./knowledgeBase/KBBridgeCard";
 import { ContextSidebarDrawer } from "./knowledgeBase/ContextSidebarDrawer";
 import { useKBBridge } from "./knowledgeBase/useKBBridge";
 import { useRagStream } from "./knowledgeBase/useRagStream";
 import { api } from "../lib/api";
+import type { MemoryPayload } from "./knowledgeBase/ragStream";
 import type { ChatSession, ContextItem, Message } from "../types/api";
 
-export function KnowledgeBase() {
+export function KnowledgeBase({ onOpenHelp }: { onOpenHelp: () => void }) {
+  const { t } = useTranslation("chat");
   const queryClient = useQueryClient();
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  // New Chat + history-open live in the Sidebar via this shared chrome context.
+  const chrome = useChatChrome();
+  const { isHistoryOpen } = chrome;
   const [contextItems, setContextItems] = useState<ContextItem[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isContextOpen, setIsContextOpen] = useState(false);
   const [documentFilter, setDocumentFilter] = useState<string[]>([]);
+  // Per-session "working memory" usage, reported by the backend each response.
+  const [sessionMemory, setSessionMemory] = useState<
+    Record<string, MemoryPayload>
+  >({});
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<{
     id: string;
@@ -54,7 +64,7 @@ export function KnowledgeBase() {
             return [
               {
                 id: "legacy-1",
-                title: "Previous Chat",
+                title: t("session.previousChat"),
                 updatedAt: Date.now(),
                 messages: data as unknown as Message[],
               },
@@ -126,6 +136,8 @@ export function KnowledgeBase() {
     updateSessionContextItems,
     isNewChatRef,
     saveHistory: (next) => saveHistoryMutation.mutate(next),
+    recordMemory: (sessionId, mem) =>
+      setSessionMemory((prev) => ({ ...prev, [sessionId]: mem })),
   });
 
   // ── Derived state + scroll-to-bottom ───────────────────────────────
@@ -139,7 +151,6 @@ export function KnowledgeBase() {
 
   const activeSession = sessions.find((s) => s.id === activeSessionId);
   const messages = activeSession ? activeSession.messages : [];
-  const contextCount = contextItems.length;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -166,12 +177,15 @@ export function KnowledgeBase() {
   /**
    * Edit a user message at `messageIndex` and resend. Trims the UI and
    * rewinds the agent history to the turn-pairs that existed *before*
-   * this message.
+   * this message. The original message's document scope is preserved so the
+   * AI still answers from the same category/file (it previously fell back to a
+   * whole-KB search on edit).
    */
   const handleEdit = (messageIndex: number, newContent: string) => {
     if (!activeSessionId) return;
+    const originalScope = activeSession?.messages[messageIndex]?.scopeFilter;
     updateSessionMessages(activeSessionId, (prev) => prev.slice(0, messageIndex));
-    rag.send([], newContent, Math.floor(messageIndex / 2));
+    rag.send([], newContent, Math.floor(messageIndex / 2), originalScope);
   };
 
   /** Regenerate the AI response at `messageIndex` by resending its prompt. */
@@ -181,7 +195,7 @@ export function KnowledgeBase() {
     const userMsg = currentMessages[messageIndex - 1];
     if (!userMsg || userMsg.role !== "user") return;
     updateSessionMessages(activeSessionId, (prev) => prev.slice(0, messageIndex));
-    rag.send([], userMsg.content, Math.floor((messageIndex - 1) / 2));
+    rag.send([], userMsg.content, Math.floor((messageIndex - 1) / 2), userMsg.scopeFilter);
   };
 
   // ── Session list actions ───────────────────────────────────────────
@@ -191,6 +205,16 @@ export function KnowledgeBase() {
     const session = sessions.find((s) => s.id === id);
     setContextItems(session?.contextItems ?? []);
   };
+
+  // Start a fresh chat — exposed to the Sidebar's "New Chat" button.
+  const handleNewChat = useCallback(() => {
+    isNewChatRef.current = true;
+    setActiveSessionId(null);
+    setContextItems([]);
+  }, []);
+  useEffect(() => {
+    chrome.registerNewChat(handleNewChat);
+  }, [chrome, handleNewChat]);
 
   const handleDeleteSession = (id: string) => {
     const target = sessions.find((s) => s.id === id);
@@ -226,19 +250,6 @@ export function KnowledgeBase() {
   return (
     <div className="flex h-full w-full relative">
       <div className="flex-1 flex flex-col h-full overflow-hidden p-3 sm:p-4 lg:p-6 gap-3 lg:gap-4 min-w-0">
-        <ChatHeaderBar
-          sessionTitle={activeSession?.title || "New Conversation"}
-          contextCount={contextCount}
-          isHistoryOpen={isHistoryOpen}
-          onOpenContextDrawer={() => setIsContextOpen(true)}
-          onToggleHistory={() => setIsHistoryOpen(!isHistoryOpen)}
-          onNewChat={() => {
-            isNewChatRef.current = true;
-            setActiveSessionId(null);
-            setContextItems([]);
-          }}
-        />
-
         <ChatMessageList
           messages={messages}
           isLoading={rag.isLoading}
@@ -246,9 +257,7 @@ export function KnowledgeBase() {
           onCopy={handleCopyMessage}
           onExport={handleExportMessage}
           messagesEndRef={messagesEndRef}
-          onSuggestionSelect={(prompt, scope) =>
-            rag.send([], prompt, undefined, scope)
-          }
+          onOpenHelp={onOpenHelp}
           onEdit={handleEdit}
           onRegenerate={handleRegenerate}
         />
@@ -263,6 +272,9 @@ export function KnowledgeBase() {
         )}
 
         <div className="flex flex-col gap-2 shrink-0">
+          {activeSessionId && (
+            <ChatMemoryMeter memory={sessionMemory[activeSessionId]} />
+          )}
           <DocScopeFilter selected={documentFilter} onChange={setDocumentFilter} />
           <ChatInput
             input={rag.input}
@@ -296,10 +308,10 @@ export function KnowledgeBase() {
 
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
-        title="Delete Chat Session"
-        message={`Delete session "${sessionToDelete?.title}"? This action cannot be undone.`}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
+        title={t("session.deleteTitle")}
+        message={t("session.deleteMessage", { title: sessionToDelete?.title })}
+        confirmLabel={t("session.delete")}
+        cancelLabel={t("session.cancel")}
         type="destructive"
         onConfirm={confirmDeleteSession}
         onCancel={() => {

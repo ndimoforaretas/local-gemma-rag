@@ -29,10 +29,17 @@ export function useDashboardData(days = 90) {
     refetchInterval: REFRESH_INTERVAL_MS,
   });
 
+  const breakdown = useQuery({
+    queryKey: ["progress", "breakdown"],
+    queryFn: () => api.getProgressBreakdown(),
+    refetchInterval: REFRESH_INTERVAL_MS,
+  });
+
   return {
     summary,
     daily,
     achievements,
+    breakdown,
     isLoading:
       summary.isLoading || daily.isLoading || achievements.isLoading,
     isError: summary.isError || daily.isError || achievements.isError,

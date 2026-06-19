@@ -16,6 +16,7 @@ import type {
   WorkshopPhase,
 } from "./types";
 import { type LessonCount } from "./types";
+import { useLessonPrefetch } from "./useLessonPrefetch";
 
 export function useWorkshop() {
   const qc = useQueryClient();
@@ -29,6 +30,9 @@ export function useWorkshop() {
   const [scope, setScope] = useState<string[]>([]);
   const [difficulty, setDifficulty] = useState<WorkshopDifficulty>("beginner");
   const [lessonCount, setLessonCount] = useState<LessonCount>(5);
+
+  // Outline edit mode (rename/reorder/delete lessons).
+  const [editingOutline, setEditingOutline] = useState(false);
 
   // ── Server state ─────────────────────────────────────────────────────
   const list = useQuery({
@@ -48,6 +52,9 @@ export function useWorkshop() {
       api.getOrGenerateLesson(activeWorkshopId!, activeLessonIdx!),
     enabled: activeWorkshopId !== null && activeLessonIdx !== null,
     staleTime: Infinity, // generated lesson content doesn't change
+    // A failed generation is surfaced as an error (with a Retry affordance) —
+    // never auto-retried, which on a slow local model would pile up requests.
+    retry: false,
   });
 
   // ── Mutations ────────────────────────────────────────────────────────
@@ -71,9 +78,60 @@ export function useWorkshop() {
     },
   });
 
+  // Re-roll the whole outline (keeps config, discards lessons + progress).
+  const rerollOutline = useMutation({
+    mutationFn: (workshopId: number) => api.rerollWorkshopOutline(workshopId),
+    onSuccess: (ws: Workshop) => {
+      qc.setQueryData(["workshops", "detail", ws.id], ws);
+      // All lesson content was discarded server-side — drop the client caches.
+      qc.removeQueries({ queryKey: ["workshops", "lesson", ws.id] });
+      list.refetch();
+    },
+  });
+
+  // Rename / reorder / delete lessons atomically; server is source of truth.
+  const editLessons = useMutation({
+    mutationFn: ({
+      workshopId,
+      lessons,
+    }: {
+      workshopId: number;
+      lessons: { old_idx: number; title: string }[];
+    }) => api.updateWorkshopLessons(workshopId, lessons),
+    onSuccess: (ws: Workshop) => {
+      qc.setQueryData(["workshops", "detail", ws.id], ws);
+      // Cached lesson content is keyed by index, and indices may have moved —
+      // drop them all; refetches hit the server-side cache (instant).
+      qc.removeQueries({ queryKey: ["workshops", "lesson", ws.id] });
+      setEditingOutline(false);
+      list.refetch();
+    },
+  });
+
+  // Re-roll an already-generated lesson; on failure the old content stays.
+  const regenerateLesson = useMutation({
+    mutationFn: ({ workshopId, lessonIdx }: { workshopId: number; lessonIdx: number }) =>
+      api.getOrGenerateLesson(workshopId, lessonIdx, true),
+    onSuccess: (data: LessonContent, vars) => {
+      qc.setQueryData(["workshops", "lesson", vars.workshopId, vars.lessonIdx], data);
+    },
+  });
+
   const deleteWorkshop = useMutation({
     mutationFn: api.deleteWorkshop,
     onSuccess: () => list.refetch(),
+  });
+
+  // Warm the next ungenerated lesson in the background while the user reads
+  // (sequential, pauses while their own lesson is generating, while the
+  // outline is being edited — no point generating for a lesson about to be
+  // renamed or deleted — and while a re-roll replaces the lesson list).
+  useLessonPrefetch({
+    workshop: active.data,
+    phase,
+    activeLessonIdx,
+    activeLessonLoading: lesson.isFetching,
+    paused: editingOutline || rerollOutline.isPending,
   });
 
   // ── Navigation helpers ──────────────────────────────────────────────
@@ -81,16 +139,20 @@ export function useWorkshop() {
     setActiveWorkshopId(id);
     setActiveLessonIdx(null);
     setPhase("outline");
+    setEditingOutline(false);
+    editLessons.reset();
   };
 
   const openLesson = (lessonIdx: number) => {
     setActiveLessonIdx(lessonIdx);
     setPhase("lesson");
+    regenerateLesson.reset(); // a stale regen error shouldn't follow into the next lesson
   };
 
   const backToOutline = () => {
     setActiveLessonIdx(null);
     setPhase("outline");
+    regenerateLesson.reset();
     active.refetch(); // refresh completion timestamps
   };
 
@@ -98,6 +160,8 @@ export function useWorkshop() {
     setActiveWorkshopId(null);
     setActiveLessonIdx(null);
     setPhase("list");
+    setEditingOutline(false);
+    editLessons.reset();
   };
 
   const startNew = () => {
@@ -114,7 +178,8 @@ export function useWorkshop() {
     difficulty, setDifficulty,
     lessonCount, setLessonCount,
     list, active, lesson,
-    createOutline, completeLesson, deleteWorkshop,
+    createOutline, completeLesson, regenerateLesson, editLessons, rerollOutline, deleteWorkshop,
+    editingOutline, setEditingOutline,
     activeWorkshopId, activeLessonIdx,
     openWorkshop, openLesson, backToOutline, backToList, startNew, startQuiz,
   };

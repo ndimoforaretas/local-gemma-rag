@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../lib/api";
-import type { Mindmap, MindmapsPhase } from "./types";
+import type { Mindmap, MindmapGraph, MindmapsPhase } from "./types";
 
 export function useMindmaps() {
   const qc = useQueryClient();
@@ -44,6 +44,35 @@ export function useMindmaps() {
     },
   });
 
+  // Change the auto-diagram layout (TD / LR); updates cache in place.
+  const saveLayout = useMutation({
+    mutationFn: ({ id, layout }: { id: number; layout: "TD" | "LR" }) =>
+      api.setMindmapLayout(id, layout),
+    onSuccess: (mm: Mindmap) =>
+      qc.setQueryData(["mindmaps", "detail", mm.id], mm),
+  });
+
+  // Save (or clear) manual node positions after dragging; cache in place.
+  const savePositions = useMutation({
+    mutationFn: ({
+      id,
+      positions,
+    }: {
+      id: number;
+      positions: Record<string, { x: number; y: number }> | null;
+    }) => api.setMindmapPositions(id, positions),
+    onSuccess: (mm: Mindmap) =>
+      qc.setQueryData(["mindmaps", "detail", mm.id], mm),
+  });
+
+  // Save (or clear with null) the user-edited graph; cache in place.
+  const saveGraph = useMutation({
+    mutationFn: ({ id, graph }: { id: number; graph: MindmapGraph | null }) =>
+      api.setMindmapGraph(id, graph),
+    onSuccess: (mm: Mindmap) =>
+      qc.setQueryData(["mindmaps", "detail", mm.id], mm),
+  });
+
   const deleteMindmap = useMutation({
     mutationFn: api.deleteMindmap,
     onSuccess: () => list.refetch(),
@@ -67,7 +96,7 @@ export function useMindmaps() {
     phase, setPhase,
     scope, setScope,
     list, active,
-    createMindmap, recordExport, deleteMindmap,
+    createMindmap, recordExport, deleteMindmap, saveLayout, savePositions, saveGraph,
     activeId,
     openMindmap, backToList, startNew,
   };

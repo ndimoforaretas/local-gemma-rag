@@ -1,0 +1,24 @@
+{
+  "title": "Welcome to Gemma CogniVault",
+  "subtitle": "Your private AI companion for any documents. Pick where you'd like to start — every card below is clickable.",
+  "privacy": "100% local & private — nothing leaves your machine.",
+  "browseHelp": "Browse all help",
+  "cards": {
+    "chat": {
+      "title": "Chat with your documents",
+      "desc": "Ask questions and get answers with citations."
+    },
+    "sync": {
+      "title": "Build your library",
+      "desc": "Upload and organise your private documents."
+    },
+    "study": {
+      "title": "Create quizzes & mindmaps",
+      "desc": "Turn documents into quizzes, flashcards & mindmaps."
+    },
+    "dashboard": {
+      "title": "Track your activity",
+      "desc": "Time spent, streaks, and achievements."
+    }
+  }
+}

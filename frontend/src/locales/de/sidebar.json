@@ -1,0 +1,20 @@
+{
+  "menu": "Menü",
+  "primaryNav": "Hauptnavigation",
+  "newChat": "Neuer Chat",
+  "browseSessions": "Frühere Sitzungen",
+  "collapse": "Seitenleiste einklappen",
+  "expand": "Seitenleiste ausklappen",
+  "lightMode": "Heller Modus",
+  "darkMode": "Dunkler Modus",
+  "online": "Online",
+  "localUser": "Lokaler Benutzer",
+  "nav": {
+    "home": "Startseite",
+    "chat": "Chat",
+    "sync": "Wissensdatenbank",
+    "study": "Lernzentrum",
+    "dashboard": "Übersicht",
+    "help": "Hilfe"
+  }
+}

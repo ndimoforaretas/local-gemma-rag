@@ -1,5 +1,7 @@
 /**
- * Quiz results screen — score card, per-question recap, and footer actions.
+ * Quiz results screen — two-column on wide viewports: a sticky summary
+ * sidebar (score · export · actions) beside a scrollable question recap.
+ * Stacks to a single column on small screens.
  *
  * Composes three small lego pieces:
  *   - QuizScoreCard  (header)
@@ -7,7 +9,8 @@
  *   - inline footer buttons
  */
 
-import { RotateCcw } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { LayoutGrid, RotateCcw } from "lucide-react";
 import { QuizExportMenu } from "./QuizExportMenu";
 import { QuizRecapRow } from "./QuizRecapRow";
 import { QuizScoreCard } from "./QuizScoreCard";
@@ -19,7 +22,12 @@ export interface QuizResultsPanelProps {
   correctCount: number;
   finalScore: number | null;
   newlyEarned: string[];
-  onRetry: () => void;
+  /** Retake the same quiz from scratch. Omit to hide the button. */
+  onRetake?: () => void;
+  /** Back to the saved-quiz library. Omit to hide the button. */
+  onLibrary?: () => void;
+  /** Custom label for the exit button (defaults to the translated "Back to Study Hub"). */
+  exitLabel?: string;
   onExit: () => void;
 }
 
@@ -29,46 +37,65 @@ export function QuizResultsPanel({
   correctCount,
   finalScore,
   newlyEarned,
-  onRetry,
+  onRetake,
+  onLibrary,
+  exitLabel,
   onExit,
 }: QuizResultsPanelProps) {
+  const { t } = useTranslation("study");
   const pct =
     finalScore ??
     (questions.length ? Math.round((100 * correctCount) / questions.length) : 0);
 
   return (
-    <div className="space-y-5">
-      <QuizScoreCard
-        pct={pct}
-        correctCount={correctCount}
-        total={questions.length}
-        newlyEarned={newlyEarned}
-      />
+    <div className="grid gap-6 lg:grid-cols-[minmax(300px,360px)_1fr] items-start">
+      {/* Summary sidebar — sticks in view while the recap scrolls beside it. */}
+      <aside className="space-y-4 lg:sticky lg:top-2">
+        <QuizScoreCard
+          pct={pct}
+          correctCount={correctCount}
+          total={questions.length}
+          newlyEarned={newlyEarned}
+        />
 
-      <div className="space-y-2">
+        <QuizExportMenu questions={questions} />
+
+        <div className="space-y-2">
+          {onRetake && (
+            <button
+              type="button"
+              onClick={onRetake}
+              className="w-full py-2.5 rounded-xl bg-[#a855f7] hover:bg-[#9333ea] text-white font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <RotateCcw size={16} />
+              {t("quiz.results.retake")}
+            </button>
+          )}
+          {onLibrary && (
+            <button
+              type="button"
+              onClick={onLibrary}
+              className="w-full py-2.5 rounded-xl border border-[#c2c6d6] dark:border-[#424754] hover:bg-[#a855f7]/10 hover:border-[#a855f7]/50 text-ink-strong font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <LayoutGrid size={16} />
+              {t("quiz.results.library")}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onExit}
+            className="w-full py-2.5 rounded-xl border border-[#c2c6d6] dark:border-[#424754] hover:bg-[#a855f7]/10 hover:border-[#a855f7]/50 text-ink-strong font-medium transition-colors"
+          >
+            {exitLabel ?? t("quiz.results.backToHub")}
+          </button>
+        </div>
+      </aside>
+
+      {/* Per-question recap — independently scrollable on wide screens. */}
+      <div className="space-y-2 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-2">
         {questions.map((q, i) => (
           <QuizRecapRow key={i} question={q} userIdx={answers[i]} />
         ))}
-      </div>
-
-      <QuizExportMenu questions={questions} />
-
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={onRetry}
-          className="flex-1 py-2.5 rounded-xl bg-[#a855f7] hover:bg-[#9333ea] text-white font-medium transition-colors flex items-center justify-center gap-2"
-        >
-          <RotateCcw size={16} />
-          New quiz
-        </button>
-        <button
-          type="button"
-          onClick={onExit}
-          className="flex-1 py-2.5 rounded-xl border border-[#c2c6d6] dark:border-[#424754] hover:border-[#a855f7]/50 text-[#191c1e] dark:text-[#e1e2ec] font-medium transition-colors"
-        >
-          Back to Study Hub
-        </button>
       </div>
     </div>
   );

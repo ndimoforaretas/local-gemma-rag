@@ -208,7 +208,24 @@ def test_summary_endpoint_returns_zeros_initially(client):
         "total_sessions": 0,
         "total_messages": 0,
         "current_streak_days": 0,
+        "longest_streak_days": 0,
     }
+
+
+def test_longest_streak_tracks_best_run_even_after_a_gap():
+    """Personal-best streak survives a missed day; current streak would reset."""
+    today = _dt.date.today()
+    # Best run: 4 consecutive days, a while back (days 10-13 ago).
+    for i in (13, 12, 11, 10):
+        ts = _dt.datetime.combine(today - _dt.timedelta(days=i), _dt.time(12, 0)).timestamp()
+        progress_tracker.record_message(sent_at=ts)
+    # A shorter recent run: 2 days (days 1-2 ago) — gap in between.
+    for i in (2, 1):
+        ts = _dt.datetime.combine(today - _dt.timedelta(days=i), _dt.time(12, 0)).timestamp()
+        progress_tracker.record_message(sent_at=ts)
+
+    summary = progress_tracker.get_summary()
+    assert summary["longest_streak_days"] == 4
 
 
 def test_daily_endpoint_returns_requested_window(client):
@@ -222,6 +239,31 @@ def test_daily_endpoint_returns_requested_window(client):
 def test_daily_endpoint_validates_range(client):
     assert client.get("/api/progress/daily?days=0").status_code == 422
     assert client.get("/api/progress/daily?days=400").status_code == 422
+
+
+def test_breakdown_endpoint_zero_state(client):
+    res = client.get("/api/progress/breakdown")
+    assert res.status_code == 200
+    body = res.json()
+    assert body == {
+        "quizzes": {"count": 0, "avg_score": 0, "best_score": 0},
+        "workshops": {"created": 0, "completed": 0},
+        "flashcards": {"decks": 0, "mastered": 0},
+        "mindmaps": {"created": 0, "exports": 0},
+    }
+
+
+def test_breakdown_endpoint_aggregates_quiz_scores(client):
+    progress_tracker.record_quiz_attempt(
+        difficulty="beginner", num_questions=5, correct_count=5, score_pct=100
+    )
+    progress_tracker.record_quiz_attempt(
+        difficulty="beginner", num_questions=5, correct_count=4, score_pct=80
+    )
+    body = client.get("/api/progress/breakdown").json()
+    assert body["quizzes"]["count"] == 2
+    assert body["quizzes"]["avg_score"] == 90  # (100 + 80) / 2
+    assert body["quizzes"]["best_score"] == 100
 
 
 def test_achievements_endpoint_lists_all_seeded_badges(client):
@@ -246,3 +288,110 @@ def test_achievements_endpoint_reflects_earned_state(client):
     earned = [a for a in body["achievements"] if a["is_earned"]]
     earned_codes = {a["code"] for a in earned}
     assert "first_question" in earned_codes
+
+
+# ── Step 2: progress metadata (detail modal) ───────────────────────────────
+
+
+def test_achievements_endpoint_exposes_progress_metadata(client):
+    """Each badge carries metric/target/group/next_code/current fields."""
+    body = client.get("/api/progress/achievements").json()
+    by_code = {a["code"]: a for a in body["achievements"]}
+
+    # A metric-backed badge has all progress fields populated.
+    quiz = by_code["first_quiz"]
+    assert quiz["metric"] == "total_quizzes"
+    assert quiz["target"] == 1
+    assert quiz["group"] == "quiz_count"
+    assert quiz["current"] == 0  # no quizzes taken yet
+
+    # Every badge has the keys present (None is fine for binary badges).
+    for a in body["achievements"]:
+        assert {"metric", "target", "group", "next_code", "current"} <= set(a)
+
+
+def test_binary_badge_has_no_progress(client):
+    """Time-of-day badges have no metric/target/current (no progress bar)."""
+    by_code = {a["code"]: a for a in client.get("/api/progress/achievements").json()["achievements"]}
+    owl = by_code["night_owl"]
+    assert owl["metric"] is None
+    assert owl["target"] is None
+    assert owl["current"] is None
+    assert owl["next_code"] is None
+
+
+def test_next_code_forms_ascending_ladder():
+    """Within a group, next_code points up the ladder; the top rung is None."""
+    defs = {d["code"]: d for d in ach_service.get_definitions()}
+    # streak_3 → streak_7 → (top)
+    assert defs["streak_3"]["next_code"] == "streak_7"
+    assert defs["streak_7"]["next_code"] is None
+    # first_quiz → quiz_marathon → (top)
+    assert defs["first_quiz"]["next_code"] == "quiz_marathon"
+    assert defs["quiz_marathon"]["next_code"] is None
+
+
+def test_current_is_capped_at_target(client):
+    """`current` never overshoots `target` (keeps the progress bar ≤ 100%)."""
+    # Two quizzes recorded; first_quiz target is 1 → current caps at 1.
+    progress_tracker.record_quiz_attempt(
+        difficulty="beginner", num_questions=5, correct_count=5, score_pct=100
+    )
+    progress_tracker.record_quiz_attempt(
+        difficulty="beginner", num_questions=5, correct_count=4, score_pct=80
+    )
+    by_code = {a["code"]: a for a in client.get("/api/progress/achievements").json()["achievements"]}
+    assert by_code["first_quiz"]["current"] == 1  # capped at target=1
+    assert by_code["quiz_marathon"]["current"] == 2  # target=10, raw 2, uncapped
+
+
+# ── Data-file achievement loading (#5) ────────────────────────────────────────
+
+
+def test_achievements_loaded_from_json_file():
+    """The live ACHIEVEMENTS list is built from achievements.json."""
+    import json as _json
+
+    raw = _json.loads(ach_service._ACHIEVEMENTS_FILE.read_text(encoding="utf-8"))
+    file_codes = {r["code"] for r in raw}
+    loaded_codes = {a.code for a in ach_service.ACHIEVEMENTS}
+    assert loaded_codes == file_codes
+    assert len(ach_service.ACHIEVEMENTS) >= 14
+
+
+def test_gte_and_hour_between_comparators_fire(monkeypatch):
+    """Both comparators evaluate correctly off the loaded data."""
+    progress_tracker.record_message()
+    monkeypatch.setattr(
+        progress_tracker, "stats_for_eval",
+        lambda now_ts=None: {
+            "total_seconds": 0, "total_messages": 1, "longest_session_seconds": 0,
+            "messages_today": 1, "scope_filter_uses": 0, "current_streak_days": 1,
+            "local_hour": 2,  # 2am → inside the night_owl wrap window [22, 4)
+        },
+    )
+    earned = ach_service.evaluate_and_persist()
+    assert "first_question" in earned  # gte comparator
+    assert "night_owl" in earned        # hour_between comparator (wrap-around)
+    assert "early_bird" not in earned   # 2am is outside [5, 8)
+
+
+def test_loader_skips_invalid_entries_and_surfaces_new_badge(tmp_path, monkeypatch):
+    """A malformed entry is dropped; a well-formed new one is loaded."""
+    data = [
+        {"code": "good_new", "name": "Good", "description": "d", "icon": "✅",
+         "metric": "total_messages", "target": 3, "group": "messages"},
+        {"code": "bad_comparator", "name": "Bad", "description": "d", "icon": "❌",
+         "comparator": "wat", "metric": "x", "target": 1},
+        {"code": "bad_gte", "name": "Bad2", "description": "d", "icon": "❌"},  # no metric/target
+        {"name": "No code", "description": "d", "icon": "❌", "metric": "x", "target": 1},
+    ]
+    f = tmp_path / "ach.json"
+    import json as _json
+
+    f.write_text(_json.dumps(data), encoding="utf-8")
+    monkeypatch.setattr(ach_service, "_ACHIEVEMENTS_FILE", f)
+
+    loaded = ach_service._load_achievements()
+    codes = {a.code for a in loaded}
+    assert codes == {"good_new"}  # only the valid entry survives

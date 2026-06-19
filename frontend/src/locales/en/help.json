@@ -1,0 +1,93 @@
+{
+  "header": {
+    "badge": "Help & Guide",
+    "title": "How can we help?",
+    "subtitle": "Pick a question to see the answer right here — no typing needed."
+  },
+  "toc": {
+    "onThisPage": "On this page",
+    "aria": "Help sections"
+  },
+  "groups": {
+    "gettingStarted": "Getting started",
+    "tools": "Tools",
+    "progressData": "Progress & data"
+  },
+  "topics": {
+    "uploadDocuments": {
+      "label": "Upload documents",
+      "question": "How do I add my documents?",
+      "answer": "Open **Knowledge Base** in the sidebar, then drag files onto the upload zone or use the file picker. You can assign a category as you upload. You can also paste a **URL** to import a web page. Files are ingested automatically and become searchable in chat."
+    },
+    "supportedTypes": {
+      "label": "Supported file types",
+      "question": "What file types can I upload?",
+      "answer": "PDF, Word (`.docx`), PowerPoint (`.pptx`), Markdown (`.md`), plain text (`.txt`), CSV, and images (PNG/JPG). Scanned or image-only PDFs are **OCR'd** automatically so their text becomes searchable."
+    },
+    "attachFiles": {
+      "label": "Attach files to a message",
+      "question": "Can I attach files or images to a single message?",
+      "answer": "Yes. Click the **paperclip** in the message box (or drag onto it) to attach documents or images to one question. They're analysed just for that message — afterwards you can choose **Add to Knowledge Base** to keep them permanently."
+    },
+    "voiceInput": {
+      "label": "Voice input",
+      "question": "How do I ask with my voice?",
+      "answer": "Tap the **microphone** in the message box and speak. Your speech is transcribed **locally** and dropped into the input, so you can review and edit it before sending."
+    },
+    "focusDocuments": {
+      "label": "Focus on specific documents",
+      "question": "How do I limit answers to certain documents?",
+      "answer": "Use the **scope filter** above the message box to restrict answers to a category or specific files. The active scope is stamped on your message as a badge, and it clears after sending so your next message uses everything again."
+    },
+    "seeSources": {
+      "label": "See the sources",
+      "question": "How do I check where an answer came from?",
+      "answer": "Every answer lists its **sources** in the right-hand panel. Expand any entry to see the exact text chunk the AI used, its relevance score, and a link to open the original file."
+    },
+    "categories": {
+      "label": "Organise with categories",
+      "question": "How do I organise my documents?",
+      "answer": "When uploading, give a document a **category** (e.g. *Contracts*, *Research*, *Recipes*). Categories show up as folders in the scope filter, so you can focus a chat — or any generated material — on one topic area."
+    },
+    "quizzes": {
+      "label": "Quizzes",
+      "question": "How do I generate a quiz?",
+      "answer": "Go to **Study Hub → Quiz Mode**, scope it to your documents, choose difficulty, the number of questions, and **Practice** (instant feedback) or **Exam** (deferred) mode, then start. Every quiz is saved so you can resume or retake it."
+    },
+    "workshops": {
+      "label": "Workshops",
+      "question": "How do I build a multi-lesson workshop?",
+      "answer": "**Study Hub → Workshop Creator** builds a structured, multi-lesson course from your scoped documents — an outline plus lessons you work through one at a time, finishing with a final quiz."
+    },
+    "flashcards": {
+      "label": "Flashcards",
+      "question": "How do flashcards work?",
+      "answer": "**Study Hub → Flashcards** generates a deck from your documents. Flip each card, mark it **Mastered** or **For review**, and your progress is saved per deck."
+    },
+    "mindmaps": {
+      "label": "Mindmaps",
+      "question": "How do I create and export a mindmap?",
+      "answer": "**Study Hub → Mindmaps** turns your documents into an interactive node map. **Drag nodes** to rearrange, switch **Left-right / Top-down** layout, and export as **Markdown, PNG, or PDF**."
+    },
+    "dashboard": {
+      "label": "Activity dashboard",
+      "question": "Where do I see my activity and time?",
+      "answer": "The **Dashboard** shows your total time, sessions, current and best streak, a per-area breakdown, and a daily activity **heatmap**. Click any day in the heatmap for that day's details."
+    },
+    "achievements": {
+      "label": "Achievements",
+      "question": "What achievements can I unlock?",
+      "answer": "Badges unlock automatically as you use the app — first question, daily streaks, quizzes, decks, mindmaps, and more. Find them in the Dashboard's **Achievements** grid; click a badge to see your progress toward it."
+    },
+    "exporting": {
+      "label": "Exporting",
+      "question": "How do I export my work?",
+      "answer": "Quizzes export to **Markdown** or **PDF**; mindmaps export to **Markdown, PNG, or PDF** (buttons on each screen). Individual chat answers can be exported to Markdown too."
+    },
+    "privacy": {
+      "label": "Privacy & storage",
+      "question": "Where is my data stored?",
+      "answer": "**Everything stays on your machine.** Your documents, the search index, chat history, and progress are all local files. Nothing is sent to any third-party AI service — the model runs locally."
+    }
+  }
+}

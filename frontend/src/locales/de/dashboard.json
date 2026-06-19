@@ -1,0 +1,138 @@
+{
+  "hero": {
+    "title": "Dein Fortschritt",
+    "subtitle": "Gesamte Lernzeit, tägliche Aktivität und die Erfolge, die du freigeschaltet hast."
+  },
+  "loading": "Dein Fortschritt wird geladen…",
+  "error": "Deine Fortschrittsdaten konnten nicht geladen werden. Prüfe, ob das Backend läuft, und lade die Seite neu.",
+  "summary": {
+    "totalTime": "Gesamte Lernzeit",
+    "sessions": "Lernsitzungen",
+    "messagesSent_one": "{{count}} Nachricht gesendet",
+    "messagesSent_other": "{{count}} Nachrichten gesendet"
+  },
+  "streak": {
+    "current": "Aktuelle Serie",
+    "best": "Rekord",
+    "days_one": "{{count}} Tag",
+    "days_other": "{{count}} Tage",
+    "personalBest": "Persönlicher Rekord: {{streak}}",
+    "startToday": "Lerne heute, um eine Serie zu starten",
+    "recordSublabel": "🔥 Persönlicher Rekord — bleib dran!"
+  },
+  "trend": {
+    "title": "Lernzeit",
+    "summary": "{{total}} · letzte {{count}} Wochen",
+    "weekOf": "Woche vom {{label}}: {{duration}}",
+    "thisWeek": "Diese Woche"
+  },
+  "breakdown": {
+    "title": "Aktivität im Lern-Hub",
+    "quizzes": "Quizze",
+    "workshops": "Workshops",
+    "flashcards": "Lernkarten",
+    "mindmaps": "Mindmaps",
+    "avgScore": "Ø {{score}}%",
+    "noneYet": "noch keine",
+    "completed": "{{count}} abgeschlossen",
+    "mastered": "{{count}} gemeistert",
+    "exports": "{{count}} Exporte"
+  },
+  "almostThere": {
+    "title": "Fast geschafft"
+  },
+  "achievements": {
+    "title": "Erfolge",
+    "earnedCount": "{{earned}} / {{total}} erreicht"
+  },
+  "progress": {
+    "complete": "Abgeschlossen",
+    "progress": "Fortschritt"
+  },
+  "badge": {
+    "titleEarned": "{{name}} — erhalten {{date}}\n{{description}}",
+    "titleLocked": "{{name}} (gesperrt)\n{{description}}"
+  },
+  "detail": {
+    "earnedOn": "Erhalten {{date}}",
+    "earned": "Erhalten",
+    "locked": "Gesperrt",
+    "close": "Schließen",
+    "howToEarn": "So erreichst du ihn"
+  },
+  "nextLevel": {
+    "label": "Nächste Stufe"
+  },
+  "heatmap": {
+    "title": "Aktivitäts-Heatmap",
+    "hint": "letzte {{count}} Tage · klicke auf einen Tag für Details",
+    "mostActiveDay": "📅 Dein aktivster Tag:"
+  },
+  "day": {
+    "noActivity": "Keine Lernaktivität",
+    "sessions_one": "{{duration}} · {{count}} Sitzung",
+    "sessions_other": "{{duration}} · {{count}} Sitzungen"
+  },
+  "dayModal": {
+    "studyActivity": "{{duration}} Lernaktivität",
+    "close": "Schließen",
+    "noActivity": "Für diesen Tag wurde keine Lernaktivität erfasst.",
+    "time": "Zeit",
+    "sessions": "Sitzungen",
+    "messages": "Nachrichten",
+    "achievementsEarned": "Erreichte Erfolge"
+  },
+  "legend": {
+    "less": "Weniger",
+    "more": "Mehr",
+    "l0": "Keine",
+    "l1": "<15 Min",
+    "l2": "15–60 Min",
+    "l3": "1–3 Std",
+    "l4": "3 Std+"
+  },
+  "empty": {
+    "intro": "Hier ist noch nichts — deine Statistiken, Diagramme und Abzeichen erscheinen, sobald du mit dem Lernen beginnst. So legst du los:",
+    "step1": {
+      "title": "Mit deinen Dokumenten chatten",
+      "description": "Lade eine Datei in die Wissensdatenbank hoch und stelle im Chat Fragen dazu. Jede Nachricht und Lernsitzung wird hier erfasst."
+    },
+    "step2": {
+      "title": "Lernmaterialien erstellen",
+      "description": "Gehe zum Lern-Hub, um Quizze, Workshops, Lernkartensätze und Mindmaps aus deinen ausgewählten Dokumenten zu erstellen."
+    },
+    "step3": {
+      "title": "Erfolge freischalten",
+      "description": "25 Abzeichen für jede Aktivitätsart — erste Frage, Serien, perfekte Ergebnisse, gemeisterte Sätze und mehr. Dein Fortschritt lebt hier."
+    }
+  },
+  "units": {
+    "min": "Min",
+    "messages": "Nachrichten",
+    "today": "heute",
+    "days": "Tage",
+    "uses": "Verwendungen",
+    "quizzes": "Quizze",
+    "passes": "bestanden",
+    "workshops": "Workshops",
+    "lessons": "Lektionen",
+    "decks": "Sätze",
+    "flips": "Umdrehungen",
+    "mindmaps": "Mindmaps",
+    "exports": "Exporte"
+  },
+  "weekdaysFull": {
+    "0": "Montag",
+    "1": "Dienstag",
+    "2": "Mittwoch",
+    "3": "Donnerstag",
+    "4": "Freitag",
+    "5": "Samstag",
+    "6": "Sonntag"
+  },
+  "weekdaysShort": {
+    "mon": "Mo",
+    "wed": "Mi",
+    "fri": "Fr"
+  }
+}

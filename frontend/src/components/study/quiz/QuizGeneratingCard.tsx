@@ -11,27 +11,30 @@
  */
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Brain } from "lucide-react";
 import { motion } from "framer-motion";
 
-const STATUS_STAGES: { from: number; message: string }[] = [
-  { from: 0, message: "Scanning your documents…" },
-  { from: 3, message: "Identifying key concepts…" },
-  { from: 7, message: "Drafting questions…" },
-  { from: 13, message: "Crafting plausible answer options…" },
-  { from: 22, message: "Polishing wording and explanations…" },
-  { from: 35, message: "Almost there — finalising your quiz…" },
+// Each stage maps to a translation key (quiz.gen.stage0…5).
+const STATUS_STAGES: { from: number; key: string }[] = [
+  { from: 0, key: "stage0" },
+  { from: 3, key: "stage1" },
+  { from: 7, key: "stage2" },
+  { from: 13, key: "stage3" },
+  { from: 22, key: "stage4" },
+  { from: 35, key: "stage5" },
 ];
 
-function pickStage(elapsedSec: number): string {
-  let current = STATUS_STAGES[0].message;
+function pickStageKey(elapsedSec: number): string {
+  let current = STATUS_STAGES[0].key;
   for (const stage of STATUS_STAGES) {
-    if (elapsedSec >= stage.from) current = stage.message;
+    if (elapsedSec >= stage.from) current = stage.key;
   }
   return current;
 }
 
 export function QuizGeneratingCard() {
+  const { t } = useTranslation("study");
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -42,7 +45,7 @@ export function QuizGeneratingCard() {
     return () => clearInterval(id);
   }, []);
 
-  const status = pickStage(elapsed);
+  const status = t(`quiz.gen.${pickStageKey(elapsed)}`);
   const mins = Math.floor(elapsed / 60);
   const secs = elapsed % 60;
   const timerLabel = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
@@ -57,13 +60,10 @@ export function QuizGeneratingCard() {
         <Brain size={32} />
       </motion.div>
 
-      <h2 className="text-xl font-bold text-[#191c1e] dark:text-[#e1e2ec] mb-1">
-        Generating your quiz
+      <h2 className="text-xl font-bold text-ink-strong mb-1">
+        {t("quiz.gen.title")}
       </h2>
-      <p className="text-sm text-[#727785] dark:text-[#8c909f] mb-6">
-        Gemma is reading your selected documents and writing questions just for
-        you. This usually takes 10–40 seconds.
-      </p>
+      <p className="text-sm text-ink-muted mb-6">{t("quiz.gen.body")}</p>
 
       {/* Indeterminate progress bar */}
       <div className="w-full max-w-sm h-1.5 bg-[#c2c6d6]/40 dark:bg-[#424754]/40 rounded-full overflow-hidden mb-4">
@@ -88,8 +88,8 @@ export function QuizGeneratingCard() {
       >
         {status}
       </motion.div>
-      <div className="text-xs text-[#727785] dark:text-[#8c909f] tabular-nums">
-        {timerLabel} elapsed
+      <div className="text-xs text-ink-muted tabular-nums">
+        {t("quiz.gen.elapsed", { time: timerLabel })}
       </div>
     </div>
   );

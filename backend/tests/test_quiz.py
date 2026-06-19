@@ -103,6 +103,47 @@ def test_parse_returns_empty_when_no_array():
     assert quiz_generator._parse_questions("no json here", allowed_types=["mcq"]) == []
 
 
+def test_parse_accepts_object_wrapped_questions():
+    """`format="json"` + Gemma returns {"questions": [...]}, not a bare array."""
+    raw = json.dumps({"questions": [VALID_MCQ, VALID_TF]})
+    out = quiz_generator._parse_questions(raw, allowed_types=["mcq", "true_false"])
+    assert len(out) == 2
+
+
+def test_parse_object_wrapped_with_fence_and_trailing_comma():
+    """Object shape inside a markdown fence with a trailing comma still parses."""
+    raw = '```json\n{"questions": [' + json.dumps(VALID_MCQ) + ",]}\n```"
+    out = quiz_generator._parse_questions(raw, allowed_types=["mcq"])
+    assert len(out) == 1
+
+
+def test_parse_object_wrapped_alternate_key():
+    """Defensive: model uses a different key but still a list of question objects."""
+    raw = json.dumps({"quiz": [VALID_MCQ]})
+    out = quiz_generator._parse_questions(raw, allowed_types=["mcq"])
+    assert len(out) == 1
+
+
+def test_generate_endpoint_happy_path_object_shape(client):
+    """End-to-end: model returns object-wrapped questions → 200 + parsed."""
+    payload = {"questions": [VALID_MCQ, VALID_TF]}
+    with patch.object(quiz_generator, "ollama") as mock_oll, patch.object(
+        quiz_generator.vector_db, "search"
+    ) as mock_search:
+        mock_search.return_value = [{"source": "g.md", "content": "Paris is the capital."}]
+        mock_oll.chat.return_value = {"message": {"content": json.dumps(payload)}}
+        resp = client.post(
+            "/api/study/quiz/generate",
+            json={
+                "difficulty": "advanced",
+                "num_questions": 5,
+                "question_types": ["mcq", "true_false"],
+            },
+        )
+    assert resp.status_code == 200
+    assert len(resp.json()["questions"]) == 2
+
+
 def test_parse_rejects_tf_with_non_truefalse_options():
     bad = dict(VALID_TF, options=["Yes", "No"])
     out = quiz_generator._parse_questions(
@@ -140,6 +181,139 @@ def test_generate_endpoint_happy_path(client):
     body = resp.json()
     assert len(body["questions"]) == 3
     assert body["source_chunks_used"] == 1
+
+
+def test_generate_saves_quiz_and_roundtrips(client):
+    """Generating a quiz auto-saves it; it can be listed, fetched, and deleted."""
+    quiz = [VALID_MCQ, VALID_TF]
+    with patch.object(quiz_generator, "ollama") as mock_oll, patch.object(
+        quiz_generator.vector_db, "search"
+    ) as mock_search:
+        mock_search.return_value = [{"source": "py.txt", "content": "Paris."}]
+        mock_oll.chat.return_value = {"message": {"content": json.dumps({"questions": quiz})}}
+        gen = client.post(
+            "/api/study/quiz/generate",
+            json={
+                "difficulty": "beginner",
+                "num_questions": 5,
+                "question_types": ["mcq", "true_false"],
+                "document_filter": ["py.txt"],
+            },
+        )
+    assert gen.status_code == 200
+    quiz_id = gen.json()["quiz_id"]
+    assert quiz_id > 0
+
+    # Appears in the list with a derived title.
+    lst = client.get("/api/study/quiz/list").json()["quizzes"]
+    assert any(q["id"] == quiz_id for q in lst)
+    saved = next(q for q in lst if q["id"] == quiz_id)
+    assert saved["title"] == "Py Quiz"
+    assert saved["question_count"] == 2
+
+    # Full fetch returns the questions verbatim.
+    full = client.get(f"/api/study/quiz/saved/{quiz_id}").json()
+    assert len(full["questions"]) == 2
+    assert full["questions"][0]["question"] == VALID_MCQ["question"]
+    assert full["scope"] == ["py.txt"]
+
+    # Delete removes it.
+    assert client.delete(f"/api/study/quiz/saved/{quiz_id}").status_code == 200
+    assert all(q["id"] != quiz_id for q in client.get("/api/study/quiz/list").json()["quizzes"])
+
+
+def test_quiz_progress_save_resume_clear(client):
+    qid = progress_tracker.create_quiz(
+        difficulty="beginner", scope=["x.txt"], title="X Quiz",
+        questions=[dict(VALID_MCQ), dict(VALID_TF), dict(VALID_MCQ)],
+    )
+    # Initially not in progress.
+    item = next(q for q in client.get("/api/study/quiz/list").json()["quizzes"] if q["id"] == qid)
+    assert item["in_progress"] is False and item["answered_count"] == 0
+
+    # Save progress: answered 2 of 3, on question index 2.
+    r = client.put(
+        f"/api/study/quiz/saved/{qid}/progress",
+        json={"current": 2, "correct_count": 1, "answers": [0, 1, None]},
+    )
+    assert r.status_code == 200
+
+    # List reflects in-progress + answered count.
+    item = next(q for q in client.get("/api/study/quiz/list").json()["quizzes"] if q["id"] == qid)
+    assert item["in_progress"] is True and item["answered_count"] == 2
+
+    # Full fetch returns the progress for resume.
+    full = client.get(f"/api/study/quiz/saved/{qid}").json()
+    assert full["progress"]["current"] == 2
+    assert full["progress"]["correct_count"] == 1
+    assert full["progress"]["answers"] == [0, 1, None]
+
+    # Clear on finish.
+    assert client.delete(f"/api/study/quiz/saved/{qid}/progress").status_code == 200
+    full = client.get(f"/api/study/quiz/saved/{qid}").json()
+    assert full["progress"] is None
+
+
+def test_quiz_completed_state_is_revisitable(client):
+    qid = progress_tracker.create_quiz(
+        difficulty="beginner", scope=["x.txt"], title="X Quiz",
+        questions=[dict(VALID_MCQ), dict(VALID_TF)],
+    )
+    # Mark completed with a score.
+    r = client.put(
+        f"/api/study/quiz/saved/{qid}/progress",
+        json={"current": 1, "correct_count": 2, "answers": [0, 1],
+              "completed": True, "score_pct": 100},
+    )
+    assert r.status_code == 200
+
+    item = next(q for q in client.get("/api/study/quiz/list").json()["quizzes"] if q["id"] == qid)
+    assert item["completed"] is True
+    assert item["last_score"] == 100
+    assert item["in_progress"] is False  # completed != in-progress
+
+    full = client.get(f"/api/study/quiz/saved/{qid}").json()
+    assert full["progress"]["completed"] is True
+    assert full["progress"]["score_pct"] == 100
+
+    # Retake clears it → back to fresh.
+    client.delete(f"/api/study/quiz/saved/{qid}/progress")
+    item = next(q for q in client.get("/api/study/quiz/list").json()["quizzes"] if q["id"] == qid)
+    assert item["completed"] is False and item["in_progress"] is False
+
+
+def test_quiz_progress_save_404(client):
+    r = client.put(
+        "/api/study/quiz/saved/9999/progress",
+        json={"current": 0, "correct_count": 0, "answers": []},
+    )
+    assert r.status_code == 404
+
+
+def test_get_saved_quiz_404(client):
+    assert client.get("/api/study/quiz/saved/9999").status_code == 404
+
+
+def test_delete_saved_quiz_404(client):
+    assert client.delete("/api/study/quiz/saved/9999").status_code == 404
+
+
+def test_quiz_tracker_crud_direct():
+    qs = [
+        {"type": "mcq", "question": "Q1", "options": ["a", "b", "c", "d"],
+         "correct_index": 1, "explanation": "because"},
+    ]
+    qid = progress_tracker.create_quiz(
+        difficulty="advanced", scope=["a.txt", "b.txt"], title="Two Quiz", questions=qs
+    )
+    got = progress_tracker.get_quiz(qid)
+    assert got is not None
+    assert got["difficulty"] == "advanced"
+    assert got["scope"] == ["a.txt", "b.txt"]
+    assert got["questions"][0]["options"] == ["a", "b", "c", "d"]
+    assert got["questions"][0]["correct_index"] == 1
+    assert progress_tracker.delete_quiz(qid) is True
+    assert progress_tracker.get_quiz(qid) is None
 
 
 def test_generate_endpoint_rejects_invalid_count(client):

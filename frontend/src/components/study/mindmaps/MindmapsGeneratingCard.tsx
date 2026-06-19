@@ -3,24 +3,26 @@
  */
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Network } from "lucide-react";
 import { motion } from "framer-motion";
 
 const STAGES = [
-  { from: 0, message: "Reading your documents…" },
-  { from: 3, message: "Identifying central themes…" },
-  { from: 8, message: "Mapping sub-topics under each theme…" },
-  { from: 18, message: "Laying out the radial structure…" },
-  { from: 30, message: "Almost there — finalising your mindmap…" },
+  { from: 0, key: "stage0" },
+  { from: 3, key: "stage1" },
+  { from: 8, key: "stage2" },
+  { from: 18, key: "stage3" },
+  { from: 30, key: "stage4" },
 ];
 
-function stage(elapsed: number): string {
-  let cur = STAGES[0].message;
-  for (const s of STAGES) if (elapsed >= s.from) cur = s.message;
+function stageKey(elapsed: number): string {
+  let cur = STAGES[0].key;
+  for (const s of STAGES) if (elapsed >= s.from) cur = s.key;
   return cur;
 }
 
 export function MindmapsGeneratingCard() {
+  const { t } = useTranslation("study");
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     const t0 = Date.now();
@@ -28,7 +30,7 @@ export function MindmapsGeneratingCard() {
     return () => clearInterval(id);
   }, []);
 
-  const status = stage(elapsed);
+  const status = t(`mindmap.gen.${stageKey(elapsed)}`);
   const mins = Math.floor(elapsed / 60);
   const secs = elapsed % 60;
   const timer = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
@@ -42,12 +44,11 @@ export function MindmapsGeneratingCard() {
       >
         <Network size={32} />
       </motion.div>
-      <h2 className="text-xl font-bold text-[#191c1e] dark:text-white mb-1">
-        Drawing your mindmap
+      <h2 className="text-xl font-bold text-ink-strong mb-1">
+        {t("mindmap.gen.title")}
       </h2>
-      <p className="text-sm text-[#727785] dark:text-[#8c909f] mb-6">
-        Gemma is reading your documents and structuring the concepts.
-        This usually takes 15–40 seconds.
+      <p className="text-sm text-ink-muted mb-6">
+        {t("mindmap.gen.body")}
       </p>
 
       <div className="w-full max-w-sm h-1.5 bg-[#c2c6d6]/40 dark:bg-[#424754]/40 rounded-full overflow-hidden mb-4">
@@ -68,8 +69,8 @@ export function MindmapsGeneratingCard() {
       >
         {status}
       </motion.div>
-      <div className="text-xs text-[#727785] dark:text-[#8c909f] tabular-nums">
-        {timer} elapsed
+      <div className="text-xs text-ink-muted tabular-nums">
+        {t("mindmap.gen.elapsed", { time: timer })}
       </div>
     </div>
   );

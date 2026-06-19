@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Filter, X, ChevronDown, ChevronRight, FileText, Folder } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
@@ -35,6 +36,7 @@ function IndeterminateCheckbox({
 }
 
 export function DocScopeFilter({ selected, onChange }: DocScopeFilterProps) {
+  const { t } = useTranslation("kb");
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   // Popover opens upward in chat (trigger near bottom) but should flip
@@ -130,7 +132,7 @@ export function DocScopeFilter({ selected, onChange }: DocScopeFilterProps) {
   // Compute smart pill label
   let pillLabel: string;
   if (!hasFilter) {
-    pillLabel = "All documents";
+    pillLabel = t("scope.all");
   } else {
     const fullCats = categories.filter((c) => isCategoryFull(c));
     const partialCats = categories.filter((c) => isCategoryPartial(c));
@@ -143,7 +145,7 @@ export function DocScopeFilter({ selected, onChange }: DocScopeFilterProps) {
     } else if (selected.length === 1) {
       pillLabel = truncate(selected[0], 22);
     } else {
-      pillLabel = `${selected.length} documents`;
+      pillLabel = t("scope.documents", { count: selected.length });
     }
   }
 
@@ -159,9 +161,9 @@ export function DocScopeFilter({ selected, onChange }: DocScopeFilterProps) {
         className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
           hasFilter
             ? "bg-[#a855f7]/10 border-[#a855f7]/40 text-[#a855f7] dark:text-[#ddb7ff]"
-            : "bg-[#f2f4f6] dark:bg-[#272a31] border-[#c2c6d6] dark:border-[#424754] text-[#727785] dark:text-[#8c909f] hover:border-[#a855f7]/40 hover:text-[#a855f7] dark:hover:text-[#ddb7ff]"
+            : "bg-[#f2f4f6] dark:bg-[#272a31] border-[#c2c6d6] dark:border-[#424754] text-ink-muted hover:border-[#a855f7]/40 hover:text-[#a855f7] dark:hover:text-[#ddb7ff]"
         }`}
-        aria-label={hasFilter ? `Searching ${selected.length} document(s)` : "Filter by category or document"}
+        aria-label={hasFilter ? t("scope.searching", { count: selected.length }) : t("scope.filterAria")}
         aria-expanded={open}
       >
         <Filter size={11} />
@@ -177,11 +179,11 @@ export function DocScopeFilter({ selected, onChange }: DocScopeFilterProps) {
         <button
           type="button"
           onClick={clearAll}
-          aria-label="Clear document filter"
+          aria-label={t("scope.clearAria")}
           className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-[#a855f7]/10 border border-[#a855f7]/30 text-[#a855f7] dark:text-[#ddb7ff] hover:bg-[#a855f7]/20 transition-colors"
         >
           <X size={11} />
-          Clear
+          {t("scope.clear")}
         </button>
       )}
 
@@ -193,11 +195,11 @@ export function DocScopeFilter({ selected, onChange }: DocScopeFilterProps) {
             direction === "up" ? "bottom-full mb-2" : "top-full mt-2"
           }`}
           role="dialog"
-          aria-label="Select categories or documents to search"
+          aria-label={t("scope.dialogAria")}
         >
           <div className="px-3 py-2 border-b border-[#c2c6d6] dark:border-[#424754] flex items-center justify-between">
-            <span className="text-xs font-semibold text-[#191c1e] dark:text-[#e1e2ec]">
-              Search scope
+            <span className="text-xs font-semibold text-ink-strong">
+              {t("scope.title")}
             </span>
             {hasFilter && (
               <button
@@ -205,15 +207,15 @@ export function DocScopeFilter({ selected, onChange }: DocScopeFilterProps) {
                 onClick={clearAll}
                 className="text-xs text-[#a855f7] dark:text-[#ddb7ff] hover:underline"
               >
-                Clear all
+                {t("scope.clearAll")}
               </button>
             )}
           </div>
 
-          <p className="px-3 pt-2 pb-1 text-[11px] text-[#727785] dark:text-[#8c909f]">
+          <p className="px-3 pt-2 pb-1 text-xs text-ink-muted">
             {hasFilter
-              ? "Agent searches only the selected documents."
-              : "Select a category or individual documents to restrict the search scope."}
+              ? t("scope.hintActive")
+              : t("scope.hintInactive")}
           </p>
 
           <ul className="max-h-64 overflow-y-auto py-1">
@@ -239,16 +241,16 @@ export function DocScopeFilter({ selected, onChange }: DocScopeFilterProps) {
                       aria-expanded={isExp}
                     >
                       {isExp ? (
-                        <ChevronDown size={12} className="text-[#727785] dark:text-[#8c909f] shrink-0" />
+                        <ChevronDown size={12} className="text-ink-muted shrink-0" />
                       ) : (
-                        <ChevronRight size={12} className="text-[#727785] dark:text-[#8c909f] shrink-0" />
+                        <ChevronRight size={12} className="text-ink-muted shrink-0" />
                       )}
                       <Folder size={12} className="text-[#a855f7] dark:text-[#ddb7ff] shrink-0" />
-                      <span className="text-xs font-semibold text-[#191c1e] dark:text-[#e1e2ec] truncate">
+                      <span className="text-xs font-semibold text-ink-strong truncate">
                         {cat}
                       </span>
-                      <span className="text-[10px] text-[#727785] dark:text-[#8c909f] ml-auto shrink-0">
-                        {catDocs.length} file{catDocs.length !== 1 ? "s" : ""}
+                      <span className="text-xs text-ink-muted ml-auto shrink-0">
+                        {t("scope.files", { count: catDocs.length })}
                       </span>
                     </button>
                   </div>
@@ -269,13 +271,13 @@ export function DocScopeFilter({ selected, onChange }: DocScopeFilterProps) {
                               />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5">
-                                  <FileText size={11} className="text-[#727785] dark:text-[#8c909f] shrink-0" />
-                                  <span className="text-xs text-[#191c1e] dark:text-[#e1e2ec] truncate">
+                                  <FileText size={11} className="text-ink-muted shrink-0" />
+                                  <span className="text-xs text-ink-strong truncate">
                                     {doc.name}
                                   </span>
                                 </div>
-                                <span className="text-[10px] text-[#727785] dark:text-[#8c909f]">
-                                  {doc.chunk_count} chunk{doc.chunk_count !== 1 ? "s" : ""}
+                                <span className="text-xs text-ink-muted">
+                                  {t("scope.chunks", { count: doc.chunk_count })}
                                 </span>
                               </div>
                             </label>
@@ -295,7 +297,7 @@ export function DocScopeFilter({ selected, onChange }: DocScopeFilterProps) {
               onClick={() => setOpen(false)}
               className="text-xs font-medium text-[#0058be] dark:text-[#adc6ff] hover:underline"
             >
-              Done
+              {t("scope.done")}
             </button>
           </div>
         </div>

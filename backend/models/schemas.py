@@ -6,7 +6,7 @@ the API contract is self-documenting via OpenAPI.
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Literal, Optional
 
 
 # ── Requests ─────────────────────────────────────────────────────────────────
@@ -143,6 +143,8 @@ class QuizQuestionOut(BaseModel):
 class QuizGenerateResponse(BaseModel):
     questions: list[QuizQuestionOut]
     source_chunks_used: int
+    # id of the auto-saved quiz, so the frontend can deep-link / delete it.
+    quiz_id: int
 
 
 class QuizSubmitRequest(BaseModel):
@@ -157,6 +159,43 @@ class QuizSubmitResponse(BaseModel):
     """Returned after recording an attempt — includes any badges just unlocked."""
     score_pct: int
     newly_earned_achievements: list[str] = []
+
+
+class QuizProgress(BaseModel):
+    """Attempt state for resume / completed review."""
+    current: int = Field(..., ge=0)
+    correct_count: int = Field(..., ge=0)
+    answers: list[Optional[int]] = []
+    completed: bool = False
+    score_pct: Optional[int] = None
+    style: str = "practice"  # "practice" | "exam"
+
+
+class SavedQuizListItem(BaseModel):
+    id: int
+    created_at: float
+    difficulty: str
+    title: str
+    question_count: int
+    in_progress: bool = False
+    answered_count: int = 0
+    completed: bool = False
+    last_score: Optional[int] = None
+
+
+class SavedQuizListResponse(BaseModel):
+    quizzes: list[SavedQuizListItem]
+
+
+class SavedQuizOut(BaseModel):
+    id: int
+    created_at: float
+    difficulty: str
+    scope: list[str]
+    title: str
+    question_count: int
+    questions: list[QuizQuestionOut]
+    progress: Optional[QuizProgress] = None
 
 
 # ── Study Hub: Workshops ────────────────────────────────────────────────────
@@ -187,6 +226,18 @@ class WorkshopOut(BaseModel):
     objectives: list[str]
     completed_at: Optional[float] = None
     lessons: list[WorkshopLessonOut]
+
+
+class WorkshopLessonEdit(BaseModel):
+    """One entry of the desired final lesson list (rename/reorder/delete)."""
+    # lesson_idx in the CURRENT workshop this entry refers to.
+    old_idx: int = Field(..., ge=0)
+    title: str = Field(..., min_length=1, max_length=200)
+
+
+class WorkshopLessonsPatchRequest(BaseModel):
+    # The desired final lesson list, in order. Omitted lessons are deleted.
+    lessons: list[WorkshopLessonEdit] = Field(..., min_length=1, max_length=20)
 
 
 class WorkshopListItem(BaseModel):
@@ -281,6 +332,27 @@ class MindmapNode(BaseModel):
     children: list["MindmapNode"] = []
 
 
+class MindmapGraphNode(BaseModel):
+    id: str = Field(..., min_length=1, max_length=64)
+    label: str = Field(..., min_length=1, max_length=300)
+    level: int = Field(..., ge=0, le=2)
+    # Preset colour key (e.g. "emerald"); null → default tier styling.
+    color: Optional[str] = Field(None, max_length=24)
+
+
+class MindmapGraphEdge(BaseModel):
+    id: str = Field(..., min_length=1, max_length=140)
+    source: str = Field(..., min_length=1, max_length=64)
+    target: str = Field(..., min_length=1, max_length=64)
+
+
+class MindmapGraph(BaseModel):
+    """User-edited graph — structure only (positions/layout have own columns)."""
+
+    nodes: list[MindmapGraphNode] = Field(..., min_length=1, max_length=500)
+    edges: list[MindmapGraphEdge] = Field(..., max_length=1_000)
+
+
 class MindmapOut(BaseModel):
     id: int
     created_at: float
@@ -289,6 +361,33 @@ class MindmapOut(BaseModel):
     title: str
     tree: MindmapNode
     export_count: int
+    # User-edited mermaid source; null → render the auto-generated diagram.
+    custom_source: Optional[str] = None
+    # Auto-diagram layout: 'TD' | 'LR' (null → frontend default).
+    layout: Optional[str] = None
+    # Manual node positions {id: {x, y}} (null → dagre auto-layout).
+    node_positions: Optional[dict] = None
+    # User-edited graph; null → render the AI-generated tree.
+    graph: Optional[MindmapGraph] = None
+
+
+class MindmapSourceRequest(BaseModel):
+    # The edited mermaid code. Empty/whitespace resets to the auto diagram.
+    source: str = Field("", max_length=20_000)
+
+
+class MindmapLayoutRequest(BaseModel):
+    layout: Literal["TD", "LR"]
+
+
+class MindmapPositionsRequest(BaseModel):
+    # Manual node positions; empty/null clears them (back to auto-layout).
+    positions: Optional[dict] = None
+
+
+class MindmapGraphRequest(BaseModel):
+    # The edited graph; null resets to the AI-generated tree.
+    graph: Optional[MindmapGraph] = None
 
 
 class MindmapListItem(BaseModel):

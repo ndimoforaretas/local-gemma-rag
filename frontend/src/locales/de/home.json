@@ -1,0 +1,24 @@
+{
+  "title": "Willkommen bei Gemma CogniVault",
+  "subtitle": "Ihr privater KI-Begleiter für alle Dokumente. Wählen Sie, wo Sie beginnen möchten – jede Karte unten ist anklickbar.",
+  "privacy": "100 % lokal & privat – nichts verlässt Ihren Rechner.",
+  "browseHelp": "Hilfe durchsuchen",
+  "cards": {
+    "chat": {
+      "title": "Mit Ihren Dokumenten chatten",
+      "desc": "Stellen Sie Fragen und erhalten Sie Antworten mit Quellenangaben."
+    },
+    "sync": {
+      "title": "Ihre Bibliothek aufbauen",
+      "desc": "Laden Sie Ihre privaten Dokumente hoch und organisieren Sie sie."
+    },
+    "study": {
+      "title": "Quiz & Mindmaps erstellen",
+      "desc": "Verwandeln Sie Dokumente in Quizze, Lernkarten & Mindmaps."
+    },
+    "dashboard": {
+      "title": "Ihre Aktivität verfolgen",
+      "desc": "Zeitaufwand, Serien und Erfolge."
+    }
+  }
+}

@@ -2,7 +2,8 @@
  * One lesson card in the outline view: index, title, est minutes, status badge.
  */
 
-import { Clock, CheckCircle2, Circle, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Clock, CheckCircle2, Zap, ChevronRight } from "lucide-react";
 import type { WorkshopLesson } from "./types";
 
 export function LessonCard({
@@ -12,8 +13,10 @@ export function LessonCard({
   lesson: WorkshopLesson;
   onClick: () => void;
 }) {
+  const { t } = useTranslation("study");
   const done = lesson.completed_at != null;
-  const started = lesson.has_content && !done;
+  // Content already generated (read or background-prefetched) → opens instantly.
+  const ready = lesson.has_content && !done;
 
   return (
     <button
@@ -26,24 +29,24 @@ export function LessonCard({
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
-          <h3 className="text-sm font-semibold text-[#191c1e] dark:text-white truncate">
+          <h3 className="text-sm font-semibold text-ink-strong truncate">
             {lesson.title}
           </h3>
           {done && (
             <CheckCircle2 size={14} className="shrink-0 text-emerald-500" />
           )}
-          {started && (
-            <Circle size={12} className="shrink-0 text-amber-500 fill-current" />
+          {ready && (
+            <Zap size={12} className="shrink-0 text-sky-500" />
           )}
         </div>
-        <div className="flex items-center gap-1 text-xs text-[#727785] dark:text-[#8c909f]">
+        <div className="flex items-center gap-1 text-xs text-ink-muted">
           <Clock size={11} />
-          <span>{lesson.est_minutes} min read</span>
-          {done && <span>· Completed</span>}
-          {started && <span>· In progress</span>}
+          <span>{t("workshop.lessonCard.minRead", { count: lesson.est_minutes })}</span>
+          {done && <span>· {t("workshop.lessonCard.completed")}</span>}
+          {ready && <span>· {t("workshop.lessonCard.ready")}</span>}
         </div>
       </div>
-      <ChevronRight size={16} className="shrink-0 text-[#727785] dark:text-[#8c909f]" />
+      <ChevronRight size={16} className="shrink-0 text-ink-muted" />
     </button>
   );
 }

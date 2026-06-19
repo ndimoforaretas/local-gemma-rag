@@ -23,6 +23,7 @@ from typing import Literal, Optional
 import ollama
 
 from backend.config import get_settings
+from backend.services import prompt_loader
 from backend.services.vector_db import vector_db
 
 logger = logging.getLogger("cognivault.flashcards")
@@ -125,28 +126,12 @@ def _build_prompt(chunks: list[dict], difficulty: Difficulty, num_cards: int) ->
     for i, c in enumerate(chunks, 1):
         text = (c.get("content") or c.get("text") or "")[:_MAX_CHUNK_CHARS]
         blocks.append(f"[Source {i}: {c.get('source', 'unknown')}]\n{text}")
-    return (
-        "You generate flashcard decks for spaced review. Output ONLY a single "
-        "JSON object — no prose, no markdown fences.\n\n"
-        f"DIFFICULTY: {difficulty}. {_DIFFICULTY_GUIDANCE[difficulty]}\n"
-        f"NUMBER OF CARDS: EXACTLY {num_cards}.\n\n"
-        "OUTPUT SCHEMA:\n"
-        "{\n"
-        '  "cards": [\n'
-        f'    {{"front": "prompt/term/question (short)", "back": "answer/definition (concise)"}},\n'
-        f'    ... exactly {num_cards} entries\n'
-        "  ]\n"
-        "}\n\n"
-        "RULES:\n"
-        "- Ground every card in the source material below — do not invent facts.\n"
-        "- Fronts must be standalone (a card should be reviewable without context).\n"
-        "- Vary the prompt style: definitions, fill-in-the-blank, compare/contrast, "
-        "  identify-the-purpose, what-happens-if. Don't make every card look identical.\n"
-        "- Backs are concise: 1-3 sentences for beginner, up to 4 for advanced.\n"
-        f"- The cards array MUST contain exactly {num_cards} entries.\n\n"
-        "SOURCE MATERIAL:\n"
-        + "\n\n".join(blocks)
-        + "\n\nNow emit the JSON object."
+    return prompt_loader.render(
+        "flashcards",
+        difficulty=difficulty,
+        diff_note=_DIFFICULTY_GUIDANCE[difficulty],
+        num_cards=num_cards,
+        context="\n\n".join(blocks),
     )
 
 

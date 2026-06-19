@@ -13,27 +13,39 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { AlertCircle, ArrowLeft, Loader2, RotateCcw } from "lucide-react";
 import { marked } from "marked";
 import type { LessonContent } from "./types";
+import { LessonActions } from "./LessonActions";
 import { TocSidebar } from "./TocSidebar";
 import { parseTocHeadings } from "./tocHelpers";
+import { enhanceCodeBlocks } from "../../../lib/enhanceCodeBlocks";
 
 export function LessonView({
   lesson,
   isLoading,
+  isError,
+  onRetry,
   isCompleted,
   isMarking,
+  regenerateFailed,
   onBack,
   onMarkComplete,
+  onRegenerate,
 }: {
   lesson: LessonContent | undefined;
   isLoading: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
   isCompleted: boolean;
   isMarking: boolean;
+  regenerateFailed: boolean;
   onBack: () => void;
   onMarkComplete: () => void;
+  onRegenerate: () => void;
 }) {
+  const { t } = useTranslation("study");
   // Body markdown with any leading H1 removed (title rendered separately).
   const bodyMd = useMemo(
     () => (lesson ? lesson.content_md.replace(/^\s*#\s+[^\n]+\n+/, "") : ""),
@@ -55,21 +67,50 @@ export function LessonView({
     });
   }, [articleEl, html, headings]);
 
+  // Syntax-highlight code blocks and add copy buttons (highlight.js lazy-loaded).
+  useEffect(() => {
+    if (!articleEl) return;
+    void enhanceCodeBlocks(articleEl, {
+      copy: t("workshop.lesson.copyCode"),
+      copied: t("workshop.lesson.copied"),
+      failed: t("workshop.lesson.copyFailed"),
+    });
+  }, [articleEl, html, t]);
+
   return (
     <div className="space-y-6">
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-sm text-[#424754] dark:text-[#c2c6d6] hover:text-[#191c1e] dark:hover:text-white"
+        className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink-strong"
       >
         <ArrowLeft size={14} />
-        Back to lessons
+        {t("workshop.lesson.back")}
       </button>
 
       {isLoading && (
-        <div className="flex items-center gap-2 p-8 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23] text-[#727785]">
+        <div className="flex items-center gap-2 p-8 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23] text-ink-muted">
           <Loader2 size={18} className="animate-spin" />
-          <span>Loading lesson…</span>
+          <span>{t("workshop.lesson.loading")}</span>
+        </div>
+      )}
+
+      {!isLoading && !lesson && isError && (
+        <div className="flex flex-col items-start gap-3 p-8 rounded-2xl border border-amber-500/40 bg-amber-500/5">
+          <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+            <AlertCircle size={18} />
+            <span className="font-medium">{t("workshop.lesson.errorTitle")}</span>
+          </div>
+          <p className="text-sm text-ink-muted">{t("workshop.lesson.errorBody")}</p>
+          {onRetry && (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#a855f7] hover:bg-[#9333ea] text-white text-sm font-medium transition-colors"
+            >
+              <RotateCcw size={14} /> {t("workshop.lesson.retry")}
+            </button>
+          )}
         </div>
       )}
 
@@ -79,7 +120,7 @@ export function LessonView({
             ref={setArticleEl}
             className="p-6 sm:p-8 rounded-2xl border border-[#c2c6d6] dark:border-[#424754] bg-white dark:bg-[#191b23]"
           >
-            <h1 className="text-3xl font-bold tracking-tight text-[#191c1e] dark:text-white mb-6">
+            <h1 className="text-3xl font-bold tracking-tight text-ink-strong mb-6">
               {lesson.title}
             </h1>
             <div
@@ -92,32 +133,13 @@ export function LessonView({
       )}
 
       {!isLoading && lesson && (
-        <div className="flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onMarkComplete}
-            disabled={isCompleted || isMarking}
-            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-colors ${
-              isCompleted
-                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 cursor-default"
-                : "bg-[#a855f7] hover:bg-[#9333ea] disabled:bg-[#a855f7]/40 text-white"
-            }`}
-          >
-            {isMarking ? (
-              <>
-                <Loader2 size={14} className="animate-spin" /> Saving…
-              </>
-            ) : isCompleted ? (
-              <>
-                <CheckCircle2 size={14} /> Lesson completed
-              </>
-            ) : (
-              <>
-                <CheckCircle2 size={14} /> Mark complete
-              </>
-            )}
-          </button>
-        </div>
+        <LessonActions
+          isCompleted={isCompleted}
+          isMarking={isMarking}
+          regenerateFailed={regenerateFailed}
+          onMarkComplete={onMarkComplete}
+          onRegenerate={onRegenerate}
+        />
       )}
     </div>
   );

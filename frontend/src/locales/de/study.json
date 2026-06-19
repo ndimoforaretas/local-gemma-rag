@@ -1,0 +1,419 @@
+{
+  "hub": {
+    "title": "Lernzentrum",
+    "subtitle": "Verwandeln Sie Ihre Wissensdatenbank in ein aktives Lernerlebnis. Wählen Sie einen Modus, um zu beginnen.",
+    "comingSoon": "Demnächst",
+    "modes": {
+      "quiz": {
+        "label": "Quiz-Modus",
+        "desc": "Testen Sie Ihr Wissen mit automatisch erstellten Quizzen in drei Schwierigkeitsgraden."
+      },
+      "workshop": {
+        "label": "Workshop-Ersteller",
+        "desc": "Mehrteilige Workshops aus Ihrer Wissensdatenbank, Lektion für Lektion."
+      },
+      "flashcards": {
+        "label": "Lernkarten",
+        "desc": "Scrollbare Klappkarten, generiert aus Ihren Dokumenten."
+      },
+      "mindmaps": {
+        "label": "Mindmaps",
+        "desc": "Visuelle Konzeptkarten mit PDF-, PNG- und Markdown-Export."
+      }
+    }
+  },
+  "difficulty": {
+    "beginner": "Anfänger",
+    "intermediate": "Fortgeschritten",
+    "advanced": "Experte"
+  },
+  "quiz": {
+    "crumbs": { "quizMode": "Quiz-Modus", "newQuiz": "Neues Quiz" },
+    "config": {
+      "title": "Quiz einrichten",
+      "subtitle": "Wählen Sie, was Sie lernen möchten, wie anspruchsvoll es sein soll und wie viele Fragen Sie möchten.",
+      "scopeLabel": "Dokumentbereich (erforderlich)",
+      "scopeHintHas": "Quizze sind am genauesten, wenn sie auf eine einzelne Kategorie oder wenige verwandte Dateien beschränkt sind.",
+      "scopeHintEmpty": "Wählen Sie mindestens eine Kategorie oder Datei. Quizze über die gesamte Wissensdatenbank liefern verstreute, qualitativ schlechtere Ergebnisse.",
+      "difficultyLabel": "Schwierigkeit",
+      "countLabel": "Anzahl der Fragen",
+      "questionsN": "{{count}} Fragen",
+      "modeLabel": "Modus",
+      "modeHintExam": "Prüfung – Antworten bleiben verborgen, bis Sie abschicken. Springen Sie zwischen Fragen, ändern Sie Antworten und markieren Sie Fragen zur Wiedervorlage.",
+      "modeHintPractice": "Übung – Sie sehen sofort beim Abschicken, ob jede Antwort richtig ist, mit Erklärung.",
+      "practice": "Übung",
+      "exam": "Prüfung",
+      "timeLabel": "Zeitlimit",
+      "timeHint": "Optional – gegen die Uhr. Das Quiz wird automatisch abgeschickt, wenn die Zeit abläuft.",
+      "noLimit": "Kein Limit",
+      "minutes": "{{count}} Min.",
+      "typesLabel": "Fragetypen",
+      "typesHint": "Wählen Sie mindestens einen Fragetyp.",
+      "mcq": "Multiple Choice",
+      "trueFalse": "Wahr / Falsch",
+      "start": "Quiz starten",
+      "generating": "Wird generiert …"
+    },
+    "list": {
+      "yourQuizzes": "Ihre Quizze",
+      "yourQuizzesCount": "Ihre Quizze ({{count}})",
+      "newQuiz": "Neues Quiz",
+      "emptyTitle": "Machen Sie Ihr erstes Quiz",
+      "emptyBody": "Quizze verwandeln Ihre ausgewählten Dokumente in Multiple-Choice- und Wahr/Falsch-Fragen mit sofortigem Feedback – und jedes Quiz wird hier gespeichert, sodass Sie es jederzeit wiederholen können.",
+      "emptyHint": "Klicken Sie oben auf „Neues Quiz“, um zu beginnen.",
+      "deleteTitle": "Dieses Quiz löschen?",
+      "deleteMessage": "„{{title}}“ ({{count}} Fragen) wird dauerhaft entfernt.",
+      "delete": "Löschen",
+      "keep": "Behalten"
+    },
+    "card": {
+      "deleteAria": "Quiz löschen",
+      "inProgress": "In Bearbeitung",
+      "answeredResume": "{{answered}} / {{total}} beantwortet · Fortsetzen",
+      "viewResults": "{{count}} Fragen · Ergebnisse ansehen",
+      "questions": "{{count}} Fragen"
+    },
+    "gen": {
+      "title": "Ihr Quiz wird generiert",
+      "body": "Gemma liest Ihre ausgewählten Dokumente und schreibt Fragen nur für Sie. Das dauert in der Regel 10–40 Sekunden.",
+      "elapsed": "{{time}} vergangen",
+      "stage0": "Ihre Dokumente werden gescannt …",
+      "stage1": "Schlüsselkonzepte werden erkannt …",
+      "stage2": "Fragen werden entworfen …",
+      "stage3": "Plausible Antwortoptionen werden erstellt …",
+      "stage4": "Formulierungen und Erklärungen werden verfeinert …",
+      "stage5": "Fast geschafft – Ihr Quiz wird fertiggestellt …"
+    },
+    "resume": {
+      "title": "Ihr laufendes Quiz fortsetzen?",
+      "progress": "Frage {{current}} von {{total}}",
+      "savedAgo": "gespeichert {{ago}}",
+      "resume": "Fortsetzen",
+      "discard": "Verwerfen",
+      "agoNow": "gerade eben",
+      "agoMinutes": "vor {{count}} Min.",
+      "agoHours": "vor {{count}} Std.",
+      "agoDays": "vor {{count}} Tg."
+    },
+    "play": {
+      "why": "Warum:",
+      "submitAnswer": "Antwort abschicken",
+      "nextQuestion": "Nächste Frage",
+      "seeResults": "Ergebnisse ansehen",
+      "questionOf": "Frage {{current}} von {{total}}",
+      "flag": "Markieren",
+      "flagged": "Markiert",
+      "back": "Zurück",
+      "next": "Weiter",
+      "submitExam": "Prüfung abschicken",
+      "submitExamSee": "Prüfung abschicken & Ergebnisse ansehen",
+      "stillBlank_one": "{{count}} Frage noch unbeantwortet",
+      "stillBlank_other": "{{count}} Fragen noch unbeantwortet"
+    },
+    "nav": {
+      "questions": "Fragen",
+      "answered": "{{answered}}/{{total}} beantwortet",
+      "legendAnswered": "Beantwortet",
+      "legendBlank": "Leer",
+      "legendFlagged": "Markiert"
+    },
+    "results": {
+      "retake": "Dieses Quiz wiederholen",
+      "library": "Quiz-Bibliothek",
+      "backToHub": "Zurück zum Lernzentrum",
+      "correctOfTotal": "{{correct}} von {{total}} richtig",
+      "newAchievements_one": "🏅 {{count}} neuer Erfolg freigeschaltet",
+      "newAchievements_other": "🏅 {{count}} neue Erfolge freigeschaltet",
+      "correctAnswer": "Richtige Antwort:"
+    },
+    "export": {
+      "title": "Dieses Quiz exportieren",
+      "subtitle": "Wählen Sie, was enthalten sein soll, und dann ein Format.",
+      "levelQuestions": "Nur Fragen",
+      "levelAnswers": "+ richtige Antworten",
+      "levelExplanations": "+ Antworten & Erklärungen",
+      "markdown": "Markdown",
+      "pdf": "PDF",
+      "markdownTip": "Als Markdown (.md) herunterladen – öffnet einen Speichern-unter-Dialog zum Umbenennen und Ordnerwählen",
+      "markdownAria": "Als Markdown herunterladen – öffnet einen Speichern-unter-Dialog",
+      "pdfTip": "Als PDF-Datei herunterladen"
+    }
+  },
+  "flashcards": {
+    "crumbs": { "flashcards": "Lernkarten", "newDeck": "Neuer Stapel" },
+    "config": {
+      "title": "Neuer Lernkartenstapel",
+      "subtitle": "Wählen Sie Bereich, Schwierigkeit und Anzahl der Karten.",
+      "back": "Zurück zu den Stapeln",
+      "scopeLabel": "Dokumentbereich (erforderlich)",
+      "scopeHintHas": "Die Karten werden aus diesen Dokumenten erstellt.",
+      "scopeHintEmpty": "Wählen Sie mindestens eine Kategorie oder Datei. Weiter Bereich = unfokussierte Karten.",
+      "difficultyLabel": "Schwierigkeit",
+      "countLabel": "Anzahl der Karten",
+      "cardsN": "{{count}} Karten",
+      "build": "Stapel erstellen",
+      "generating": "Wird generiert …"
+    },
+    "list": {
+      "yourDecks": "Ihre Lernkartenstapel",
+      "yourDecksCount": "Ihre Stapel ({{count}})",
+      "newDeck": "Neuer Stapel",
+      "emptyTitle": "Erstellen Sie Ihren ersten Stapel",
+      "emptyBody": "Lernkarten verwandeln Ihre ausgewählten Dokumente in einen Stapel Klappkarten, die Sie jederzeit durchgehen können, wenn Sie schnell Ihr Wissen auffrischen möchten.",
+      "emptyHint": "Klicken Sie oben auf „Neuer Stapel“, um zu beginnen.",
+      "deleteTitle": "Diesen Stapel löschen?",
+      "deleteMessage": "„{{title}}“ und alle {{count}} Karten werden dauerhaft entfernt.",
+      "delete": "Löschen",
+      "keep": "Behalten"
+    },
+    "card": {
+      "deleteAria": "Stapel löschen",
+      "mastered": "Gemeistert",
+      "masteredCount": "{{mastered}} / {{total}} gemeistert"
+    },
+    "gen": {
+      "title": "Ihr Stapel wird erstellt",
+      "body": "Gemma liest Ihre ausgewählten Dokumente und schreibt Klappkarten. Das dauert in der Regel 10–40 Sekunden.",
+      "elapsed": "{{time}} vergangen",
+      "stage0": "Ihre Dokumente werden gescannt …",
+      "stage1": "Schlüsselkonzepte zum Merken werden ausgewählt …",
+      "stage2": "Frage-/Antwort-Paare werden entworfen …",
+      "stage3": "Kartenformate werden variiert für abwechslungsreiches Lernen …",
+      "stage4": "Fast geschafft – Ihr Stapel wird fertiggestellt …"
+    },
+    "deck": {
+      "back": "Zurück zu den Stapeln",
+      "meta": "{{difficulty}} · {{count}} Karten · {{mastered}} gemeistert",
+      "filterAll": "Alle",
+      "filterUnmarked": "Unmarkiert",
+      "filterReview": "Wiederholen",
+      "filterMastered": "Gemeistert",
+      "noMatch": "Keine Karten passen zu diesem Filter."
+    },
+    "cardFace": {
+      "clickToFlip": "Zum Umdrehen klicken",
+      "answer": "Antwort",
+      "showPrompt": "Frage anzeigen",
+      "showAnswer": "Antwort anzeigen",
+      "gotIt": "Verstanden",
+      "review": "Wiederholen",
+      "masteredBadge": "Gemeistert",
+      "reviewBadge": "Wiederholen"
+    }
+  },
+  "workshop": {
+    "crumbs": {
+      "creator": "Workshop-Ersteller",
+      "newWorkshop": "Neuer Workshop",
+      "recapQuiz": "Abschlussquiz"
+    },
+    "list": {
+      "yourWorkshops": "Deine Workshops",
+      "yourWorkshopsCount": "Deine Workshops ({{count}})",
+      "newWorkshop": "Neuer Workshop",
+      "emptyTitle": "Erstelle deinen ersten Workshop",
+      "emptyBody": "Workshops verwandeln deine ausgewählten Dokumente in einen strukturierten, mehrteiligen Lernpfad, den du in deinem eigenen Tempo durcharbeiten kannst.",
+      "emptyHintPre": "Klicke oben auf",
+      "emptyHintPost": "um loszulegen.",
+      "deleteTitle": "Diesen Workshop löschen?",
+      "deleteMessage": "„{{title}}“ und alle zugehörigen Lektionen werden dauerhaft entfernt. Dies kann nicht rückgängig gemacht werden.",
+      "delete": "Löschen",
+      "keep": "Behalten"
+    },
+    "card": {
+      "deleteAria": "Workshop löschen",
+      "complete": "Abgeschlossen",
+      "lessonsCount": "{{completed}} / {{total}} Lektionen"
+    },
+    "config": {
+      "back": "Zurück zu den Workshops",
+      "title": "Neuer Workshop",
+      "subtitle": "Wähle deinen Umfang, den Schwierigkeitsgrad und die Anzahl der zu erstellenden Lektionen.",
+      "scopeLabel": "Dokumentbereich (erforderlich)",
+      "scopeHintHas": "Der Workshop nutzt den gesamten Inhalt dieser Dokumente.",
+      "scopeHintEmpty": "Wähle mindestens eine Kategorie oder Datei. Zu breiter Umfang = unfokussierter Workshop.",
+      "difficultyLabel": "Schwierigkeit",
+      "lessonsLabel": "Anzahl der Lektionen",
+      "lessonsOption": "{{count}} Lektionen",
+      "buildingOutline": "Gliederung wird erstellt…",
+      "build": "Workshop erstellen"
+    },
+    "outline": {
+      "back": "Zurück zu den Workshops",
+      "meta": "{{difficulty}} · {{total}} Lektionen · {{done}} erledigt",
+      "keyPoints": "Kernpunkte",
+      "objectives": "Du wirst lernen,",
+      "lessons": "Lektionen",
+      "completeTitle": "Workshop abgeschlossen!",
+      "completeBody": "Teste dein Wissen mit einem Abschlussquiz aus 5 Fragen.",
+      "takeRecap": "Abschlussquiz starten",
+      "editOutline": "Gliederung bearbeiten",
+      "editSave": "Änderungen speichern",
+      "editCancel": "Abbrechen",
+      "renameLesson": "Lektionstitel",
+      "moveUp": "Nach oben",
+      "moveDown": "Nach unten",
+      "deleteLesson": "Lektion löschen",
+      "deleteLessonTitle": "Diese Lektion löschen?",
+      "deleteLessonMessage": "„{{title}}“ und der generierte Inhalt werden aus diesem Workshop entfernt.",
+      "deleteLessonConfirm": "Löschen",
+      "deleteLessonCancel": "Behalten",
+      "reroll": "Gliederung neu generieren",
+      "rerollTitle": "Diese Gliederung neu generieren?",
+      "rerollMessage": "Eine neue Gliederung ersetzt die aktuelle. Alle generierten Lektionen und der Fortschritt in diesem Workshop werden verworfen.",
+      "rerollConfirm": "Neu generieren",
+      "rerollCancel": "Gliederung behalten",
+      "rerollFailed": "Neu generieren fehlgeschlagen — die aktuelle Gliederung wurde behalten."
+    },
+    "export": {
+      "markdown": "Markdown",
+      "pdf": "PDF",
+      "markdownTip": "Gesamten Workshop als Markdown exportieren",
+      "pdfTip": "Gesamten Workshop als PDF exportieren",
+      "notGenerated": "Diese Lektion wurde noch nicht generiert."
+    },
+    "lessonCard": {
+      "minRead": "{{count}} Min. Lesezeit",
+      "completed": "Abgeschlossen",
+      "ready": "Bereit"
+    },
+    "lesson": {
+      "back": "Zurück zu den Lektionen",
+      "loading": "Lektion wird geladen…",
+      "saving": "Wird gespeichert…",
+      "completed": "Lektion abgeschlossen",
+      "markComplete": "Als erledigt markieren",
+      "errorTitle": "Lektion konnte nicht erstellt werden",
+      "errorBody": "Das Modell hat unvollständigen Inhalt geliefert. Das kann gelegentlich passieren — bitte erneut versuchen.",
+      "retry": "Erneut versuchen",
+      "regenerate": "Neu generieren",
+      "regenTitle": "Diese Lektion neu generieren?",
+      "regenMessage": "Der aktuelle Text wird durch eine neu generierte Version ersetzt. Dein Abschluss-Status bleibt erhalten.",
+      "regenConfirm": "Neu generieren",
+      "regenCancel": "Aktuelle behalten",
+      "regenFailed": "Neu generieren fehlgeschlagen — die vorherige Version wurde behalten.",
+      "copyCode": "Kopieren",
+      "copied": "Kopiert",
+      "copyFailed": "Fehler"
+    },
+    "toc": {
+      "onThisPage": "Auf dieser Seite"
+    },
+    "gen": {
+      "outlineTitle": "Deine Workshop-Gliederung wird erstellt",
+      "lessonTitle": "Diese Lektion wird geschrieben",
+      "body": "Gemma schreibt das aus deinen Dokumenten — meist {{eta}}, je nach Hardware.",
+      "lessonHint": "Kommende Lektionen werden im Hintergrund vorbereitet, während du liest.",
+      "outlineEta": "10–40 Sekunden",
+      "lessonEta": "20–60 Sekunden",
+      "elapsed": "{{time}} vergangen",
+      "outlineStage0": "Deine Dokumente werden gescannt…",
+      "outlineStage1": "Die Kernkonzepte werden identifiziert…",
+      "outlineStage2": "Der Lernpfad wird strukturiert…",
+      "outlineStage3": "Lektionstitel und Lesezeit-Schätzungen werden entworfen…",
+      "outlineStage4": "Fast geschafft — die Gliederung wird finalisiert…",
+      "lessonStage0": "Das relevante Material wird erneut gelesen…",
+      "lessonStage1": "Die Lektionsabschnitte werden gegliedert…",
+      "lessonStage2": "Text, Beispiele und Code-Blöcke werden geschrieben…",
+      "lessonStage3": "Struktur und Selbstkontroll-Fragen werden verfeinert…",
+      "lessonStage4": "Wird gerade fertiggestellt — fast bereit…"
+    },
+    "finalQuiz": {
+      "back": "Zurück zur Workshop-Gliederung",
+      "backToWorkshop": "Zurück zum Workshop"
+    }
+  },
+  "mindmap": {
+    "crumbs": {
+      "mindmaps": "Mindmaps",
+      "newMindmap": "Neue Mindmap"
+    },
+    "list": {
+      "yourMindmaps": "Deine Mindmaps",
+      "yourMindmapsCount": "Deine Mindmaps ({{count}})",
+      "newMindmap": "Neue Mindmap",
+      "emptyTitle": "Ein Konzept abbilden",
+      "emptyBody": "Mindmaps stellen die zentralen Themen und Unterthemen deiner ausgewählten Dokumente als interaktives radiales Diagramm dar, das du verschieben, zoomen und als Markdown, PNG oder PDF exportieren kannst.",
+      "emptyHintPre": "Klicke oben auf",
+      "emptyHintPost": "um loszulegen.",
+      "deleteTitle": "Diese Mindmap löschen?",
+      "deleteMessage": "„{{title}}“ wird dauerhaft entfernt.",
+      "delete": "Löschen",
+      "keep": "Behalten"
+    },
+    "card": {
+      "deleteAria": "Mindmap löschen",
+      "depth": "Tiefe {{depth}}",
+      "created": "Erstellt {{date}}"
+    },
+    "config": {
+      "title": "Neue Mindmap",
+      "subtitle": "Wähle die Dokumente aus, die abgebildet werden sollen. Die Mindmap stellt die wichtigsten Themen und Unterthemen dar, die sie findet.",
+      "scopeLabel": "Dokumentbereich (erforderlich)",
+      "scopeHintHas": "Die Mindmap fasst diese Dokumente zusammen.",
+      "scopeHintEmpty": "Wähle mindestens eine Kategorie oder Datei. Mindmaps funktionieren am besten, wenn sie auf ein einzelnes zusammenhängendes Thema beschränkt sind.",
+      "generating": "Wird erstellt…",
+      "generate": "Mindmap erstellen"
+    },
+    "gen": {
+      "title": "Deine Mindmap wird gezeichnet",
+      "body": "Gemma liest deine Dokumente und strukturiert die Konzepte. Das dauert normalerweise 15–40 Sekunden.",
+      "elapsed": "{{time}} vergangen",
+      "stage0": "Deine Dokumente werden gelesen…",
+      "stage1": "Zentrale Themen werden identifiziert…",
+      "stage2": "Unterthemen werden den Themen zugeordnet…",
+      "stage3": "Die radiale Struktur wird angelegt…",
+      "stage4": "Fast geschafft — deine Mindmap wird finalisiert…"
+    },
+    "view": {
+      "meta": "{{themes}} Themen · {{subtopics}} Unterthemen",
+      "hint": "Knoten ziehen zum Anordnen · scrollen zum Zoomen · Hintergrund ziehen zum Verschieben · Shift+Ziehen für Mehrfachauswahl · F passt die Ansicht ein · Doppelklick benennt einen Knoten um",
+      "resetLayout": "Layout zurücksetzen",
+      "resetToAi": "Auf KI-Version zurücksetzen",
+      "resetGraphTitle": "Bearbeitungen verwerfen?",
+      "resetGraphMessage": "„{{title}}“ kehrt zur ursprünglich generierten KI-Struktur zurück. Deine Knoten-Bearbeitungen gehen verloren.",
+      "resetGraphConfirm": "Zurücksetzen",
+      "resetGraphCancel": "Bearbeitungen behalten"
+    },
+    "canvas": {
+      "searchPlaceholder": "Knoten suchen…",
+      "prevMatch": "Voriger Treffer",
+      "nextMatch": "Nächster Treffer",
+      "clearSearch": "Suche löschen",
+      "lockLayout": "Layout sperren",
+      "unlockLayout": "Layout entsperren",
+      "snapToGrid": "Am Raster ausrichten",
+      "collapseBranch": "Zweig einklappen",
+      "expandBranch": "Zweig ausklappen ({{count}} verborgen)",
+      "addChild": "Unterthema hinzufügen",
+      "deleteNode": "Knoten löschen",
+      "newNode": "Neues Thema",
+      "deleteBranchTitle": "Diesen Zweig löschen?",
+      "deleteBranchMessage": "„{{label}}“ und {{count}} Unterthemen werden entfernt.",
+      "deleteBranchConfirm": "Löschen",
+      "deleteBranchCancel": "Behalten",
+      "recolor": "Umfärben",
+      "resetColor": "Standardfarbe",
+      "applyToBranch": "Auf ganzen Zweig anwenden",
+      "colors": {
+        "purple": "Lila",
+        "pink": "Pink",
+        "emerald": "Smaragdgrün",
+        "amber": "Bernstein",
+        "sky": "Himmelblau",
+        "rose": "Rosé"
+      }
+    },
+    "layout": {
+      "label": "Layout",
+      "leftRight": "Links-rechts",
+      "topDown": "Oben-unten"
+    },
+    "export": {
+      "markdown": "Markdown",
+      "image": "Bild",
+      "pdf": "PDF",
+      "exportAs": "Als {{format}} exportieren"
+    }
+  }
+}

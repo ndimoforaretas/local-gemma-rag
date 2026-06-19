@@ -26,16 +26,25 @@ from backend.models.schemas import (
     LessonContentResponse,
     MindmapCreateRequest,
     MindmapExportResponse,
+    MindmapGraphRequest,
+    MindmapLayoutRequest,
     MindmapListItem,
     MindmapListResponse,
     MindmapOut,
+    MindmapPositionsRequest,
+    MindmapSourceRequest,
     QuizGenerateRequest,
     QuizGenerateResponse,
     QuizQuestionOut,
+    QuizProgress,
     QuizSubmitRequest,
     QuizSubmitResponse,
+    SavedQuizListItem,
+    SavedQuizListResponse,
+    SavedQuizOut,
     WorkshopCreateRequest,
     WorkshopLessonOut,
+    WorkshopLessonsPatchRequest,
     WorkshopListItem,
     WorkshopListResponse,
     WorkshopOut,
@@ -58,6 +67,19 @@ router = APIRouter(prefix="/api/study", tags=["Study"])
 _ALLOWED_QUESTION_TYPES = {"mcq", "true_false"}
 # Allowed quiz lengths per UI spec. Anything else 422s.
 _ALLOWED_QUESTION_COUNTS = {5, 10, 20}
+
+
+def _derive_quiz_title(scope: list[str] | None) -> str:
+    """A readable title for a saved quiz, derived from its document scope."""
+    import re
+
+    scope = scope or []
+    if len(scope) == 1:
+        stem = re.sub(r"\.[a-z0-9]+$", "", scope[0], flags=re.IGNORECASE)
+        return stem.replace("_", " ").replace("-", " ").strip().title() + " Quiz"
+    if len(scope) > 1:
+        return f"{len(scope)}-source Quiz"
+    return "Knowledge Base Quiz"
 
 
 @router.post("/quiz/generate", response_model=QuizGenerateResponse)
@@ -104,19 +126,90 @@ def generate_quiz(req: QuizGenerateRequest) -> QuizGenerateResponse:
             detail="The model did not return a usable quiz. Try again or change scope.",
         )
 
+    questions_out = [
+        QuizQuestionOut(
+            type=q.type,
+            question=q.question,
+            options=q.options,
+            correct_index=q.correct_index,
+            explanation=q.explanation,
+        )
+        for q in result.questions
+    ]
+
+    # Auto-save so the quiz is revisitable later (parity with the other modes).
+    # Best-effort: a persistence hiccup must not fail generation.
+    quiz_id = 0
+    try:
+        quiz_id = progress_tracker.create_quiz(
+            difficulty=req.difficulty,
+            scope=req.document_filter or [],
+            title=_derive_quiz_title(req.document_filter),
+            questions=[q.model_dump() for q in questions_out],
+        )
+    except Exception:
+        logger.exception("Saving generated quiz failed (non-fatal)")
+
     return QuizGenerateResponse(
-        questions=[
-            QuizQuestionOut(
-                type=q.type,
-                question=q.question,
-                options=q.options,
-                correct_index=q.correct_index,
-                explanation=q.explanation,
-            )
-            for q in result.questions
-        ],
+        questions=questions_out,
         source_chunks_used=result.source_chunks_used,
+        quiz_id=quiz_id,
     )
+
+
+@router.get("/quiz/list", response_model=SavedQuizListResponse)
+def list_saved_quizzes() -> SavedQuizListResponse:
+    return SavedQuizListResponse(
+        quizzes=[SavedQuizListItem(**q) for q in progress_tracker.list_quizzes()],
+    )
+
+
+@router.get("/quiz/saved/{quiz_id}", response_model=SavedQuizOut)
+def get_saved_quiz(quiz_id: int) -> SavedQuizOut:
+    quiz = progress_tracker.get_quiz(quiz_id)
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found.")
+    return SavedQuizOut(
+        id=quiz["id"],
+        created_at=quiz["created_at"],
+        difficulty=quiz["difficulty"],
+        scope=quiz["scope"],
+        title=quiz["title"],
+        question_count=quiz["question_count"],
+        questions=[QuizQuestionOut(**q) for q in quiz["questions"]],
+        progress=QuizProgress(**quiz["progress"]) if quiz.get("progress") else None,
+    )
+
+
+@router.put("/quiz/saved/{quiz_id}/progress", response_model=dict)
+def save_quiz_progress(quiz_id: int, req: QuizProgress) -> dict:
+    """Persist in-progress attempt state so the quiz can be resumed later."""
+    ok = progress_tracker.save_quiz_progress(
+        quiz_id,
+        current=req.current,
+        correct_count=req.correct_count,
+        answers=req.answers,
+        completed=req.completed,
+        score_pct=req.score_pct,
+        style=req.style,
+    )
+    if not ok:
+        raise HTTPException(status_code=404, detail="Quiz not found.")
+    return {"status": "saved"}
+
+
+@router.delete("/quiz/saved/{quiz_id}/progress", response_model=dict)
+def clear_quiz_progress(quiz_id: int) -> dict:
+    """Clear in-progress state (called when a quiz is finished)."""
+    progress_tracker.clear_quiz_progress(quiz_id)
+    return {"status": "cleared"}
+
+
+@router.delete("/quiz/saved/{quiz_id}", response_model=dict)
+def delete_saved_quiz(quiz_id: int) -> dict:
+    if not progress_tracker.delete_quiz(quiz_id):
+        raise HTTPException(status_code=404, detail="Quiz not found.")
+    return {"status": "deleted"}
 
 
 @router.post("/quiz/submit", response_model=QuizSubmitResponse)
@@ -155,17 +248,10 @@ def submit_quiz(req: QuizSubmitRequest) -> QuizSubmitResponse:
 # ── Workshops ────────────────────────────────────────────────────────────────
 
 
-_ALLOWED_LESSON_COUNTS = {5, 10}
-
-
 @router.post("/workshop/outline", response_model=WorkshopOut)
 def create_workshop_outline(req: WorkshopCreateRequest) -> WorkshopOut:
     """Pass 1: generate the workshop outline and persist it. Returns full record."""
-    if req.num_lessons not in _ALLOWED_LESSON_COUNTS:
-        raise HTTPException(
-            status_code=422,
-            detail=f"num_lessons must be one of {sorted(_ALLOWED_LESSON_COUNTS)}",
-        )
+    # Lesson count bounds (3–15) are enforced by the request schema.
     try:
         outline = workshop_generator.generate_outline(
             difficulty=req.difficulty,  # type: ignore[arg-type]
@@ -216,8 +302,15 @@ def get_workshop(workshop_id: int) -> WorkshopOut:
 
 
 @router.post("/workshop/{workshop_id}/lesson/{lesson_idx}", response_model=LessonContentResponse)
-def get_or_generate_lesson(workshop_id: int, lesson_idx: int) -> LessonContentResponse:
-    """Return cached lesson content, or generate it on demand and cache."""
+def get_or_generate_lesson(
+    workshop_id: int, lesson_idx: int, force: bool = False
+) -> LessonContentResponse:
+    """
+    Return cached lesson content, or generate it on demand and cache.
+    ``force=true`` re-rolls an already-generated lesson; the old content is
+    only replaced if the new generation succeeds (generation raises on
+    non-substantive output, leaving the cache untouched).
+    """
     ws = progress_tracker.get_workshop(workshop_id)
     if not ws:
         raise HTTPException(status_code=404, detail="Workshop not found.")
@@ -225,7 +318,9 @@ def get_or_generate_lesson(workshop_id: int, lesson_idx: int) -> LessonContentRe
         raise HTTPException(status_code=404, detail="Lesson index out of range.")
 
     lesson = ws["lessons"][lesson_idx]
-    if lesson["content_md"]:
+    # Self-heal: only serve cached content that's actually substantive. Garbage
+    # persisted by an older/concurrent generation falls through to regenerate.
+    if not force and workshop_generator.is_substantive_lesson(lesson["content_md"]):
         return LessonContentResponse(
             lesson_idx=lesson_idx,
             title=lesson["title"],
@@ -251,11 +346,13 @@ def get_or_generate_lesson(workshop_id: int, lesson_idx: int) -> LessonContentRe
         raise HTTPException(status_code=500, detail="Failed to generate this lesson.")
 
     progress_tracker.save_lesson_content(workshop_id, lesson_idx, content_md)
+    # Completion tracks the user's progress, not the content version — a
+    # regenerated lesson keeps its completed_at.
     return LessonContentResponse(
         lesson_idx=lesson_idx,
         title=lesson["title"],
         content_md=content_md,
-        completed_at=None,
+        completed_at=lesson["completed_at"],
     )
 
 
@@ -280,6 +377,59 @@ def complete_lesson(workshop_id: int, lesson_idx: int) -> LessonCompleteResponse
         workshop_completed=summary["workshop_completed"],
         newly_earned_achievements=newly_earned,
     )
+
+
+@router.post("/workshop/{workshop_id}/reroll", response_model=WorkshopOut)
+def reroll_workshop_outline(workshop_id: int) -> WorkshopOut:
+    """
+    Regenerate the outline for an existing workshop, keeping its difficulty,
+    scope and lesson count. Discards all generated lessons and completion.
+    Generation runs BEFORE any write — a failed re-roll leaves the workshop
+    untouched.
+    """
+    ws = progress_tracker.get_workshop(workshop_id)
+    if not ws:
+        raise HTTPException(status_code=404, detail="Workshop not found.")
+    try:
+        outline = workshop_generator.generate_outline(
+            difficulty=ws["difficulty"],
+            num_lessons=len(ws["lessons"]),
+            source_filter=ws["scope"],
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except Exception:
+        logger.exception("Workshop outline re-roll failed")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to regenerate the outline. The model may be unavailable.",
+        )
+
+    progress_tracker.replace_workshop_outline(
+        workshop_id,
+        title=outline.title,
+        summary=outline.summary,
+        key_points=outline.key_points,
+        objectives=outline.objectives,
+        lessons=outline.lessons,
+    )
+    return _workshop_to_response(progress_tracker.get_workshop(workshop_id))
+
+
+@router.patch("/workshop/{workshop_id}/lessons", response_model=WorkshopOut)
+def edit_workshop_lessons(
+    workshop_id: int, req: WorkshopLessonsPatchRequest
+) -> WorkshopOut:
+    """Rename / reorder / delete lessons atomically (content travels along)."""
+    try:
+        ok = progress_tracker.update_workshop_lessons(
+            workshop_id, [l.model_dump() for l in req.lessons]
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    if not ok:
+        raise HTTPException(status_code=404, detail="Workshop not found.")
+    return _workshop_to_response(progress_tracker.get_workshop(workshop_id))
 
 
 @router.delete("/workshop/{workshop_id}", response_model=dict)
@@ -308,7 +458,7 @@ def _workshop_to_response(ws: dict | None) -> WorkshopOut:
                 title=l["title"],
                 est_minutes=l["est_minutes"],
                 completed_at=l["completed_at"],
-                has_content=bool(l["content_md"]),
+                has_content=workshop_generator.is_substantive_lesson(l["content_md"]),
             )
             for l in ws["lessons"]
         ],
@@ -477,6 +627,51 @@ def list_mindmaps() -> MindmapListResponse:
 
 @router.get("/mindmaps/mindmap/{mindmap_id}", response_model=MindmapOut)
 def get_mindmap(mindmap_id: int) -> MindmapOut:
+    mm = progress_tracker.get_mindmap(mindmap_id)
+    if not mm:
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
+    return MindmapOut(**mm)
+
+
+@router.put("/mindmaps/mindmap/{mindmap_id}/source", response_model=MindmapOut)
+def set_mindmap_source(mindmap_id: int, req: MindmapSourceRequest) -> MindmapOut:
+    """Save (or clear) a user-edited mermaid diagram for this mindmap."""
+    if not progress_tracker.set_mindmap_source(mindmap_id, req.source):
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
+    mm = progress_tracker.get_mindmap(mindmap_id)
+    if not mm:
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
+    return MindmapOut(**mm)
+
+
+@router.put("/mindmaps/mindmap/{mindmap_id}/layout", response_model=MindmapOut)
+def set_mindmap_layout(mindmap_id: int, req: MindmapLayoutRequest) -> MindmapOut:
+    """Set the layout (TD / LR / radial) for this mindmap's auto diagram."""
+    if not progress_tracker.set_mindmap_layout(mindmap_id, req.layout):
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
+    mm = progress_tracker.get_mindmap(mindmap_id)
+    if not mm:
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
+    return MindmapOut(**mm)
+
+
+@router.put("/mindmaps/mindmap/{mindmap_id}/positions", response_model=MindmapOut)
+def set_mindmap_positions(mindmap_id: int, req: MindmapPositionsRequest) -> MindmapOut:
+    """Save (or clear) manual React Flow node positions for this mindmap."""
+    if not progress_tracker.set_mindmap_positions(mindmap_id, req.positions):
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
+    mm = progress_tracker.get_mindmap(mindmap_id)
+    if not mm:
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
+    return MindmapOut(**mm)
+
+
+@router.put("/mindmaps/mindmap/{mindmap_id}/graph", response_model=MindmapOut)
+def set_mindmap_graph(mindmap_id: int, req: MindmapGraphRequest) -> MindmapOut:
+    """Save (or clear) the user-edited graph. Null resets to the AI tree."""
+    graph = req.graph.model_dump() if req.graph is not None else None
+    if not progress_tracker.set_mindmap_graph(mindmap_id, graph):
+        raise HTTPException(status_code=404, detail="Mindmap not found.")
     mm = progress_tracker.get_mindmap(mindmap_id)
     if not mm:
         raise HTTPException(status_code=404, detail="Mindmap not found.")

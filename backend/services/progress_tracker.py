@@ -98,6 +98,33 @@ def _init_schema(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_quiz_finished_at
             ON quiz_attempts(finished_at);
 
+        -- Saved quizzes (revisitable, like the other modes) ----------------
+        CREATE TABLE IF NOT EXISTS quizzes (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at      REAL    NOT NULL,
+            difficulty      TEXT    NOT NULL,
+            scope_json      TEXT    NOT NULL,
+            title           TEXT    NOT NULL,
+            question_count  INTEGER NOT NULL,
+            -- In-progress state for resume: JSON {current, correct_count, answers}.
+            -- NULL = no in-progress attempt (fresh or just-finished).
+            progress_json   TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS quiz_questions (
+            quiz_id        INTEGER NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+            q_idx          INTEGER NOT NULL,
+            type           TEXT    NOT NULL,
+            question       TEXT    NOT NULL,
+            options_json   TEXT    NOT NULL,
+            correct_index  INTEGER NOT NULL,
+            explanation    TEXT    NOT NULL DEFAULT '',
+            PRIMARY KEY (quiz_id, q_idx)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_quizzes_created
+            ON quizzes(created_at);
+
         -- Workshop Creator (Mode 2) ----------------------------------------
         CREATE TABLE IF NOT EXISTS workshops (
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -162,6 +189,28 @@ def _init_schema(conn: sqlite3.Connection) -> None:
             ON mindmaps(created_at);
         """
     )
+    # Defensive migration: add quizzes.progress_json if an older DB created the
+    # table before this column existed. ALTER raises if the column is present,
+    # so we check first.
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(quizzes)").fetchall()}
+    if "progress_json" not in cols:
+        conn.execute("ALTER TABLE quizzes ADD COLUMN progress_json TEXT")
+    # Defensive migration: add mindmaps.custom_source (user-edited mermaid code,
+    # NULL = use the auto-generated diagram).
+    mm_cols = {r["name"] for r in conn.execute("PRAGMA table_info(mindmaps)").fetchall()}
+    if "custom_source" not in mm_cols:
+        conn.execute("ALTER TABLE mindmaps ADD COLUMN custom_source TEXT")
+    # Layout for the auto-generated diagram: 'TD' | 'LR' (NULL → LR).
+    if "layout" not in mm_cols:
+        conn.execute("ALTER TABLE mindmaps ADD COLUMN layout TEXT")
+    # Manual React Flow node positions (JSON {id: {x, y}}); NULL → auto-layout.
+    if "node_positions" not in mm_cols:
+        conn.execute("ALTER TABLE mindmaps ADD COLUMN node_positions TEXT")
+    # User-edited graph (Option B fork): JSON {nodes: [{id,label,level}],
+    # edges: [{id,source,target}]}. NULL → render the AI tree (tree_json).
+    # Structure only — positions stay in node_positions, direction in layout.
+    if "graph_json" not in mm_cols:
+        conn.execute("ALTER TABLE mindmaps ADD COLUMN graph_json TEXT")
     conn.commit()
 
 
@@ -293,6 +342,52 @@ def create_workshop(
             conn.close()
 
 
+def replace_workshop_outline(
+    workshop_id: int,
+    title: str,
+    summary: str,
+    key_points: list[str],
+    objectives: list[str],
+    lessons: list[dict],  # [{title, est_minutes}, ...]
+) -> bool:
+    """
+    Replace a workshop's outline with a freshly generated one (re-roll).
+
+    Overwrites title/summary/key points/objectives, discards ALL lessons
+    (content + completion) and inserts fresh stubs, and clears the workshop's
+    completed_at. Difficulty, scope and created_at are kept. Returns False if
+    the workshop doesn't exist.
+    """
+    import json as _json
+
+    outline = {"key_points": key_points, "objectives": objectives}
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE workshops SET title = ?, summary = ?, outline_json = ?, "
+                "completed_at = NULL WHERE id = ?",
+                (title, summary, _json.dumps(outline), workshop_id),
+            )
+            if cur.rowcount == 0:
+                return False
+            cur.execute(
+                "DELETE FROM workshop_lessons WHERE workshop_id = ?", (workshop_id,)
+            )
+            for idx, lesson in enumerate(lessons):
+                cur.execute(
+                    "INSERT INTO workshop_lessons "
+                    "(workshop_id, lesson_idx, title, est_minutes) VALUES (?, ?, ?, ?)",
+                    (workshop_id, idx, lesson["title"], int(lesson.get("est_minutes", 5))),
+                )
+            conn.commit()
+            return True
+        finally:
+            conn.close()
+
+
 def get_workshop(workshop_id: int) -> Optional[dict]:
     """Return the full workshop including all lesson rows, or None if missing."""
     import json as _json
@@ -370,6 +465,77 @@ def save_lesson_content(workshop_id: int, lesson_idx: int, content_md: str) -> N
                 (content_md, workshop_id, lesson_idx),
             )
             conn.commit()
+        finally:
+            conn.close()
+
+
+def update_workshop_lessons(workshop_id: int, lessons: list[dict]) -> bool:
+    """
+    Atomically rewrite a workshop's lesson list (rename / reorder / delete).
+
+    ``lessons`` is the desired FINAL ordered list:
+    ``[{"old_idx": int, "title": str}, ...]`` — ``old_idx`` references the
+    current lesson_idx, so content_md / completed_at / est_minutes travel with
+    their lesson through renames and reorders. Lessons whose old_idx is omitted
+    are deleted. Recomputes workshops.completed_at, since deleting the only
+    incomplete lessons can legitimately complete the workshop.
+
+    Returns False if the workshop doesn't exist; raises ValueError on an
+    invalid edit (empty list, unknown/duplicate old_idx, blank title).
+    """
+    if not lessons:
+        raise ValueError("A workshop needs at least one lesson.")
+    ts = _dt.datetime.now().timestamp()
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute("SELECT id FROM workshops WHERE id = ?", (workshop_id,))
+            if not cur.fetchone():
+                return False
+            cur.execute(
+                "SELECT lesson_idx, title, est_minutes, content_md, completed_at "
+                "FROM workshop_lessons WHERE workshop_id = ?",
+                (workshop_id,),
+            )
+            current = {r["lesson_idx"]: dict(r) for r in cur.fetchall()}
+
+            seen: set[int] = set()
+            rows: list[tuple] = []
+            for pos, item in enumerate(lessons):
+                old_idx = item.get("old_idx")
+                title = (item.get("title") or "").strip()
+                if old_idx not in current:
+                    raise ValueError(f"Unknown lesson index: {old_idx}")
+                if old_idx in seen:
+                    raise ValueError(f"Duplicate lesson index: {old_idx}")
+                if not title:
+                    raise ValueError("Lesson titles cannot be empty.")
+                seen.add(old_idx)
+                src = current[old_idx]
+                rows.append(
+                    (workshop_id, pos, title, src["est_minutes"],
+                     src["content_md"], src["completed_at"])
+                )
+
+            cur.execute(
+                "DELETE FROM workshop_lessons WHERE workshop_id = ?", (workshop_id,)
+            )
+            cur.executemany(
+                "INSERT INTO workshop_lessons "
+                "(workshop_id, lesson_idx, title, est_minutes, content_md, completed_at) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                rows,
+            )
+            # Recompute completion — a delete-only edit can complete the workshop.
+            if all(r[5] is not None for r in rows):
+                cur.execute(
+                    "UPDATE workshops SET completed_at = COALESCE(completed_at, ?) WHERE id = ?",
+                    (ts, workshop_id),
+                )
+            conn.commit()
+            return True
         finally:
             conn.close()
 
@@ -570,6 +736,206 @@ def delete_flashcard_deck(deck_id: int) -> bool:
             conn.close()
 
 
+# ── Saved quizzes ────────────────────────────────────────────────────────────
+
+
+def create_quiz(
+    difficulty: str,
+    scope: list[str],
+    title: str,
+    questions: list[dict],  # [{type, question, options, correct_index, explanation}, ...]
+    created_at: Optional[float] = None,
+) -> int:
+    """Persist a generated quiz and its questions. Returns the new quiz id."""
+    import json as _json
+
+    ts = created_at if created_at is not None else _dt.datetime.now().timestamp()
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO quizzes "
+                "(created_at, difficulty, scope_json, title, question_count) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (ts, difficulty, _json.dumps(scope), title, len(questions)),
+            )
+            quiz_id = cur.lastrowid or 0
+            for idx, q in enumerate(questions):
+                cur.execute(
+                    "INSERT INTO quiz_questions "
+                    "(quiz_id, q_idx, type, question, options_json, correct_index, explanation) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        quiz_id,
+                        idx,
+                        q["type"],
+                        q["question"],
+                        _json.dumps(q["options"]),
+                        q["correct_index"],
+                        q.get("explanation", ""),
+                    ),
+                )
+            conn.commit()
+            return quiz_id
+        finally:
+            conn.close()
+
+
+def get_quiz(quiz_id: int) -> Optional[dict]:
+    """Return a saved quiz + all its questions, or None if missing."""
+    import json as _json
+
+    conn = _connect()
+    try:
+        _init_schema(conn)
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM quizzes WHERE id = ?", (quiz_id,))
+        row = cur.fetchone()
+        if not row:
+            return None
+        cur.execute(
+            "SELECT q_idx, type, question, options_json, correct_index, explanation "
+            "FROM quiz_questions WHERE quiz_id = ? ORDER BY q_idx",
+            (quiz_id,),
+        )
+        questions = [
+            {
+                "type": r["type"],
+                "question": r["question"],
+                "options": _json.loads(r["options_json"]),
+                "correct_index": r["correct_index"],
+                "explanation": r["explanation"] or "",
+            }
+            for r in cur.fetchall()
+        ]
+        progress = _json.loads(row["progress_json"]) if row["progress_json"] else None
+        return {
+            "id": row["id"],
+            "created_at": row["created_at"],
+            "difficulty": row["difficulty"],
+            "scope": _json.loads(row["scope_json"]),
+            "title": row["title"],
+            "question_count": row["question_count"],
+            "questions": questions,
+            "progress": progress,
+        }
+    finally:
+        conn.close()
+
+
+def list_quizzes() -> list[dict]:
+    """All saved quizzes, newest first (metadata + resume state, no questions)."""
+    import json as _json
+
+    conn = _connect()
+    try:
+        _init_schema(conn)
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id, created_at, difficulty, title, question_count, progress_json "
+            "FROM quizzes ORDER BY created_at DESC"
+        )
+        out = []
+        for r in cur.fetchall():
+            progress = _json.loads(r["progress_json"]) if r["progress_json"] else None
+            completed = bool(progress and progress.get("completed"))
+            answered = 0
+            if progress:
+                answered = sum(1 for a in progress.get("answers", []) if a is not None)
+            out.append(
+                {
+                    "id": r["id"],
+                    "created_at": r["created_at"],
+                    "difficulty": r["difficulty"],
+                    "title": r["title"],
+                    "question_count": int(r["question_count"] or 0),
+                    # in_progress = started but not finished.
+                    "in_progress": progress is not None and not completed,
+                    "answered_count": answered,
+                    "completed": completed,
+                    "last_score": progress.get("score_pct") if completed else None,
+                }
+            )
+        return out
+    finally:
+        conn.close()
+
+
+def save_quiz_progress(
+    quiz_id: int,
+    current: int,
+    correct_count: int,
+    answers: list[Optional[int]],
+    completed: bool = False,
+    score_pct: Optional[int] = None,
+    style: str = "practice",
+) -> bool:
+    """
+    Upsert attempt state for a saved quiz. True if the quiz exists.
+
+    ``completed=True`` (with ``score_pct``) marks a finished attempt so the quiz
+    stays revisitable as a result, instead of resetting on the next open.
+    ``style`` ("practice" | "exam") is remembered so a resumed quiz reopens in
+    the same play mode.
+    """
+    import json as _json
+
+    blob = _json.dumps(
+        {
+            "current": current,
+            "correct_count": correct_count,
+            "answers": answers,
+            "completed": completed,
+            "score_pct": score_pct,
+            "style": style,
+        }
+    )
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE quizzes SET progress_json = ? WHERE id = ?", (blob, quiz_id)
+            )
+            conn.commit()
+            return cur.rowcount > 0
+        finally:
+            conn.close()
+
+
+def clear_quiz_progress(quiz_id: int) -> bool:
+    """Clear in-progress state (on finish). True if the quiz exists."""
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE quizzes SET progress_json = NULL WHERE id = ?", (quiz_id,)
+            )
+            conn.commit()
+            return cur.rowcount > 0
+        finally:
+            conn.close()
+
+
+def delete_quiz(quiz_id: int) -> bool:
+    """Remove a saved quiz + cascade its questions. True if a row was deleted."""
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute("DELETE FROM quizzes WHERE id = ?", (quiz_id,))
+            conn.commit()
+            return cur.rowcount > 0
+        finally:
+            conn.close()
+
+
 def create_mindmap(
     scope: list[str],
     depth: int,
@@ -610,6 +976,7 @@ def get_mindmap(mindmap_id: int) -> Optional[dict]:
         row = cur.fetchone()
         if not row:
             return None
+        keys = row.keys()
         return {
             "id": row["id"],
             "created_at": row["created_at"],
@@ -618,6 +985,22 @@ def get_mindmap(mindmap_id: int) -> Optional[dict]:
             "title": row["title"],
             "tree": _json.loads(row["tree_json"]),
             "export_count": int(row["export_count"] or 0),
+            # User-edited mermaid source (NULL → render the auto-generated tree).
+            "custom_source": row["custom_source"] if "custom_source" in keys else None,
+            # Auto-diagram layout: 'TD' | 'LR' (NULL → frontend default).
+            "layout": row["layout"] if "layout" in keys else None,
+            # Manual node positions {id: {x, y}} (NULL → dagre auto-layout).
+            "node_positions": (
+                _json.loads(row["node_positions"])
+                if "node_positions" in keys and row["node_positions"]
+                else None
+            ),
+            # User-edited graph (NULL → render the AI-generated tree).
+            "graph": (
+                _json.loads(row["graph_json"])
+                if "graph_json" in keys and row["graph_json"]
+                else None
+            ),
         }
     finally:
         conn.close()
@@ -658,6 +1041,104 @@ def increment_mindmap_export(mindmap_id: int) -> None:
                 (mindmap_id,),
             )
             conn.commit()
+        finally:
+            conn.close()
+
+
+def set_mindmap_source(mindmap_id: int, source: Optional[str]) -> bool:
+    """
+    Persist (or clear) a user-edited mermaid diagram for a mindmap.
+
+    ``source=None`` (or empty) resets to the auto-generated diagram. Returns
+    True if a row was updated.
+    """
+    cleaned = source.strip() if isinstance(source, str) and source.strip() else None
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE mindmaps SET custom_source = ? WHERE id = ?",
+                (cleaned, mindmap_id),
+            )
+            conn.commit()
+            return cur.rowcount > 0
+        finally:
+            conn.close()
+
+
+def set_mindmap_layout(mindmap_id: int, layout: str) -> bool:
+    """
+    Persist the chosen layout for a mindmap's auto-generated diagram.
+
+    ``layout`` is one of 'TD' | 'LR'. Returns True if a row updated.
+    """
+    if layout not in ("TD", "LR"):
+        layout = "LR"
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            # Changing direction invalidates any manual drag positions → reset.
+            cur.execute(
+                "UPDATE mindmaps SET layout = ?, node_positions = NULL WHERE id = ?",
+                (layout, mindmap_id),
+            )
+            conn.commit()
+            return cur.rowcount > 0
+        finally:
+            conn.close()
+
+
+def set_mindmap_positions(mindmap_id: int, positions: Optional[dict]) -> bool:
+    """
+    Persist (or clear) manual React Flow node positions for a mindmap.
+
+    ``positions`` is a dict ``{node_id: {"x": float, "y": float}}``; None/empty
+    clears it (back to auto-layout). Returns True if a row was updated.
+    """
+    import json as _json
+
+    blob = _json.dumps(positions) if positions else None
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE mindmaps SET node_positions = ? WHERE id = ?",
+                (blob, mindmap_id),
+            )
+            conn.commit()
+            return cur.rowcount > 0
+        finally:
+            conn.close()
+
+
+def set_mindmap_graph(mindmap_id: int, graph: Optional[dict]) -> bool:
+    """
+    Persist (or clear) the user-edited graph for a mindmap.
+
+    ``graph`` is ``{"nodes": [{id, label, level}], "edges": [{id, source,
+    target}]}`` — structure only; positions/layout live in their own columns.
+    ``None`` resets to the AI-generated tree. Returns True if a row updated.
+    """
+    import json as _json
+
+    blob = _json.dumps(graph) if graph else None
+    with _write_lock:
+        conn = _connect()
+        try:
+            _init_schema(conn)
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE mindmaps SET graph_json = ? WHERE id = ?",
+                (blob, mindmap_id),
+            )
+            conn.commit()
+            return cur.rowcount > 0
         finally:
             conn.close()
 
@@ -754,11 +1235,88 @@ def get_summary() -> dict:
         total_messages = int(row["total_messages"] or 0)
 
         streak = _current_streak_days(conn)
+        longest = _longest_streak_days(conn)
         return {
             "total_seconds": total_seconds,
             "total_sessions": total_sessions,
             "total_messages": total_messages,
             "current_streak_days": streak,
+            "longest_streak_days": longest,
+        }
+    finally:
+        conn.close()
+
+
+def study_hub_breakdown() -> dict:
+    """
+    Per-mode Study Hub activity for the dashboard breakdown cards.
+
+    Returns
+    -------
+    {
+        "quizzes":    {"count": int, "avg_score": int, "best_score": int},
+        "workshops":  {"created": int, "completed": int},
+        "flashcards": {"decks": int, "mastered": int},
+        "mindmaps":   {"created": int, "exports": int},
+    }
+
+    ``avg_score`` / ``best_score`` are whole percentages (0 when no quizzes).
+    """
+    conn = _connect()
+    try:
+        _init_schema(conn)
+        cur = conn.cursor()
+
+        cur.execute(
+            "SELECT COUNT(*) AS n, "
+            "       COALESCE(AVG(score_pct), 0) AS avg_score, "
+            "       COALESCE(MAX(score_pct), 0) AS best_score "
+            "FROM quiz_attempts"
+        )
+        q = cur.fetchone()
+
+        cur.execute(
+            "SELECT COUNT(*) AS created, "
+            "       COALESCE(SUM(CASE WHEN completed_at IS NOT NULL THEN 1 ELSE 0 END), 0) AS completed "
+            "FROM workshops"
+        )
+        w = cur.fetchone()
+
+        cur.execute("SELECT COUNT(*) AS decks FROM flashcard_decks")
+        decks = int(cur.fetchone()["decks"] or 0)
+        cur.execute(
+            "SELECT COUNT(*) AS n FROM ("
+            "  SELECT d.id FROM flashcard_decks d "
+            "  LEFT JOIN flashcards c ON c.deck_id = d.id "
+            "  GROUP BY d.id "
+            "  HAVING COUNT(c.card_idx) > 0 "
+            "     AND COUNT(c.card_idx) = SUM(CASE WHEN c.status='mastered' THEN 1 ELSE 0 END)"
+            ")"
+        )
+        mastered = int(cur.fetchone()["n"] or 0)
+
+        cur.execute(
+            "SELECT COUNT(*) AS created, "
+            "       COALESCE(SUM(export_count), 0) AS exports "
+            "FROM mindmaps"
+        )
+        m = cur.fetchone()
+
+        return {
+            "quizzes": {
+                "count": int(q["n"] or 0),
+                "avg_score": round(float(q["avg_score"] or 0)),
+                "best_score": int(q["best_score"] or 0),
+            },
+            "workshops": {
+                "created": int(w["created"] or 0),
+                "completed": int(w["completed"] or 0),
+            },
+            "flashcards": {"decks": decks, "mastered": mastered},
+            "mindmaps": {
+                "created": int(m["created"] or 0),
+                "exports": int(m["exports"] or 0),
+            },
         }
     finally:
         conn.close()
@@ -787,6 +1345,28 @@ def _current_streak_days(conn: sqlite3.Connection) -> int:
         streak += 1
         cursor_day -= _dt.timedelta(days=1)
     return streak
+
+
+def _longest_streak_days(conn: sqlite3.Connection) -> int:
+    """
+    The longest run of consecutive active days ever (the user's personal best).
+
+    Independent of today — unlike the current streak, this never resets when a
+    day is missed; it records the best run the user has achieved.
+    """
+    cur = conn.cursor()
+    cur.execute("SELECT started_at FROM study_sessions")
+    rows = cur.fetchall()
+    if not rows:
+        return 0
+
+    days = sorted({_dt.date.fromtimestamp(r["started_at"]) for r in rows})
+    longest = 1
+    run = 1
+    for prev, current in zip(days, days[1:]):
+        run = run + 1 if (current - prev).days == 1 else 1
+        longest = max(longest, run)
+    return longest
 
 
 def get_daily(days: int = 30) -> list[dict]:

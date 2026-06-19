@@ -1,0 +1,419 @@
+{
+  "hub": {
+    "title": "Study Hub",
+    "subtitle": "Turn your knowledge base into an active learning experience. Pick a mode to get started.",
+    "comingSoon": "Coming Soon",
+    "modes": {
+      "quiz": {
+        "label": "Quiz Mode",
+        "desc": "Test your recall with auto-generated quizzes at three difficulty levels."
+      },
+      "workshop": {
+        "label": "Workshop Creator",
+        "desc": "Multi-lesson workshops built from your knowledge base, lesson-by-lesson."
+      },
+      "flashcards": {
+        "label": "Flashcards",
+        "desc": "Scrollable flip-cards generated from your documents."
+      },
+      "mindmaps": {
+        "label": "Mindmaps",
+        "desc": "Visual concept maps with PDF, PNG and Markdown export."
+      }
+    }
+  },
+  "difficulty": {
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced"
+  },
+  "quiz": {
+    "crumbs": { "quizMode": "Quiz Mode", "newQuiz": "New Quiz" },
+    "config": {
+      "title": "Set up your quiz",
+      "subtitle": "Choose what to study, how challenging it should be, and how many questions you want.",
+      "scopeLabel": "Document scope (required)",
+      "scopeHintHas": "Quizzes are most accurate when scoped to a single category or a few related files.",
+      "scopeHintEmpty": "Pick at least one category or file. Whole-KB quizzes give scattered, lower-quality results.",
+      "difficultyLabel": "Difficulty",
+      "countLabel": "Number of questions",
+      "questionsN": "{{count}} questions",
+      "modeLabel": "Mode",
+      "modeHintExam": "Exam — answers stay hidden until you submit. Jump between questions, change answers, and flag ones to revisit.",
+      "modeHintPractice": "Practice — see whether each answer is right the moment you submit it, with the explanation.",
+      "practice": "Practice",
+      "exam": "Exam",
+      "timeLabel": "Time limit",
+      "timeHint": "Optional — race the clock. The quiz auto-submits when time runs out.",
+      "noLimit": "No limit",
+      "minutes": "{{count}} min",
+      "typesLabel": "Question types",
+      "typesHint": "Pick at least one question type.",
+      "mcq": "Multiple choice",
+      "trueFalse": "True / False",
+      "start": "Start Quiz",
+      "generating": "Generating…"
+    },
+    "list": {
+      "yourQuizzes": "Your quizzes",
+      "yourQuizzesCount": "Your quizzes ({{count}})",
+      "newQuiz": "New Quiz",
+      "emptyTitle": "Take your first quiz",
+      "emptyBody": "Quizzes turn your scoped documents into multiple-choice and true/false questions with instant feedback — and every quiz is saved here so you can retake it anytime.",
+      "emptyHint": "Click ‘New Quiz’ above to get started.",
+      "deleteTitle": "Delete this quiz?",
+      "deleteMessage": "“{{title}}” ({{count}} questions) will be permanently removed.",
+      "delete": "Delete",
+      "keep": "Keep"
+    },
+    "card": {
+      "deleteAria": "Delete quiz",
+      "inProgress": "In progress",
+      "answeredResume": "{{answered}} / {{total}} answered · Resume",
+      "viewResults": "{{count}} questions · View results",
+      "questions": "{{count}} questions"
+    },
+    "gen": {
+      "title": "Generating your quiz",
+      "body": "Gemma is reading your selected documents and writing questions just for you. This usually takes 10–40 seconds.",
+      "elapsed": "{{time}} elapsed",
+      "stage0": "Scanning your documents…",
+      "stage1": "Identifying key concepts…",
+      "stage2": "Drafting questions…",
+      "stage3": "Crafting plausible answer options…",
+      "stage4": "Polishing wording and explanations…",
+      "stage5": "Almost there — finalising your quiz…"
+    },
+    "resume": {
+      "title": "Resume your in-progress quiz?",
+      "progress": "Question {{current}} of {{total}}",
+      "savedAgo": "saved {{ago}}",
+      "resume": "Resume",
+      "discard": "Discard",
+      "agoNow": "just now",
+      "agoMinutes": "{{count}}m ago",
+      "agoHours": "{{count}}h ago",
+      "agoDays": "{{count}}d ago"
+    },
+    "play": {
+      "why": "Why:",
+      "submitAnswer": "Submit answer",
+      "nextQuestion": "Next question",
+      "seeResults": "See results",
+      "questionOf": "Question {{current}} of {{total}}",
+      "flag": "Flag",
+      "flagged": "Flagged",
+      "back": "Back",
+      "next": "Next",
+      "submitExam": "Submit exam",
+      "submitExamSee": "Submit exam & see results",
+      "stillBlank_one": "{{count}} question still blank",
+      "stillBlank_other": "{{count}} questions still blank"
+    },
+    "nav": {
+      "questions": "Questions",
+      "answered": "{{answered}}/{{total}} answered",
+      "legendAnswered": "Answered",
+      "legendBlank": "Blank",
+      "legendFlagged": "Flagged"
+    },
+    "results": {
+      "retake": "Retake this quiz",
+      "library": "Quiz library",
+      "backToHub": "Back to Study Hub",
+      "correctOfTotal": "{{correct}} of {{total}} correct",
+      "newAchievements_one": "🏅 {{count}} new achievement unlocked",
+      "newAchievements_other": "🏅 {{count}} new achievements unlocked",
+      "correctAnswer": "Correct answer:"
+    },
+    "export": {
+      "title": "Export this quiz",
+      "subtitle": "Pick what to include, then choose a format.",
+      "levelQuestions": "Questions only",
+      "levelAnswers": "+ correct answers",
+      "levelExplanations": "+ answers & explanations",
+      "markdown": "Markdown",
+      "pdf": "PDF",
+      "markdownTip": "Download as Markdown (.md) — opens a Save As dialog where you can rename and choose a folder",
+      "markdownAria": "Download as Markdown — opens a Save As dialog",
+      "pdfTip": "Download as a PDF file"
+    }
+  },
+  "flashcards": {
+    "crumbs": { "flashcards": "Flashcards", "newDeck": "New Deck" },
+    "config": {
+      "title": "New Flashcard Deck",
+      "subtitle": "Pick your scope, difficulty, and how many cards to generate.",
+      "back": "Back to decks",
+      "scopeLabel": "Document scope (required)",
+      "scopeHintHas": "Cards are drawn from these documents.",
+      "scopeHintEmpty": "Pick at least one category or file. Wide scope = unfocused cards.",
+      "difficultyLabel": "Difficulty",
+      "countLabel": "Number of cards",
+      "cardsN": "{{count}} cards",
+      "build": "Build Deck",
+      "generating": "Generating…"
+    },
+    "list": {
+      "yourDecks": "Your flashcard decks",
+      "yourDecksCount": "Your decks ({{count}})",
+      "newDeck": "New Deck",
+      "emptyTitle": "Build your first deck",
+      "emptyBody": "Flashcards turn your scoped documents into a deck of flip cards you can review whenever you want a quick recall workout.",
+      "emptyHint": "Click ‘New Deck’ above to get started.",
+      "deleteTitle": "Delete this deck?",
+      "deleteMessage": "“{{title}}” and all {{count}} of its cards will be permanently removed.",
+      "delete": "Delete",
+      "keep": "Keep"
+    },
+    "card": {
+      "deleteAria": "Delete deck",
+      "mastered": "Mastered",
+      "masteredCount": "{{mastered}} / {{total}} mastered"
+    },
+    "gen": {
+      "title": "Building your deck",
+      "body": "Gemma is reading your selected documents and writing flip cards. This usually takes 10–40 seconds.",
+      "elapsed": "{{time}} elapsed",
+      "stage0": "Scanning your documents…",
+      "stage1": "Picking the key concepts to memorise…",
+      "stage2": "Drafting prompt / answer pairs…",
+      "stage3": "Varying card formats for richer review…",
+      "stage4": "Almost there — finalising your deck…"
+    },
+    "deck": {
+      "back": "Back to decks",
+      "meta": "{{difficulty}} · {{count}} cards · {{mastered}} mastered",
+      "filterAll": "All",
+      "filterUnmarked": "Unmarked",
+      "filterReview": "Review",
+      "filterMastered": "Mastered",
+      "noMatch": "No cards match this filter."
+    },
+    "cardFace": {
+      "clickToFlip": "Click to flip",
+      "answer": "Answer",
+      "showPrompt": "Show prompt",
+      "showAnswer": "Show answer",
+      "gotIt": "Got it",
+      "review": "Review",
+      "masteredBadge": "Mastered",
+      "reviewBadge": "Review"
+    }
+  },
+  "workshop": {
+    "crumbs": {
+      "creator": "Workshop Creator",
+      "newWorkshop": "New Workshop",
+      "recapQuiz": "Recap Quiz"
+    },
+    "list": {
+      "yourWorkshops": "Your workshops",
+      "yourWorkshopsCount": "Your workshops ({{count}})",
+      "newWorkshop": "New Workshop",
+      "emptyTitle": "Build your first workshop",
+      "emptyBody": "Workshops turn your scoped documents into a structured, multi-lesson learning path you can work through at your own pace.",
+      "emptyHintPre": "Click",
+      "emptyHintPost": "above to get started.",
+      "deleteTitle": "Delete this workshop?",
+      "deleteMessage": "\"{{title}}\" and all its lessons will be permanently removed. This can't be undone.",
+      "delete": "Delete",
+      "keep": "Keep"
+    },
+    "card": {
+      "deleteAria": "Delete workshop",
+      "complete": "Complete",
+      "lessonsCount": "{{completed}} / {{total}} lessons"
+    },
+    "config": {
+      "back": "Back to workshops",
+      "title": "New Workshop",
+      "subtitle": "Choose your scope, difficulty, and how many lessons to generate.",
+      "scopeLabel": "Document scope (required)",
+      "scopeHintHas": "The workshop pulls all content from these documents.",
+      "scopeHintEmpty": "Pick at least one category or file. Wide scope = unfocused workshop.",
+      "difficultyLabel": "Difficulty",
+      "lessonsLabel": "Number of lessons",
+      "lessonsOption": "{{count}} lessons",
+      "buildingOutline": "Building outline…",
+      "build": "Build Workshop"
+    },
+    "outline": {
+      "back": "Back to workshops",
+      "meta": "{{difficulty}} · {{total}} lessons · {{done}} done",
+      "keyPoints": "Key points",
+      "objectives": "You will learn to",
+      "lessons": "Lessons",
+      "completeTitle": "Workshop complete!",
+      "completeBody": "Test what you learned with a 5-question recap quiz.",
+      "takeRecap": "Take recap quiz",
+      "editOutline": "Edit outline",
+      "editSave": "Save changes",
+      "editCancel": "Cancel",
+      "renameLesson": "Lesson title",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "deleteLesson": "Delete lesson",
+      "deleteLessonTitle": "Delete this lesson?",
+      "deleteLessonMessage": "\"{{title}}\" and its generated content will be removed from this workshop.",
+      "deleteLessonConfirm": "Delete",
+      "deleteLessonCancel": "Keep",
+      "reroll": "Regenerate outline",
+      "rerollTitle": "Regenerate this outline?",
+      "rerollMessage": "A new outline will replace the current one. All generated lessons and completion progress in this workshop will be discarded.",
+      "rerollConfirm": "Regenerate",
+      "rerollCancel": "Keep outline",
+      "rerollFailed": "Regenerating failed — the current outline was kept."
+    },
+    "export": {
+      "markdown": "Markdown",
+      "pdf": "PDF",
+      "markdownTip": "Export the whole workshop as Markdown",
+      "pdfTip": "Export the whole workshop as PDF",
+      "notGenerated": "This lesson has not been generated yet."
+    },
+    "lessonCard": {
+      "minRead": "{{count}} min read",
+      "completed": "Completed",
+      "ready": "Ready"
+    },
+    "lesson": {
+      "back": "Back to lessons",
+      "loading": "Loading lesson…",
+      "saving": "Saving…",
+      "completed": "Lesson completed",
+      "markComplete": "Mark complete",
+      "errorTitle": "Couldn't generate this lesson",
+      "errorBody": "The model returned incomplete content. This can happen occasionally — try again.",
+      "retry": "Retry",
+      "regenerate": "Regenerate",
+      "regenTitle": "Regenerate this lesson?",
+      "regenMessage": "The current text will be replaced with a freshly generated version. Your completion status is kept.",
+      "regenConfirm": "Regenerate",
+      "regenCancel": "Keep current",
+      "regenFailed": "Regeneration failed — the previous version was kept.",
+      "copyCode": "Copy",
+      "copied": "Copied",
+      "copyFailed": "Failed"
+    },
+    "toc": {
+      "onThisPage": "On this page"
+    },
+    "gen": {
+      "outlineTitle": "Building your workshop outline",
+      "lessonTitle": "Writing this lesson",
+      "body": "Gemma is writing this from your documents — typically {{eta}}, depending on your hardware.",
+      "lessonHint": "Upcoming lessons are prepared in the background while you read.",
+      "outlineEta": "10–40 seconds",
+      "lessonEta": "20–60 seconds",
+      "elapsed": "{{time}} elapsed",
+      "outlineStage0": "Scanning your documents…",
+      "outlineStage1": "Identifying the core concepts…",
+      "outlineStage2": "Structuring the learning path…",
+      "outlineStage3": "Drafting lesson titles and reading-time estimates…",
+      "outlineStage4": "Almost there — finalising the outline…",
+      "lessonStage0": "Re-reading the relevant material…",
+      "lessonStage1": "Outlining the lesson sections…",
+      "lessonStage2": "Writing the body, examples, and code blocks…",
+      "lessonStage3": "Polishing structure and self-check prompts…",
+      "lessonStage4": "Just finishing up — almost ready…"
+    },
+    "finalQuiz": {
+      "back": "Back to workshop outline",
+      "backToWorkshop": "Back to workshop"
+    }
+  },
+  "mindmap": {
+    "crumbs": {
+      "mindmaps": "Mindmaps",
+      "newMindmap": "New Mindmap"
+    },
+    "list": {
+      "yourMindmaps": "Your mindmaps",
+      "yourMindmapsCount": "Your mindmaps ({{count}})",
+      "newMindmap": "New Mindmap",
+      "emptyTitle": "Map a concept",
+      "emptyBody": "Mindmaps render the central themes and sub-topics of your scoped documents as an interactive radial diagram you can pan, zoom, and export as Markdown, PNG, or PDF.",
+      "emptyHintPre": "Click",
+      "emptyHintPost": "above to get started.",
+      "deleteTitle": "Delete this mindmap?",
+      "deleteMessage": "\"{{title}}\" will be permanently removed.",
+      "delete": "Delete",
+      "keep": "Keep"
+    },
+    "card": {
+      "deleteAria": "Delete mindmap",
+      "depth": "Depth {{depth}}",
+      "created": "Created {{date}}"
+    },
+    "config": {
+      "title": "New Mindmap",
+      "subtitle": "Pick the documents you want mapped. The mindmap will render the main themes and sub-topics it finds.",
+      "scopeLabel": "Document scope (required)",
+      "scopeHintHas": "The mindmap will summarise these documents.",
+      "scopeHintEmpty": "Pick at least one category or file. Mindmaps work best when scoped to a single coherent topic.",
+      "generating": "Generating…",
+      "generate": "Generate Mindmap"
+    },
+    "gen": {
+      "title": "Drawing your mindmap",
+      "body": "Gemma is reading your documents and structuring the concepts. This usually takes 15–40 seconds.",
+      "elapsed": "{{time}} elapsed",
+      "stage0": "Reading your documents…",
+      "stage1": "Identifying central themes…",
+      "stage2": "Mapping sub-topics under each theme…",
+      "stage3": "Laying out the radial structure…",
+      "stage4": "Almost there — finalising your mindmap…"
+    },
+    "view": {
+      "meta": "{{themes}} themes · {{subtopics}} sub-topics",
+      "hint": "Drag nodes to rearrange · scroll to zoom · drag the background to pan · Shift+drag to multi-select · press F to fit the view · double-click a node to rename",
+      "resetLayout": "Reset layout",
+      "resetToAi": "Reset to AI version",
+      "resetGraphTitle": "Discard your edits?",
+      "resetGraphMessage": "\"{{title}}\" will return to the original AI-generated structure. Your node edits will be lost.",
+      "resetGraphConfirm": "Reset",
+      "resetGraphCancel": "Keep edits"
+    },
+    "canvas": {
+      "searchPlaceholder": "Search nodes…",
+      "prevMatch": "Previous match",
+      "nextMatch": "Next match",
+      "clearSearch": "Clear search",
+      "lockLayout": "Lock layout",
+      "unlockLayout": "Unlock layout",
+      "snapToGrid": "Snap to grid",
+      "collapseBranch": "Collapse branch",
+      "expandBranch": "Expand branch ({{count}} hidden)",
+      "addChild": "Add child topic",
+      "deleteNode": "Delete node",
+      "newNode": "New topic",
+      "deleteBranchTitle": "Delete this branch?",
+      "deleteBranchMessage": "\"{{label}}\" and its {{count}} sub-topics will be removed.",
+      "deleteBranchConfirm": "Delete",
+      "deleteBranchCancel": "Keep",
+      "recolor": "Recolor",
+      "resetColor": "Default color",
+      "applyToBranch": "Apply to whole branch",
+      "colors": {
+        "purple": "Purple",
+        "pink": "Pink",
+        "emerald": "Emerald",
+        "amber": "Amber",
+        "sky": "Sky",
+        "rose": "Rose"
+      }
+    },
+    "layout": {
+      "label": "Layout",
+      "leftRight": "Left-right",
+      "topDown": "Top-down"
+    },
+    "export": {
+      "markdown": "Markdown",
+      "image": "Image",
+      "pdf": "PDF",
+      "exportAs": "Export as {{format}}"
+    }
+  }
+}

@@ -248,6 +248,7 @@ export const api = {
       explanation: string;
     }[];
     source_chunks_used: number;
+    quiz_id: number;
   }> => {
     const resp = await fetch(`${API_BASE}/api/study/quiz/generate`, {
       method: "POST",
@@ -255,6 +256,50 @@ export const api = {
       body: JSON.stringify(req),
     });
     return handleJsonResponse(resp);
+  },
+
+  // Saved quizzes (revisit/replay)
+  listSavedQuizzes: async () => {
+    const resp = await fetch(`${API_BASE}/api/study/quiz/list`);
+    return handleJsonResponse<import("../types/api").SavedQuizListResponse>(resp);
+  },
+
+  getSavedQuiz: async (id: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/quiz/saved/${id}`);
+    return handleJsonResponse<import("../types/api").SavedQuiz>(resp);
+  },
+
+  deleteSavedQuiz: async (id: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/quiz/saved/${id}`, {
+      method: "DELETE",
+    });
+    return handleJsonResponse<{ status: string }>(resp);
+  },
+
+  saveQuizProgress: async (
+    id: number,
+    body: {
+      current: number;
+      correct_count: number;
+      answers: (number | null)[];
+      completed?: boolean;
+      score_pct?: number | null;
+      style?: "practice" | "exam";
+    },
+  ) => {
+    const resp = await fetch(`${API_BASE}/api/study/quiz/saved/${id}/progress`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return handleJsonResponse<{ status: string }>(resp);
+  },
+
+  clearQuizProgress: async (id: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/quiz/saved/${id}/progress`, {
+      method: "DELETE",
+    });
+    return handleJsonResponse<{ status: string }>(resp);
   },
 
   // ── Progress Dashboard ───────────────────────────────────────────────
@@ -266,6 +311,11 @@ export const api = {
   getProgressDaily: async (days = 30) => {
     const resp = await fetch(`${API_BASE}/api/progress/daily?days=${days}`);
     return handleJsonResponse<import("../types/api").DailyActivityResponse>(resp);
+  },
+
+  getProgressBreakdown: async () => {
+    const resp = await fetch(`${API_BASE}/api/progress/breakdown`);
+    return handleJsonResponse<import("../types/api").ModeBreakdown>(resp);
   },
 
   getProgressAchievements: async () => {
@@ -297,12 +347,36 @@ export const api = {
     return handleJsonResponse<import("../types/api").Workshop>(resp);
   },
 
-  getOrGenerateLesson: async (workshopId: number, lessonIdx: number) => {
+  // `force` re-rolls an already-generated lesson (old content kept on failure).
+  getOrGenerateLesson: async (workshopId: number, lessonIdx: number, force = false) => {
     const resp = await fetch(
-      `${API_BASE}/api/study/workshop/${workshopId}/lesson/${lessonIdx}`,
+      `${API_BASE}/api/study/workshop/${workshopId}/lesson/${lessonIdx}${force ? "?force=true" : ""}`,
       { method: "POST" },
     );
     return handleJsonResponse<import("../types/api").LessonContent>(resp);
+  },
+
+  // Regenerate the outline keeping difficulty/scope/lesson count.
+  // Discards all generated lessons; a failed re-roll changes nothing.
+  rerollWorkshopOutline: async (workshopId: number) => {
+    const resp = await fetch(`${API_BASE}/api/study/workshop/${workshopId}/reroll`, {
+      method: "POST",
+    });
+    return handleJsonResponse<import("../types/api").Workshop>(resp);
+  },
+
+  // Rename / reorder / delete lessons atomically. `lessons` is the desired
+  // final list in order; old_idx references the current lesson positions.
+  updateWorkshopLessons: async (
+    workshopId: number,
+    lessons: { old_idx: number; title: string }[],
+  ) => {
+    const resp = await fetch(`${API_BASE}/api/study/workshop/${workshopId}/lessons`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lessons }),
+    });
+    return handleJsonResponse<import("../types/api").Workshop>(resp);
   },
 
   completeLesson: async (workshopId: number, lessonIdx: number) => {
@@ -384,6 +458,51 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ depth: 2, ...req }),
     });
+    return handleJsonResponse<import("../types/api").Mindmap>(resp);
+  },
+
+  // Set the auto-diagram layout (TD / LR).
+  setMindmapLayout: async (id: number, layout: "TD" | "LR") => {
+    const resp = await fetch(
+      `${API_BASE}/api/study/mindmaps/mindmap/${id}/layout`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ layout }),
+      },
+    );
+    return handleJsonResponse<import("../types/api").Mindmap>(resp);
+  },
+
+  // Save (or clear, with null) manual React Flow node positions.
+  setMindmapPositions: async (
+    id: number,
+    positions: Record<string, { x: number; y: number }> | null,
+  ) => {
+    const resp = await fetch(
+      `${API_BASE}/api/study/mindmaps/mindmap/${id}/positions`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ positions }),
+      },
+    );
+    return handleJsonResponse<import("../types/api").Mindmap>(resp);
+  },
+
+  // Save (or clear, with null) the user-edited graph (structure only).
+  setMindmapGraph: async (
+    id: number,
+    graph: import("../types/api").MindmapGraph | null,
+  ) => {
+    const resp = await fetch(
+      `${API_BASE}/api/study/mindmaps/mindmap/${id}/graph`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ graph }),
+      },
+    );
     return handleJsonResponse<import("../types/api").Mindmap>(resp);
   },
 

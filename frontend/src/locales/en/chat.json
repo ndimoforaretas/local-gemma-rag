@@ -1,0 +1,90 @@
+{
+  "empty": {
+    "title": "Ask anything about your documents",
+    "intro": "Type a question below to get started. A few things you can do:",
+    "hint1": "Scope the chat to a category or specific files so answers stay on-topic.",
+    "hint2": "Attach documents or images right in the message box.",
+    "hint3": "Prefer talking? Tap the mic to dictate your question.",
+    "browseHelp": "Browse all help"
+  },
+  "input": {
+    "placeholder": "Message Gemma CogniVault…",
+    "ariaInput": "Message input",
+    "attach": "Attach files",
+    "attachFull": "Attach files (images, PDF, DOCX, text — up to {{max}})",
+    "attachLimit": "Maximum {{max}} attachments reached",
+    "send": "Send message",
+    "generating": "Generating response…",
+    "recordStart": "Record voice message (Whisper)",
+    "recordStop": "Stop recording",
+    "transcribing": "Transcribing…",
+    "helper": "Enter to send · Shift+Enter for new line · attach up to {{max}} files",
+    "chars": "{{count}} chars"
+  },
+  "message": {
+    "conversationAria": "Conversation messages",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyTip": "Copy response to clipboard",
+    "copiedTip": "Copied to clipboard!",
+    "copyAria": "Copy response",
+    "copiedAria": "Response copied",
+    "export": "Export",
+    "exportTip": "Export this response as a Markdown file",
+    "exportAria": "Export response as markdown",
+    "regenerate": "Regenerate",
+    "regenerateTip": "Regenerate this response",
+    "regenerateAria": "Regenerate response",
+    "editTip": "Edit and resend",
+    "editAria": "Edit message",
+    "editYourAria": "Edit your message",
+    "cancel": "Cancel",
+    "resend": "Send",
+    "reasoning": "Reasoning"
+  },
+  "memory": {
+    "label": "Working memory",
+    "trimmed": "This chat is long — the oldest messages are dropping out of the AI's memory. Start a new chat to keep full context.",
+    "tooltip": "The AI is holding about {{words}} words of this conversation in memory ({{pct}}% of its rolling window)."
+  },
+  "scope": {
+    "documents_one": "{{count}} document",
+    "documents_other": "{{count}} documents"
+  },
+  "session": {
+    "previousChat": "Previous Chat",
+    "deleteTitle": "Delete Chat Session",
+    "deleteMessage": "Delete session \"{{title}}\"? This action cannot be undone.",
+    "delete": "Delete",
+    "cancel": "Cancel"
+  },
+  "bridge": {
+    "done": "✅ \"{{file}}\" indexed and ready",
+    "indexing": "⚙️ Indexing \"{{file}}\"…",
+    "error": "❌ Failed to save \"{{file}}\" — try again",
+    "prompt": "Add \"{{file}}\" to Knowledge Base?",
+    "add": "Add to KB"
+  },
+  "context": {
+    "title": "Context Used",
+    "referenced": "Referenced Sources",
+    "closeAria": "Close sources panel",
+    "retrievedChunk": "Retrieved chunk",
+    "collapseAria": "Collapse chunk preview",
+    "viewAria": "View chunk text",
+    "hide": "Hide",
+    "viewChunk": "View chunk",
+    "openTip": "Open source file",
+    "open": "Open"
+  },
+  "history": {
+    "title": "Chat History",
+    "recent": "Recent Sessions",
+    "msgs": "{{count}} msgs",
+    "deleteAria": "Delete session {{title}}",
+    "deleteTitle": "Delete session",
+    "empty": "No past sessions",
+    "today": "Today, {{time}}",
+    "yesterday": "Yesterday, {{time}}"
+  }
+}

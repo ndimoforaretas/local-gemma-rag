@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import i18n from '../i18n';
 
 interface Props {
   children: ReactNode;
@@ -34,6 +35,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      const t = i18n.t;
       return (
         <div className="flex items-center justify-center h-screen w-full bg-[#f7f9fb] dark:bg-[#10131a] transition-colors">
           <div className="max-w-md w-full mx-4 bg-white dark:bg-[#1d2027] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-10 text-center shadow-xl">
@@ -41,13 +43,12 @@ export class ErrorBoundary extends Component<Props, State> {
               <AlertTriangle size={32} className="text-red-500" />
             </div>
 
-            <h2 className="text-2xl font-bold mb-3 text-[#191c1e] dark:text-[#e1e2ec]">
-              Something went wrong
+            <h2 className="text-2xl font-bold mb-3 text-ink-strong">
+              {t("common:errorBoundary.title")}
             </h2>
 
-            <p className="text-base text-[#424754] dark:text-[#8c909f] mb-6 leading-relaxed">
-              An unexpected error occurred. You can try refreshing the page or
-              resetting the application state.
+            <p className="text-base text-ink-muted mb-6 leading-relaxed">
+              {t("common:errorBoundary.body")}
             </p>
 
             {this.state.error && (
@@ -62,13 +63,13 @@ export class ErrorBoundary extends Component<Props, State> {
                 className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[#a855f7] hover:bg-[#9333ea] text-white font-medium shadow-lg shadow-[#a855f7]/25 transition-all"
               >
                 <RefreshCw size={18} />
-                Try Again
+                {t("common:errorBoundary.tryAgain")}
               </button>
               <button
                 onClick={() => window.location.reload()}
-                className="px-6 py-3 rounded-xl bg-[#e0e3e5] hover:bg-[#c2c6d6] dark:bg-[#272a31] dark:hover:bg-[#32353c] text-[#191c1e] dark:text-[#c2c6d6] font-medium transition-colors"
+                className="px-6 py-3 rounded-xl bg-[#e0e3e5] hover:bg-[#c2c6d6] dark:bg-[#272a31] dark:hover:bg-[#32353c] text-ink font-medium transition-colors"
               >
-                Reload Page
+                {t("common:errorBoundary.reload")}
               </button>
             </div>
           </div>

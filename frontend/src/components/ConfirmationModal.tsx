@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, Trash2, Info, X } from "lucide-react";
 
@@ -17,12 +18,13 @@ export function ConfirmationModal({
   isOpen,
   title,
   message,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  confirmLabel,
+  cancelLabel,
   type = "info",
   onConfirm,
   onCancel,
 }: ConfirmationModalProps) {
+  const { t } = useTranslation("common");
   // Listen for Escape key to close the modal
   useEffect(() => {
     if (!isOpen) return;
@@ -101,8 +103,8 @@ export function ConfirmationModal({
             {/* Close Button */}
             <button
               onClick={onCancel}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-[#727785] hover:text-[#191c1e] dark:text-[#8c909f] dark:hover:text-[#e1e2ec] hover:bg-[#eceef0] dark:hover:bg-[#272a31] transition-colors"
-              aria-label="Close dialog"
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-ink-muted hover:text-ink-strong hover:bg-[#eceef0] dark:hover:bg-[#272a31] transition-colors"
+              aria-label={t("closeDialog")}
             >
               <X className="w-5 h-5" />
             </button>
@@ -116,11 +118,11 @@ export function ConfirmationModal({
                 <div className="flex-1 min-w-0 pr-6">
                   <h3
                     id="modal-title"
-                    className="text-lg font-bold text-[#191c1e] dark:text-[#e1e2ec] tracking-tight leading-6"
+                    className="text-lg font-bold text-ink-strong tracking-tight leading-6"
                   >
                     {title}
                   </h3>
-                  <p className="mt-2 text-sm text-[#424754] dark:text-[#c2c6d6] leading-relaxed">
+                  <p className="mt-2 text-sm text-ink-muted leading-relaxed">
                     {message}
                   </p>
                 </div>
@@ -131,16 +133,16 @@ export function ConfirmationModal({
                 <button
                   type="button"
                   onClick={onCancel}
-                  className="px-4 py-2 rounded-xl bg-[#e0e3e5] hover:bg-[#c2c6d6] dark:bg-[#272a31] dark:hover:bg-[#32353c] text-[#191c1e] dark:text-[#c2c6d6] text-sm font-medium transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-[#e0e3e5] hover:bg-[#c2c6d6] dark:bg-[#272a31] dark:hover:bg-[#32353c] text-ink text-sm font-medium transition-colors cursor-pointer"
                 >
-                  {cancelLabel}
+                  {cancelLabel ?? t("cancel")}
                 </button>
                 <button
                   type="button"
                   onClick={onConfirm}
                   className={`px-5 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${confirmBtnClass}`}
                 >
-                  {confirmLabel}
+                  {confirmLabel ?? t("confirm")}
                 </button>
               </div>
             </div>

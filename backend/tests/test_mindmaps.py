@@ -220,6 +220,190 @@ def test_get_endpoint(client):
     body = client.get(f"/api/study/mindmaps/mindmap/{mm_id}").json()
     assert body["title"] == "T"
     assert body["tree"]["label"] == "Python Fundamentals"
+    assert body["custom_source"] is None  # fresh mindmap → auto-generated
+
+
+def test_set_and_clear_custom_source(client):
+    mm_id = progress_tracker.create_mindmap(scope=["x.txt"], depth=2, title="T", tree=VALID_TREE_JSON)
+    custom = "graph TD\n  a[Hello] --- b[World]"
+
+    # Save an edited diagram.
+    resp = client.put(
+        f"/api/study/mindmaps/mindmap/{mm_id}/source", json={"source": custom}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["custom_source"] == custom
+    # Persisted across a fresh GET.
+    assert client.get(f"/api/study/mindmaps/mindmap/{mm_id}").json()["custom_source"] == custom
+
+    # Empty source resets to the auto-generated diagram.
+    resp = client.put(
+        f"/api/study/mindmaps/mindmap/{mm_id}/source", json={"source": "   "}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["custom_source"] is None
+
+
+def test_set_source_404(client):
+    assert (
+        client.put("/api/study/mindmaps/mindmap/999/source", json={"source": "x"}).status_code
+        == 404
+    )
+
+
+def test_set_positions_persist_and_reset(client):
+    mm_id = progress_tracker.create_mindmap(scope=["x.txt"], depth=2, title="T", tree=VALID_TREE_JSON)
+    assert client.get(f"/api/study/mindmaps/mindmap/{mm_id}").json()["node_positions"] is None
+
+    pos = {"n0": {"x": 10, "y": 20}, "n1": {"x": 100, "y": 0}}
+    resp = client.put(
+        f"/api/study/mindmaps/mindmap/{mm_id}/positions", json={"positions": pos}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["node_positions"] == pos
+    assert client.get(f"/api/study/mindmaps/mindmap/{mm_id}").json()["node_positions"] == pos
+
+    # Clearing returns to auto-layout.
+    resp = client.put(
+        f"/api/study/mindmaps/mindmap/{mm_id}/positions", json={"positions": None}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["node_positions"] is None
+
+
+def test_changing_layout_clears_manual_positions(client):
+    mm_id = progress_tracker.create_mindmap(scope=["x.txt"], depth=2, title="T", tree=VALID_TREE_JSON)
+    client.put(
+        f"/api/study/mindmaps/mindmap/{mm_id}/positions",
+        json={"positions": {"n0": {"x": 5, "y": 5}}},
+    )
+    # Switching direction invalidates the manual layout.
+    body = client.put(
+        f"/api/study/mindmaps/mindmap/{mm_id}/layout", json={"layout": "TD"}
+    ).json()
+    assert body["layout"] == "TD"
+    assert body["node_positions"] is None
+
+
+VALID_GRAPH = {
+    "nodes": [
+        {"id": "n0", "label": "Python Fundamentals", "level": 0, "color": None},
+        {"id": "n1", "label": "Variables (renamed)", "level": 1, "color": "emerald"},
+    ],
+    "edges": [{"id": "en0-n1", "source": "n0", "target": "n1"}],
+}
+
+
+def test_set_graph_persist_and_reset(client):
+    mm_id = progress_tracker.create_mindmap(scope=["x.txt"], depth=2, title="T", tree=VALID_TREE_JSON)
+    # Fresh mindmaps have no user-edited graph.
+    assert client.get(f"/api/study/mindmaps/mindmap/{mm_id}").json()["graph"] is None
+
+    resp = client.put(
+        f"/api/study/mindmaps/mindmap/{mm_id}/graph", json={"graph": VALID_GRAPH}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["graph"] == VALID_GRAPH
+    assert client.get(f"/api/study/mindmaps/mindmap/{mm_id}").json()["graph"] == VALID_GRAPH
+    # The original AI tree is untouched (stays as the regeneration seed).
+    assert client.get(f"/api/study/mindmaps/mindmap/{mm_id}").json()["tree"]["label"] == "Python Fundamentals"
+
+    # Null resets back to the AI-generated tree.
+    resp = client.put(
+        f"/api/study/mindmaps/mindmap/{mm_id}/graph", json={"graph": None}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["graph"] is None
+
+
+def test_set_graph_does_not_touch_positions_or_layout(client):
+    mm_id = progress_tracker.create_mindmap(scope=["x.txt"], depth=2, title="T", tree=VALID_TREE_JSON)
+    pos = {"n0": {"x": 5, "y": 5}}
+    client.put(f"/api/study/mindmaps/mindmap/{mm_id}/positions", json={"positions": pos})
+    client.put(f"/api/study/mindmaps/mindmap/{mm_id}/layout", json={"layout": "TD"})
+
+    body = client.put(
+        f"/api/study/mindmaps/mindmap/{mm_id}/graph", json={"graph": VALID_GRAPH}
+    ).json()
+    # Graph is structure-only; the overlay columns are independent.
+    assert body["layout"] == "TD"
+    assert body["node_positions"] is None  # layout switch cleared them (existing rule)
+    client.put(f"/api/study/mindmaps/mindmap/{mm_id}/positions", json={"positions": pos})
+    assert client.get(f"/api/study/mindmaps/mindmap/{mm_id}").json()["node_positions"] == pos
+
+
+def test_set_graph_validates_shape(client):
+    mm_id = progress_tracker.create_mindmap(scope=["x.txt"], depth=2, title="T", tree=VALID_TREE_JSON)
+    # Empty label rejected.
+    bad = {"nodes": [{"id": "n0", "label": "", "level": 0}], "edges": []}
+    assert (
+        client.put(f"/api/study/mindmaps/mindmap/{mm_id}/graph", json={"graph": bad}).status_code
+        == 422
+    )
+    # Level out of range rejected.
+    bad = {"nodes": [{"id": "n0", "label": "X", "level": 7}], "edges": []}
+    assert (
+        client.put(f"/api/study/mindmaps/mindmap/{mm_id}/graph", json={"graph": bad}).status_code
+        == 422
+    )
+    # Empty node list rejected.
+    bad = {"nodes": [], "edges": []}
+    assert (
+        client.put(f"/api/study/mindmaps/mindmap/{mm_id}/graph", json={"graph": bad}).status_code
+        == 422
+    )
+
+
+def test_graph_color_roundtrip_and_legacy_default(client):
+    mm_id = progress_tracker.create_mindmap(scope=["x.txt"], depth=2, title="T", tree=VALID_TREE_JSON)
+    # Colours persist per node (VALID_GRAPH has one coloured, one default).
+    body = client.put(
+        f"/api/study/mindmaps/mindmap/{mm_id}/graph", json={"graph": VALID_GRAPH}
+    ).json()
+    colors = {n["id"]: n["color"] for n in body["graph"]["nodes"]}
+    assert colors == {"n0": None, "n1": "emerald"}
+
+    # Graphs stored before the colour field existed parse with color=None.
+    legacy = {
+        "nodes": [{"id": "n0", "label": "Old", "level": 0}],
+        "edges": [],
+    }
+    assert progress_tracker.set_mindmap_graph(mm_id, legacy)
+    body = client.get(f"/api/study/mindmaps/mindmap/{mm_id}").json()
+    assert body["graph"]["nodes"][0]["color"] is None
+
+
+def test_set_graph_404(client):
+    assert (
+        client.put("/api/study/mindmaps/mindmap/999/graph", json={"graph": VALID_GRAPH}).status_code
+        == 404
+    )
+
+
+def test_set_layout_persists_and_validates(client):
+    mm_id = progress_tracker.create_mindmap(scope=["x.txt"], depth=2, title="T", tree=VALID_TREE_JSON)
+    # Default is unset until chosen.
+    assert client.get(f"/api/study/mindmaps/mindmap/{mm_id}").json()["layout"] is None
+
+    resp = client.put(
+        f"/api/study/mindmaps/mindmap/{mm_id}/layout", json={"layout": "LR"}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["layout"] == "LR"
+    assert client.get(f"/api/study/mindmaps/mindmap/{mm_id}").json()["layout"] == "LR"
+
+    # Unknown layout values are rejected by the schema.
+    assert (
+        client.put(
+            f"/api/study/mindmaps/mindmap/{mm_id}/layout", json={"layout": "diagonal"}
+        ).status_code
+        == 422
+    )
+    # 404 for a missing mindmap.
+    assert (
+        client.put("/api/study/mindmaps/mindmap/999/layout", json={"layout": "TD"}).status_code
+        == 404
+    )
 
 
 def test_get_endpoint_404(client):

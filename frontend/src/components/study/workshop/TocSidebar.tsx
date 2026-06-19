@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ListOrdered } from "lucide-react";
 import type { TocHeading } from "./tocHelpers";
 
@@ -23,6 +24,7 @@ export function TocSidebar({
   articleEl: HTMLElement | null;
 }) {
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
+  const { t } = useTranslation("study");
 
   // Scroll-spy: highlight the topmost heading currently visible in the viewport.
   useEffect(() => {
@@ -62,9 +64,9 @@ export function TocSidebar({
 
   return (
     <aside className="hidden lg:block w-48 shrink-0 sticky top-6 self-start">
-      <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#727785] dark:text-[#8c909f] mb-3">
+      <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-ink-muted mb-3">
         <ListOrdered size={12} />
-        On this page
+        {t("workshop.toc.onThisPage")}
       </div>
       <nav>
         <ul className="border-l border-[#c2c6d6] dark:border-[#424754]">
@@ -76,12 +78,12 @@ export function TocSidebar({
                   href={`#${h.slug}`}
                   onClick={(e) => handleClick(e, h.slug)}
                   className={`
-                    block py-1 px-3 text-xs leading-snug transition-colors border-l-2 -ml-px
+                    block py-1 px-3 text-xs leading-snug transition-colors border-l-2 -ml-px rounded-r-md
                     ${h.level === 3 ? "pl-6" : ""}
                     ${
                       active
-                        ? "border-[#a855f7] text-[#a855f7] dark:text-[#ddb7ff] font-semibold"
-                        : "border-transparent text-[#424754] dark:text-[#c2c6d6] hover:text-[#a855f7] dark:hover:text-[#ddb7ff]"
+                        ? "border-[#a855f7] text-[#a855f7] dark:text-[#ddb7ff] font-semibold bg-[#a855f7]/10"
+                        : "border-transparent text-ink-muted hover:text-[#a855f7] dark:hover:text-[#ddb7ff] hover:border-[#a855f7]/40 hover:bg-[#a855f7]/5"
                     }
                   `}
                 >

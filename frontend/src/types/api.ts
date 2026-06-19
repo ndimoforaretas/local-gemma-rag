@@ -181,6 +181,8 @@ export interface ProgressSummary {
   total_sessions: number;
   total_messages: number;
   current_streak_days: number;
+  /** Longest run of consecutive active days ever (personal best). */
+  longest_streak_days: number;
 }
 
 export interface DailyActivityEntry {
@@ -201,10 +203,27 @@ export interface AchievementItem {
   icon: string;
   earned_at: number | null;
   is_earned: boolean;
+  /** Stat this badge tracks (e.g. "total_quizzes"); null for binary badges. */
+  metric?: string | null;
+  /** Threshold the metric must reach; null for binary badges. */
+  target?: number | null;
+  /** Family ID — badges in a group form an ascending ladder; null = standalone. */
+  group?: string | null;
+  /** Code of the next badge up the ladder; null at the top or for standalone. */
+  next_code?: string | null;
+  /** User's live value toward target (capped at target); null for binary badges. */
+  current?: number | null;
 }
 
 export interface AchievementsResponse {
   achievements: AchievementItem[];
+}
+
+export interface ModeBreakdown {
+  quizzes: { count: number; avg_score: number; best_score: number };
+  workshops: { created: number; completed: number };
+  flashcards: { decks: number; mastered: number };
+  mindmaps: { created: number; exports: number };
 }
 
 // ── Workshops ───────────────────────────────────────────────────────────
@@ -307,6 +326,26 @@ export interface MindmapNode {
   children: MindmapNode[];
 }
 
+export interface MindmapGraphNode {
+  id: string;
+  label: string;
+  level: 0 | 1 | 2;
+  /** Preset colour key (e.g. "emerald"); null/absent → default tier styling. */
+  color?: string | null;
+}
+
+export interface MindmapGraphEdge {
+  id: string;
+  source: string;
+  target: string;
+}
+
+/** User-edited mindmap graph — structure only (positions/layout separate). */
+export interface MindmapGraph {
+  nodes: MindmapGraphNode[];
+  edges: MindmapGraphEdge[];
+}
+
 export interface Mindmap {
   id: number;
   created_at: number;
@@ -315,6 +354,14 @@ export interface Mindmap {
   title: string;
   tree: MindmapNode;
   export_count: number;
+  /** User-edited mermaid source; null/absent → render the auto diagram. */
+  custom_source?: string | null;
+  /** Auto-diagram layout: "TD" | "LR" (null → default). */
+  layout?: "TD" | "LR" | null;
+  /** Manual React Flow node positions {id: {x, y}} (null → auto-layout). */
+  node_positions?: Record<string, { x: number; y: number }> | null;
+  /** User-edited graph; null/absent → render the AI-generated tree. */
+  graph?: MindmapGraph | null;
 }
 
 export interface MindmapListItem {
@@ -327,6 +374,52 @@ export interface MindmapListItem {
 
 export interface MindmapListResponse {
   mindmaps: MindmapListItem[];
+}
+
+// ── Saved Quizzes ────────────────────────────────────────────────────────────
+
+export interface SavedQuizQuestion {
+  type: "mcq" | "true_false";
+  question: string;
+  options: string[];
+  correct_index: number;
+  explanation: string;
+}
+
+export interface QuizProgress {
+  current: number;
+  correct_count: number;
+  answers: (number | null)[];
+  completed: boolean;
+  score_pct: number | null;
+  style: "practice" | "exam";
+}
+
+export interface SavedQuizListItem {
+  id: number;
+  created_at: number;
+  difficulty: WorkshopDifficulty;
+  title: string;
+  question_count: number;
+  in_progress: boolean;
+  answered_count: number;
+  completed: boolean;
+  last_score: number | null;
+}
+
+export interface SavedQuizListResponse {
+  quizzes: SavedQuizListItem[];
+}
+
+export interface SavedQuiz {
+  id: number;
+  created_at: number;
+  difficulty: WorkshopDifficulty;
+  scope: string[];
+  title: string;
+  question_count: number;
+  questions: SavedQuizQuestion[];
+  progress: QuizProgress | null;
 }
 
 export interface MindmapExportResponse {

@@ -3,6 +3,7 @@
  * picker. Pattern mirrors QuizConfigPanel for visual consistency.
  */
 
+import { useTranslation } from "react-i18next";
 import { BookOpen, Loader2, AlertCircle, ArrowLeft } from "lucide-react";
 import { DocScopeFilter } from "../../DocScopeFilter";
 import { PillButton, Section } from "../quiz/QuizPrimitives";
@@ -23,6 +24,7 @@ export interface WorkshopConfigPanelProps {
 }
 
 export function WorkshopConfigPanel(p: WorkshopConfigPanelProps) {
+  const { t } = useTranslation("study");
   const hasScope = p.scope.length > 0;
   const canStart = hasScope && !p.isLoading;
 
@@ -31,34 +33,34 @@ export function WorkshopConfigPanel(p: WorkshopConfigPanelProps) {
       <button
         type="button"
         onClick={p.onCancel}
-        className="inline-flex items-center gap-1.5 text-sm text-[#424754] dark:text-[#c2c6d6] hover:text-[#191c1e] dark:hover:text-white"
+        className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink-strong"
       >
         <ArrowLeft size={14} />
-        Back to workshops
+        {t("workshop.config.back")}
       </button>
 
       <div>
-        <h2 className="text-2xl font-bold text-[#191c1e] dark:text-white mb-1">
-          New Workshop
+        <h2 className="text-2xl font-bold text-ink-strong mb-1">
+          {t("workshop.config.title")}
         </h2>
-        <p className="text-sm text-[#424754] dark:text-[#c2c6d6]">
-          Choose your scope, difficulty, and how many lessons to generate.
+        <p className="text-sm text-ink-muted">
+          {t("workshop.config.subtitle")}
         </p>
       </div>
 
       <div className="bg-white dark:bg-[#191b23] border border-[#c2c6d6] dark:border-[#424754] rounded-2xl p-6 sm:p-8 space-y-7">
         <Section
-          label="Document scope (required)"
+          label={t("workshop.config.scopeLabel")}
           hint={
             hasScope
-              ? "The workshop pulls all content from these documents."
-              : "Pick at least one category or file. Wide scope = unfocused workshop."
+              ? t("workshop.config.scopeHintHas")
+              : t("workshop.config.scopeHintEmpty")
           }
         >
           <DocScopeFilter selected={p.scope} onChange={p.setScope} />
         </Section>
 
-        <Section label="Difficulty">
+        <Section label={t("workshop.config.difficultyLabel")}>
           <div className="flex flex-wrap gap-2.5">
             {DIFFICULTIES.map((d) => (
               <PillButton
@@ -66,13 +68,13 @@ export function WorkshopConfigPanel(p: WorkshopConfigPanelProps) {
                 active={p.difficulty === d.id}
                 onClick={() => p.setDifficulty(d.id)}
               >
-                <span className={d.tone}>●</span> {d.label}
+                <span className={d.tone}>●</span> {t(`difficulty.${d.id}`)}
               </PillButton>
             ))}
           </div>
         </Section>
 
-        <Section label="Number of lessons">
+        <Section label={t("workshop.config.lessonsLabel")}>
           <div className="flex flex-wrap gap-2.5">
             {LESSON_COUNTS.map((n) => (
               <PillButton
@@ -80,7 +82,7 @@ export function WorkshopConfigPanel(p: WorkshopConfigPanelProps) {
                 active={p.lessonCount === n}
                 onClick={() => p.setLessonCount(n)}
               >
-                {n} lessons
+                {t("workshop.config.lessonsOption", { count: n })}
               </PillButton>
             ))}
           </div>
@@ -103,11 +105,11 @@ export function WorkshopConfigPanel(p: WorkshopConfigPanelProps) {
         >
           {p.isLoading ? (
             <>
-              <Loader2 size={16} className="animate-spin" /> Building outline…
+              <Loader2 size={16} className="animate-spin" /> {t("workshop.config.buildingOutline")}
             </>
           ) : (
             <>
-              <BookOpen size={16} /> Build Workshop
+              <BookOpen size={16} /> {t("workshop.config.build")}
             </>
           )}
         </button>

@@ -6,28 +6,29 @@
  */
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { BookOpen, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 
 const OUTLINE_STAGES = [
-  { from: 0, message: "Scanning your documents…" },
-  { from: 3, message: "Identifying the core concepts…" },
-  { from: 8, message: "Structuring the learning path…" },
-  { from: 16, message: "Drafting lesson titles and reading-time estimates…" },
-  { from: 30, message: "Almost there — finalising the outline…" },
+  { from: 0, key: "outlineStage0" },
+  { from: 3, key: "outlineStage1" },
+  { from: 8, key: "outlineStage2" },
+  { from: 16, key: "outlineStage3" },
+  { from: 30, key: "outlineStage4" },
 ];
 
 const LESSON_STAGES = [
-  { from: 0, message: "Re-reading the relevant material…" },
-  { from: 4, message: "Outlining the lesson sections…" },
-  { from: 10, message: "Writing the body, examples, and code blocks…" },
-  { from: 22, message: "Polishing structure and self-check prompts…" },
-  { from: 40, message: "Just finishing up — almost ready…" },
+  { from: 0, key: "lessonStage0" },
+  { from: 4, key: "lessonStage1" },
+  { from: 10, key: "lessonStage2" },
+  { from: 22, key: "lessonStage3" },
+  { from: 40, key: "lessonStage4" },
 ];
 
-function pickStage(elapsed: number, stages: typeof OUTLINE_STAGES): string {
-  let current = stages[0].message;
-  for (const s of stages) if (elapsed >= s.from) current = s.message;
+function pickStageKey(elapsed: number, stages: typeof OUTLINE_STAGES): string {
+  let current = stages[0].key;
+  for (const s of stages) if (elapsed >= s.from) current = s.key;
   return current;
 }
 
@@ -36,6 +37,7 @@ export function WorkshopGeneratingCard({
 }: {
   mode: "outline" | "lesson";
 }) {
+  const { t } = useTranslation("study");
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     const t0 = Date.now();
@@ -45,9 +47,9 @@ export function WorkshopGeneratingCard({
 
   const Icon = mode === "outline" ? BookOpen : FileText;
   const stages = mode === "outline" ? OUTLINE_STAGES : LESSON_STAGES;
-  const status = pickStage(elapsed, stages);
-  const title = mode === "outline" ? "Building your workshop outline" : "Writing this lesson";
-  const eta = mode === "outline" ? "10–40 seconds" : "20–60 seconds";
+  const status = t(`workshop.gen.${pickStageKey(elapsed, stages)}`);
+  const title = mode === "outline" ? t("workshop.gen.outlineTitle") : t("workshop.gen.lessonTitle");
+  const eta = mode === "outline" ? t("workshop.gen.outlineEta") : t("workshop.gen.lessonEta");
 
   const mins = Math.floor(elapsed / 60);
   const secs = elapsed % 60;
@@ -62,12 +64,15 @@ export function WorkshopGeneratingCard({
       >
         <Icon size={32} />
       </motion.div>
-      <h2 className="text-xl font-bold text-[#191c1e] dark:text-white mb-1">
+      <h2 className="text-xl font-bold text-ink-strong mb-1">
         {title}
       </h2>
-      <p className="text-sm text-[#727785] dark:text-[#8c909f] mb-6">
-        Gemma is on it. This usually takes {eta}.
+      <p className={`text-sm text-ink-muted ${mode === "lesson" ? "mb-1" : "mb-6"}`}>
+        {t("workshop.gen.body", { eta })}
       </p>
+      {mode === "lesson" && (
+        <p className="text-xs text-ink-muted mb-6">{t("workshop.gen.lessonHint")}</p>
+      )}
 
       <div className="w-full max-w-sm h-1.5 bg-[#c2c6d6]/40 dark:bg-[#424754]/40 rounded-full overflow-hidden mb-4">
         <motion.div
@@ -87,8 +92,8 @@ export function WorkshopGeneratingCard({
       >
         {status}
       </motion.div>
-      <div className="text-xs text-[#727785] dark:text-[#8c909f] tabular-nums">
-        {timer} elapsed
+      <div className="text-xs text-ink-muted tabular-nums">
+        {t("workshop.gen.elapsed", { time: timer })}
       </div>
     </div>
   );
